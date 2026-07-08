@@ -1,0 +1,151 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { BuilderForm } from "@/components/dashboard/builder-form";
+import { BuilderList } from "@/components/dashboard/builder-list";
+import { CommunityForm } from "@/components/dashboard/community-form";
+import { CommunityList } from "@/components/dashboard/community-list";
+import { HomeForm } from "@/components/dashboard/home-form";
+import { useData } from "@/context/data-context";
+import { communityHasBuilder } from "@/lib/community-builders";
+import type { Builder, Community, Home } from "@/lib/types";
+
+export function BuildersWorkspace() {
+  const { builders, communities } = useData();
+  const [selectedBuilderId, setSelectedBuilderId] = useState<string | null>(null);
+  const [editingBuilder, setEditingBuilder] = useState<Builder | null>(null);
+  const [editingCommunity, setEditingCommunity] = useState<Community | null>(
+    null,
+  );
+  const [editingHome, setEditingHome] = useState<Home | null>(null);
+  const [editingHomeCommunityId, setEditingHomeCommunityId] = useState<
+    string | null
+  >(null);
+  const [addingHomeForCommunityId, setAddingHomeForCommunityId] = useState<
+    string | null
+  >(null);
+
+  const selectedBuilder = useMemo(
+    () => builders.find((builder) => builder.id === selectedBuilderId) ?? null,
+    [builders, selectedBuilderId],
+  );
+
+  const builderCommunityIds = useMemo(
+    () =>
+      communities
+        .filter(
+          (community) =>
+            selectedBuilderId !== null &&
+            communityHasBuilder(community, selectedBuilderId),
+        )
+        .map((community) => community.id),
+    [communities, selectedBuilderId],
+  );
+
+  useEffect(() => {
+    if (builders.length > 0 && !selectedBuilderId) {
+      setSelectedBuilderId(builders[0].id);
+    }
+  }, [builders, selectedBuilderId]);
+
+  function handleSelectBuilder(builderId: string) {
+    setSelectedBuilderId(builderId || null);
+    setEditingCommunity(null);
+    setEditingHome(null);
+    setEditingHomeCommunityId(null);
+    setAddingHomeForCommunityId(null);
+  }
+
+  function handleEditHome(communityId: string, home: Home) {
+    setEditingHome(home);
+    setEditingHomeCommunityId(communityId);
+    setAddingHomeForCommunityId(null);
+  }
+
+  function handleAddHome(communityId: string) {
+    setEditingHome(null);
+    setEditingHomeCommunityId(communityId);
+    setAddingHomeForCommunityId(communityId);
+  }
+
+  function handleHomeEditComplete() {
+    setEditingHome(null);
+    setEditingHomeCommunityId(null);
+    setAddingHomeForCommunityId(null);
+  }
+
+  const showHomeForm =
+    (editingHome !== null && editingHomeCommunityId !== null) ||
+    addingHomeForCommunityId !== null;
+
+  return (
+    <div className="space-y-10">
+      <div>
+        <h2 className="font-heading text-2xl">Builders</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Organize the catalog by builder. Select a builder to manage their
+          communities and home models.
+        </p>
+      </div>
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <BuilderForm
+          key={editingBuilder?.id ?? "new-builder"}
+          editingBuilder={editingBuilder}
+          onEditComplete={() => setEditingBuilder(null)}
+        />
+        <BuilderList
+          selectedBuilderId={selectedBuilderId}
+          onSelect={handleSelectBuilder}
+          onEdit={setEditingBuilder}
+        />
+      </div>
+
+      {selectedBuilder && (
+        <div className="space-y-6 border-t border-border pt-10">
+          <div>
+            <h3 className="font-heading text-xl">{selectedBuilder.name}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Communities and models for this builder.
+            </p>
+          </div>
+
+          <div className="grid gap-8 xl:grid-cols-2">
+            <div className="space-y-8">
+              <CommunityForm
+                key={`${selectedBuilder.id}-${editingCommunity?.id ?? "new-community"}`}
+                editingCommunity={editingCommunity}
+                defaultBuilderId={selectedBuilder.id}
+                lockBuilder
+                onEditComplete={() => setEditingCommunity(null)}
+              />
+
+              {showHomeForm && (
+                <HomeForm
+                  key={
+                    editingHome?.id ??
+                    `new-home-${addingHomeForCommunityId ?? editingHomeCommunityId}`
+                  }
+                  editingHome={editingHome}
+                  editingCommunityId={
+                    editingHomeCommunityId ?? addingHomeForCommunityId
+                  }
+                  communityIds={builderCommunityIds}
+                  onEditComplete={handleHomeEditComplete}
+                />
+              )}
+            </div>
+
+            <CommunityList
+              filterBuilderId={selectedBuilder.id}
+              onEditCommunity={setEditingCommunity}
+              onEditHome={handleEditHome}
+              onAddHome={handleAddHome}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
