@@ -246,6 +246,21 @@ export type BuyerProfile = {
   email: string;
 };
 
+export type UserRole = "buyer" | "builder" | "lender" | "admin";
+
+export type UserStatus = "active" | "pending" | "rejected";
+
+/** Fila de public.profiles mapeada a camelCase. */
+export type Profile = {
+  id: string;
+  role: UserRole;
+  status: UserStatus;
+  fullName?: string;
+  companyName?: string;
+  email?: string;
+  avatarUrl?: string;
+};
+
 export type GuidanceFormData = {
   email: string;
   budget: string;

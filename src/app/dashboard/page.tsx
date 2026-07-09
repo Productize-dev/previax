@@ -13,6 +13,7 @@ import { FeaturedList } from "@/components/dashboard/featured-list";
 import { FeaturedCommunitiesManager } from "@/components/dashboard/featured-communities-manager";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
 import { LocalDataImportCard } from "@/components/dashboard/local-data-import-card";
+import { PendingAccountsCard } from "@/components/dashboard/pending-accounts-card";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
 import { useData } from "@/context/data-context";
 import type { DashboardTab, FeaturedItem } from "@/lib/types";
@@ -47,12 +48,21 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <Link
-            href="/"
-            className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-          >
-            ← View site
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              ← View site
+            </Link>
+            <Link
+              href="/logout"
+              prefetch={false}
+              className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              Sign out
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -68,6 +78,7 @@ export default function DashboardPage() {
         <main className="min-w-0 flex-1">
           {tab === "overview" && (
             <div className="space-y-6">
+              <PendingAccountsCard />
               <LocalDataImportCard />
               <DashboardOverview onNavigate={setTab} />
             </div>

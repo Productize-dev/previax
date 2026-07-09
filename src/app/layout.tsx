@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 
+import { AuthProvider } from "@/context/auth-context";
 import { DataProvider } from "@/context/data-context";
 import { BuyerProvider } from "@/context/buyer-context";
 
@@ -37,9 +38,11 @@ export default function RootLayout({
       className={`${inter.variable} ${playfair.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <DataProvider>
-          <BuyerProvider>{children}</BuyerProvider>
-        </DataProvider>
+        <AuthProvider>
+          <DataProvider>
+            <BuyerProvider>{children}</BuyerProvider>
+          </DataProvider>
+        </AuthProvider>
       </body>
     </html>
   );

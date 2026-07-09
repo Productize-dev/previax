@@ -8,7 +8,9 @@ import { Bell, Heart, Search, User, X } from "lucide-react";
 import { SignInDialog } from "@/components/buyer/sign-in-dialog";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { Input } from "@/components/ui/input";
+import { useProfile } from "@/context/auth-context";
 import { useBuyer } from "@/context/buyer-context";
+import { canAccessDashboard } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
 
 const SECTION_LINKS = [
@@ -28,6 +30,8 @@ function getActiveHash(pathname: string, hash: string): string {
 export function NetflixNavbar() {
   const pathname = usePathname();
   const { searchQuery, setSearchQuery, savedIds, buyer, signOut } = useBuyer();
+  const profile = useProfile();
+  const showDashboard = canAccessDashboard(profile);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
@@ -90,15 +94,17 @@ export function NetflixNavbar() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-            <Link
-              href="/dashboard"
-              className={cn(
-                "hidden shrink-0 rounded px-2.5 py-1.5 text-sm text-[#e5e5e5] transition-colors hover:text-white sm:inline-block",
-                pathname === "/dashboard" && "font-semibold text-white",
-              )}
-            >
-              Dashboard
-            </Link>
+            {showDashboard && (
+              <Link
+                href="/dashboard"
+                className={cn(
+                  "hidden shrink-0 rounded px-2.5 py-1.5 text-sm text-[#e5e5e5] transition-colors hover:text-white sm:inline-block",
+                  pathname === "/dashboard" && "font-semibold text-white",
+                )}
+              >
+                Dashboard
+              </Link>
+            )}
 
             <div
               className={cn(

@@ -8,11 +8,9 @@ import {
   useState,
 } from "react";
 
+import { useAuth } from "@/context/auth-context";
 import {
-  clearBuyerProfile,
-  getBuyerProfile,
   getSavedCommunityIds,
-  saveBuyerProfile,
   subscribeBuyerStorage,
   toggleSavedCommunity,
 } from "@/lib/buyer-storage";
@@ -29,7 +27,6 @@ type BuyerContextValue = {
   buyer: BuyerProfile | null;
   toggleSaved: (id: string) => void;
   isSaved: (id: string) => boolean;
-  signIn: (profile: BuyerProfile) => void;
   signOut: () => void;
 };
 
@@ -41,11 +38,8 @@ function getServerSaved(): string[] {
   return serverSaved;
 }
 
-function getServerBuyer(): BuyerProfile | null {
-  return null;
-}
-
 export function BuyerProvider({ children }: { children: React.ReactNode }) {
+  const { user, profile, signOut: authSignOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [offersOnly, setOffersOnly] = useState(false);
@@ -55,11 +49,18 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     getSavedCommunityIds,
     getServerSaved,
   );
-  const buyer = useSyncExternalStore(
-    subscribeBuyerStorage,
-    getBuyerProfile,
-    getServerBuyer,
-  );
+
+  // El "buyer" ahora viene de la sesión real de Supabase Auth.
+  const buyer: BuyerProfile | null = user
+    ? {
+        name:
+          profile?.fullName ||
+          (user.user_metadata?.full_name as string | undefined) ||
+          user.email?.split("@")[0] ||
+          "Account",
+        email: profile?.email ?? user.email ?? "",
+      }
+    : null;
 
   const isSavedFn = useCallback(
     (id: string) => savedIds.includes(id),
@@ -70,13 +71,9 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     toggleSavedCommunity(id);
   }, []);
 
-  const signIn = useCallback((profile: BuyerProfile) => {
-    saveBuyerProfile(profile);
-  }, []);
-
   const signOut = useCallback(() => {
-    clearBuyerProfile();
-  }, []);
+    void authSignOut();
+  }, [authSignOut]);
 
   return (
     <BuyerContext.Provider
@@ -91,7 +88,6 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
         buyer,
         toggleSaved,
         isSaved: isSavedFn,
-        signIn,
         signOut,
       }}
     >
