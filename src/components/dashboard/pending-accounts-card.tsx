@@ -17,6 +17,8 @@ import {
   type ProfileRow,
 } from "@/lib/auth/profile";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logLifecycleEvent } from "@/lib/analytics";
+import { toastSuccess, toastError } from "@/lib/toast";
 import type { Profile, UserStatus } from "@/lib/types";
 
 /** Solo admin: aprueba o rechaza cuentas builder/lender pendientes. */
@@ -62,8 +64,15 @@ export function PendingAccountsCard() {
       .eq("id", id);
     setBusyId(null);
     if (updateError) {
+      toastError(updateError.message);
       setError(updateError.message);
       return;
+    }
+    if (status === "active") {
+      void logLifecycleEvent("account_approved", id, {
+        email: pending.find((p) => p.id === id)?.email,
+      });
+      toastSuccess("Account approved");
     }
     setPending((prev) => prev.filter((item) => item.id !== id));
   }

@@ -4,6 +4,7 @@ import {
   isOfferExpired,
   isOfferExpiringSoon,
 } from "@/lib/community-utils";
+import { trackCommunityEvent } from "@/lib/analytics";
 import { useData } from "@/context/data-context";
 import type { LenderOffer } from "@/lib/types";
 
@@ -46,6 +47,13 @@ export function FinancingOffers({ communityId }: FinancingOffersProps) {
               key={offer.id}
               className="overflow-hidden rounded-xl border border-[#46d369]/30 bg-gradient-to-br from-[#46d369]/10 to-transparent"
             >
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() =>
+                  void trackCommunityEvent(communityId, "offer_clicked")
+                }
+              >
               {offer.imageUrl && (
                 <div className="aspect-[16/9] w-full overflow-hidden">
                   <img
@@ -82,6 +90,7 @@ export function FinancingOffers({ communityId }: FinancingOffersProps) {
                   </div>
                 )}
               </div>
+              </button>
             </li>
           );
         })}

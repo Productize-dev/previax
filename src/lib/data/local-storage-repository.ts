@@ -528,6 +528,7 @@ export const localStorageRepository: SiteRepository = {
         communityId,
         rank,
         period,
+        isAuto: false,
       });
     }
 
@@ -543,6 +544,14 @@ export const localStorageRepository: SiteRepository = {
     ];
     writeStored(stored);
     return sorted;
+  },
+
+  async computeTop10(_period: Top10Period) {
+    return 0;
+  },
+
+  async getActivityEvents(_limit = 30) {
+    return [];
   },
 
   async importCsvCatalog(communitiesCsv, modelHomesCsv, options) {

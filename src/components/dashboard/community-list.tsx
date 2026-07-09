@@ -1,7 +1,13 @@
 "use client";
 
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+import {
+  filterBySearch,
+  ListToolbar,
+  sortByLabel,
+} from "@/components/dashboard/list-toolbar";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +32,7 @@ import {
   getCommunityBuilderDisplay,
 } from "@/lib/community-builders";
 import { getCommunityTagLabel } from "@/lib/tag-labels";
+import { toastSuccess } from "@/lib/toast";
 import type { Community, Home } from "@/lib/types";
 
 type CommunityListProps = {
@@ -52,12 +59,23 @@ export function CommunityList({
     homeId?: string;
     name: string;
   } | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const items = filterBuilderId
+  const baseItems = filterBuilderId
     ? communities.filter((community) =>
         communityHasBuilder(community, filterBuilderId),
       )
     : communities;
+
+  const items = useMemo(() => {
+    const filtered = filterBySearch(
+      baseItems,
+      search,
+      (c) => `${c.name} ${c.city} ${c.builderName}`,
+    );
+    return sortByLabel(filtered, (c) => c.name, sortDir);
+  }, [baseItems, search, sortDir]);
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -72,13 +90,15 @@ export function CommunityList({
     if (!deleteTarget) return;
     if (deleteTarget.type === "community") {
       await deleteCommunity(deleteTarget.communityId);
+      toastSuccess("Community deleted");
     } else if (deleteTarget.homeId) {
       await deleteHome(deleteTarget.communityId, deleteTarget.homeId);
+      toastSuccess("Model home deleted");
     }
     setDeleteTarget(null);
   }
 
-  if (items.length === 0) {
+  if (baseItems.length === 0) {
     return (
       <p className="text-muted-foreground">
         {filterBuilderId
@@ -94,6 +114,19 @@ export function CommunityList({
         <h2 className="font-heading text-xl">
           {filterBuilderId ? "Communities" : "All Communities"}
         </h2>
+        <ListToolbar
+          search={search}
+          onSearchChange={setSearch}
+          placeholder="Search by name, city, builder…"
+          sortDir={sortDir}
+          onSortToggle={() =>
+            setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+          }
+          count={items.length}
+        />
+        {items.length === 0 && (
+          <p className="text-sm text-muted-foreground">No matches for your search.</p>
+        )}
         {items.map((community) => {
           const isOpen = expanded.has(community.id);
           const priceRange = getPriceRange(community);

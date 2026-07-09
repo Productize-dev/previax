@@ -35,6 +35,7 @@ import type { Home, HomeTag } from "@/lib/types";
 import type { DuplicateMatch } from "@/lib/duplicate-detection";
 import { isValidYouTubeUrl, getYouTubeThumbnailUrl } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 type HomeFormProps = {
   editingHome: Home | null;
@@ -152,12 +153,16 @@ export function HomeForm({
     try {
       if (isEditing) {
         await updateHome(editingCommunityId, editingHome.id, payload);
+        toastSuccess("Model home updated");
         onEditComplete();
       } else {
         await addHome(communityId, payload);
+        toastSuccess("Model home added");
       }
       setForm(newHomeModelForm());
       if (!isEditing) setCommunityId("");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Could not save model");
     } finally {
       setSubmitting(false);
     }

@@ -19,6 +19,7 @@ import type {
   SeriesInput,
   Top10CommunitySlot,
   Top10Period,
+  ActivityEvent,
 } from "../types";
 
 export interface SiteRepository {
@@ -67,6 +68,8 @@ export interface SiteRepository {
     communityId: string | null,
     period?: Top10Period,
   ): Promise<Top10CommunitySlot[]>;
+  computeTop10(period: Top10Period): Promise<number>;
+  getActivityEvents(limit?: number): Promise<ActivityEvent[]>;
   importCsvCatalog(
     communitiesCsv: string,
     modelHomesCsv: string,

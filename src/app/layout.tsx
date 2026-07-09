@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 
+import { AppToaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { DataProvider } from "@/context/data-context";
 import { BuyerProvider } from "@/context/buyer-context";
@@ -43,6 +44,7 @@ export default function RootLayout({
             <BuyerProvider>{children}</BuyerProvider>
           </DataProvider>
         </AuthProvider>
+        <AppToaster />
       </body>
     </html>
   );

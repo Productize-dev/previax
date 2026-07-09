@@ -4,6 +4,7 @@ import { syncCommunityBuilderFields, communityHasBuilder } from "../community-bu
 import { sortTop10Slots } from "../top-10-communities";
 import type {
   AppData,
+  ActivityEvent,
   Builder,
   Community,
   FeaturedCommunityRow,
@@ -16,6 +17,7 @@ import type {
   Top10CommunitySlot,
   Top10Period,
 } from "../types";
+import { logLifecycleEvent } from "../analytics";
 import type { SiteRepository } from "./repository";
 import {
   builderInputToRow,
@@ -52,6 +54,7 @@ import {
   type SeriesRow,
   type TagLabelRow,
   type Top10Row,
+  type ActivityEventRow,
 } from "./supabase-mappers";
 
 function db() {
@@ -169,6 +172,17 @@ async function fetchTagLabels(): Promise<Record<string, string>> {
   return rowsToTagLabels((data ?? []) as TagLabelRow[]);
 }
 
+function rowToActivityEvent(row: ActivityEventRow): ActivityEvent {
+  return {
+    id: row.id,
+    type: row.type,
+    entityId: row.entity_id,
+    actorId: row.actor_id ?? undefined,
+    metadata: row.metadata ?? {},
+    createdAt: row.created_at,
+  };
+}
+
 async function fetchAppData(): Promise<AppData> {
   const [
     communities,
@@ -260,7 +274,12 @@ export const supabaseRepository: SiteRepository = {
       .select()
       .single();
     if (error) fail("Create community", error.message);
-    return rowToCommunity(row as CommunityRow, []);
+    const community = rowToCommunity(row as CommunityRow, []);
+    void logLifecycleEvent("community_created", community.id, {
+      name: community.name,
+      city: community.city,
+    });
+    return community;
   },
 
   async update(id, data) {
@@ -436,7 +455,12 @@ export const supabaseRepository: SiteRepository = {
       .select()
       .single();
     if (error) fail("Add lender offer", error.message);
-    return rowToLenderOffer(row as LenderOfferRow);
+    const offer = rowToLenderOffer(row as LenderOfferRow);
+    void logLifecycleEvent("offer_published", offer.id, {
+      title: offer.title,
+      communityId: offer.communityId,
+    });
+    return offer;
   },
 
   async updateLenderOffer(id, data) {
@@ -525,11 +549,34 @@ export const supabaseRepository: SiteRepository = {
 
       const { error } = await db()
         .from("top10_communities")
-        .insert({ community_id: communityId, rank, period });
+        .insert({
+          community_id: communityId,
+          rank,
+          period,
+          is_auto: false,
+        });
       if (error) fail("Set Top 10 slot", error.message);
     }
 
     return sortTop10Slots(await fetchTop10(period));
+  },
+
+  async computeTop10(period) {
+    const { data, error } = await db().rpc("compute_top10_as_admin", {
+      p_period: period,
+    });
+    if (error) fail("Compute Top 10", error.message);
+    return Number(data ?? 0);
+  },
+
+  async getActivityEvents(limit = 30) {
+    const { data, error } = await db()
+      .from("activity_events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) fail("Load activity", error.message);
+    return ((data ?? []) as ActivityEventRow[]).map(rowToActivityEvent);
   },
 
   async importCsvCatalog(communitiesCsv, modelHomesCsv, options) {

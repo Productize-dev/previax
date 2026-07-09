@@ -86,6 +86,8 @@ export type CommunityRow = {
   nearby_places: NearbyPlace[];
   reviews: CommunityReview[];
   media_gallery: MediaItem[];
+  view_count: number;
+  save_count: number;
   created_at: string;
 };
 
@@ -156,6 +158,7 @@ export type Top10Row = {
   community_id: string;
   rank: number;
   period: Top10Period;
+  is_auto: boolean;
 };
 
 export type HomepageSeriesRowRow = {
@@ -167,6 +170,15 @@ export type HomepageSeriesRowRow = {
 export type TagLabelRow = {
   slug: string;
   label: string;
+};
+
+export type ActivityEventRow = {
+  id: string;
+  actor_id: string | null;
+  type: string;
+  entity_id: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
 };
 
 // ---------------------------------------------------------------------
@@ -264,6 +276,8 @@ export function rowToCommunity(row: CommunityRow, homes: Home[]): Community {
     reviews: row.reviews ?? [],
     mediaGallery: row.media_gallery ?? [],
     ownerId: row.owner_id ?? undefined,
+    viewCount: row.view_count ?? 0,
+    saveCount: row.save_count ?? 0,
   };
 }
 
@@ -316,6 +330,7 @@ export function rowToTop10(row: Top10Row): Top10CommunitySlot {
     communityId: row.community_id,
     rank: row.rank,
     period: row.period,
+    isAuto: row.is_auto,
   };
 }
 
@@ -515,7 +530,13 @@ export function featuredCommunityToRow(row: FeaturedCommunityRow): AnyRow {
 }
 
 export function top10ToRow(slot: Top10CommunitySlot): AnyRow {
-  return { id: slot.id, community_id: slot.communityId, rank: slot.rank };
+  return {
+    id: slot.id,
+    community_id: slot.communityId,
+    rank: slot.rank,
+    period: slot.period ?? "all-time",
+    is_auto: slot.isAuto ?? false,
+  };
 }
 
 export function homepageSeriesToRow(row: HomepageSeriesRow): AnyRow {

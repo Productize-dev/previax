@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { AdminOverview } from "@/components/dashboard/admin-overview";
+import { DashboardOverviewSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { BuilderOverview } from "@/components/dashboard/builder-overview";
 import { BuildersWorkspace } from "@/components/dashboard/builders-workspace";
 import { CommunitiesWorkspace } from "@/components/dashboard/communities-workspace";
@@ -62,8 +63,15 @@ export default function DashboardPage() {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card/50 px-6 py-5">
+          <div className="mx-auto max-w-7xl">
+            <h1 className="font-heading text-2xl">Dashboard</h1>
+          </div>
+        </header>
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <DashboardOverviewSkeleton />
+        </div>
       </div>
     );
   }

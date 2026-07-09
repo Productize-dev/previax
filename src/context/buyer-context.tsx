@@ -18,6 +18,7 @@ import {
   toggleSavedCommunity,
   type BuyerGuidancePrefs,
 } from "@/lib/buyer-storage";
+import { trackCommunityEvent } from "@/lib/analytics";
 import type { BuyerProfile } from "@/lib/types";
 
 type BuyerContextValue = {
@@ -143,7 +144,12 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toggleSaved = useCallback((id: string) => {
+    const wasSaved = getSavedCommunityIds().includes(id);
     toggleSavedCommunity(id);
+    void trackCommunityEvent(
+      id,
+      wasSaved ? "community_unsaved" : "community_saved",
+    );
   }, []);
 
   const signOut = useCallback(() => {

@@ -160,6 +160,8 @@ export type Community = {
   mediaGallery?: MediaItem[];
   /** Dashboard scope — dueño de la comunidad en Supabase. */
   ownerId?: string;
+  viewCount?: number;
+  saveCount?: number;
 };
 
 export type FeaturedItem = {
@@ -222,6 +224,18 @@ export type Top10CommunitySlot = {
   communityId: string;
   rank: number;
   period?: Top10Period;
+  /** false = override manual del admin; true = calculado automáticamente. */
+  isAuto?: boolean;
+};
+
+/** Evento de actividad para el feed del admin. */
+export type ActivityEvent = {
+  id: string;
+  type: string;
+  entityId: string;
+  actorId?: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
 };
 
 /** @deprecated Use FeaturedCommunityRow */

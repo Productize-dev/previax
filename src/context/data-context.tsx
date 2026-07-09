@@ -31,6 +31,7 @@ import type {
   SeriesInput,
   Top10CommunitySlot,
   Top10Period,
+  ActivityEvent,
 } from "@/lib/types";
 
 type DataContextValue = {
@@ -88,6 +89,8 @@ type DataContextValue = {
   fetchTop10Communities: (
     period?: Top10Period,
   ) => Promise<Top10CommunitySlot[]>;
+  computeTop10: (period: Top10Period) => Promise<number>;
+  fetchActivityEvents: (limit?: number) => Promise<ActivityEvent[]>;
   addBuilder: (data: BuilderInput) => Promise<Builder>;
   updateBuilder: (id: string, data: Partial<BuilderInput>) => Promise<Builder>;
   deleteBuilder: (id: string) => Promise<void>;
@@ -431,6 +434,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const computeTop10 = useCallback(
+    async (period: Top10Period) => {
+      const inserted = await repository.computeTop10(period);
+      if (period === "all-time") {
+        const updated = await repository.getTop10Communities("all-time");
+        setTop10Communities(updated);
+      }
+      return inserted;
+    },
+    [],
+  );
+
+  const fetchActivityEvents = useCallback(
+    async (limit = 30) => repository.getActivityEvents(limit),
+    [],
+  );
+
   const addBuilder = useCallback(async (data: BuilderInput) => {
     const item = await repository.addBuilder(data);
     setBuilders((prev) => [...prev, item]);
@@ -574,6 +594,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         reorderFeaturedCommunities,
         setTop10Slot,
         fetchTop10Communities,
+        computeTop10,
+        fetchActivityEvents,
         addBuilder,
         updateBuilder,
         deleteBuilder,

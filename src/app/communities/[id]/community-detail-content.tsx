@@ -27,6 +27,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { useData } from "@/context/data-context";
 import { trackViewedCity } from "@/lib/buyer-storage";
+import { trackCommunityView } from "@/lib/analytics";
 import { getAvailableModels } from "@/lib/community-media";
 import { getRelatedCommunities } from "@/lib/community-utils";
 import type { Home } from "@/lib/types";
@@ -96,6 +97,10 @@ export default function CommunityDetailContent() {
   useEffect(() => {
     if (community?.city) trackViewedCity(community.city);
   }, [community?.city]);
+
+  useEffect(() => {
+    if (community?.id) void trackCommunityView(community.id);
+  }, [community?.id]);
 
   useEffect(() => {
     if (!homeIdParam || !community) return;

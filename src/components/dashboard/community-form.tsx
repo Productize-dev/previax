@@ -41,6 +41,7 @@ import {
 import type { Community, CommunityTag } from "@/lib/types";
 import type { DuplicateMatch } from "@/lib/duplicate-detection";
 import { cn } from "@/lib/utils";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 function linesToList(text: string): string[] {
   return text
@@ -216,8 +217,22 @@ export function CommunityForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!form.name.trim()) {
+      toastError("Community name is required");
+      return;
+    }
+    if (!form.city.trim()) {
+      toastError("City is required");
+      return;
+    }
+    if (!form.description.trim()) {
+      toastError("Description is required");
+      return;
+    }
+
     if (!isValidYouTubeUrl(form.youtubeUrl)) {
       setYoutubeError("Please enter a valid YouTube URL");
+      toastError("Please enter a valid YouTube URL");
       return;
     }
 
@@ -226,7 +241,10 @@ export function CommunityForm({
       form.thumbnailUrl,
     );
 
-    if (!thumbnailUrl) return;
+    if (!thumbnailUrl) {
+      toastError("A thumbnail or valid YouTube URL is required");
+      return;
+    }
 
     const payload = {
       ...form,
@@ -243,11 +261,15 @@ export function CommunityForm({
           id,
           toCommunityInput(payload, existing, builders),
         );
+        toastSuccess("Community updated");
         onEditComplete();
       } else {
         await addCommunity(toCommunityInput(payload, undefined, builders));
+        toastSuccess("Community created");
       }
       setForm(newCommunityDashboardForm(defaultBuilderId ?? form.builderId));
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Could not save community");
     } finally {
       setSubmitting(false);
     }
