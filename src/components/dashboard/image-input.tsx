@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fileToDataUrl } from "@/lib/images";
+import { uploadImageToStorage } from "@/lib/supabase/storage";
 import { cn } from "@/lib/utils";
 
 type ImageInputProps = {
@@ -29,18 +29,22 @@ export function ImageInput({
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"url" | "upload">("url");
+  const [uploading, setUploading] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setError("");
+    setUploading(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
-      onChange(dataUrl);
+      const publicUrl = await uploadImageToStorage(file);
+      onChange(publicUrl);
       setMode("upload");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
     }
     e.target.value = "";
   }
@@ -68,13 +72,14 @@ export function ImageInput({
           type="button"
           variant={mode === "upload" ? "default" : "outline"}
           size="sm"
+          disabled={uploading}
           onClick={() => {
             setMode("upload");
             fileRef.current?.click();
           }}
         >
           <Upload className="size-3.5" />
-          Upload
+          {uploading ? "Uploading..." : "Upload"}
         </Button>
         <input
           ref={fileRef}

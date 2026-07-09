@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fileToDataUrl } from "@/lib/images";
+import { uploadImageToStorage } from "@/lib/supabase/storage";
 
 type MultiImageInputProps = {
   label: string;
@@ -24,6 +24,7 @@ export function MultiImageInput({
   const fileRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState("");
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   function addUrl() {
     const trimmed = urlInput.trim();
@@ -37,11 +38,14 @@ export function MultiImageInput({
     if (files.length === 0) return;
 
     setError("");
+    setUploading(true);
     try {
-      const dataUrls = await Promise.all(files.map(fileToDataUrl));
-      onChange([...value, ...dataUrls]);
+      const publicUrls = await Promise.all(files.map(uploadImageToStorage));
+      onChange([...value, ...publicUrls]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
     }
     e.target.value = "";
   }
@@ -77,6 +81,7 @@ export function MultiImageInput({
           type="button"
           variant="outline"
           size="icon"
+          disabled={uploading}
           onClick={() => fileRef.current?.click()}
         >
           <Upload className="size-4" />

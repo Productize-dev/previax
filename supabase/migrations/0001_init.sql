@@ -6,16 +6,21 @@
 --   1) Crea un proyecto en Supabase.
 --   2) Pega este archivo en el SQL Editor y ejecútalo, o guárdalo en
 --      supabase/migrations/0001_init.sql y corre `supabase db push`.
---   3) Crea el primer admin (ver bloque al final de este archivo).
+--   3) Aplica también 0002_phase1_public_write.sql (temporal, Fase 1).
+--   4) Crea el primer admin (ver bloque al final de este archivo).
 --
 -- Convenciones:
 --   - Columnas en snake_case. El repositorio TS (supabase-repository.ts)
 --     mapea a los tipos camelCase de src/lib/types.ts.
+--   - IDs del catálogo como TEXT (default uuid) porque la app genera IDs
+--     tipo "seed-waxhaw" / "import-community-x" en seeds y CSV import, y
+--     la importación de datos locales debe preservar esos IDs.
 --   - Las listas embebidas (rooms, reviews, mediaGallery, schools,
 --     nearbyPlaces, highlights, amenities, tags...) se guardan como jsonb
 --     para reflejar 1:1 los tipos actuales de Home/Community.
 --   - RLS activo en todas las tablas: lectura pública del catálogo,
 --     escritura restringida por propiedad (owner) o por rol admin.
+--     (La Fase 1 abre escritura anónima temporal en 0002.)
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -76,7 +81,7 @@ $$;
 -- BUILDERS
 -- =====================================================================
 create table public.builders (
-  id          uuid primary key default gen_random_uuid(),
+  id          text primary key default (gen_random_uuid()::text),
   owner_id    uuid references public.profiles (id) on delete set null,
   name        text not null,
   logo_url    text,
@@ -90,8 +95,8 @@ create index builders_owner_idx on public.builders (owner_id);
 -- SERIES  (líneas de modelos de un builder)
 -- =====================================================================
 create table public.series (
-  id            uuid primary key default gen_random_uuid(),
-  builder_id    uuid not null references public.builders (id) on delete cascade,
+  id            text primary key default (gen_random_uuid()::text),
+  builder_id    text not null references public.builders (id) on delete cascade,
   name          text not null,
   description   text,
   thumbnail_url text,
@@ -105,9 +110,9 @@ create index series_builder_idx on public.series (builder_id);
 -- COMMUNITIES
 -- =====================================================================
 create table public.communities (
-  id                uuid primary key default gen_random_uuid(),
+  id                text primary key default (gen_random_uuid()::text),
   owner_id          uuid references public.profiles (id) on delete set null,
-  builder_id        uuid references public.builders (id) on delete set null,
+  builder_id        text references public.builders (id) on delete set null,
   name              text not null,
   city              text not null,
   description       text not null default '',
@@ -155,12 +160,15 @@ create index communities_embedding_idx
   on public.communities using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
 -- =====================================================================
--- HOMES  (modelos de casa, pertenecen a una serie)
+-- HOMES  (modelos de casa; viven dentro de una community y
+--         referencian una serie del builder)
 -- =====================================================================
 create table public.homes (
-  id                 uuid primary key default gen_random_uuid(),
-  series_id          uuid not null references public.series (id) on delete cascade,
-  community_id       uuid references public.communities (id) on delete cascade,
+  id                 text primary key default (gen_random_uuid()::text),
+  community_id       text not null references public.communities (id) on delete cascade,
+  -- Nullable: al borrar una serie, el repositorio reasigna o deja null
+  -- (el tipo TS Home.seriesId mapea null <-> "").
+  series_id          text references public.series (id) on delete set null,
   price              numeric not null default 0,
   bedrooms           integer not null default 0,
   bathrooms          numeric not null default 0,
@@ -192,7 +200,7 @@ create index homes_beds_idx      on public.homes (bedrooms);
 -- LENDERS
 -- =====================================================================
 create table public.lenders (
-  id          uuid primary key default gen_random_uuid(),
+  id          text primary key default (gen_random_uuid()::text),
   owner_id    uuid references public.profiles (id) on delete set null,
   name        text not null,
   description text not null default '',
@@ -207,9 +215,9 @@ create index lenders_owner_idx on public.lenders (owner_id);
 -- LENDER OFFERS  (NUEVO — ofertas de financiamiento por comunidad, Fase 3)
 -- =====================================================================
 create table public.lender_offers (
-  id           uuid primary key default gen_random_uuid(),
-  lender_id    uuid not null references public.lenders (id) on delete cascade,
-  community_id uuid references public.communities (id) on delete cascade,
+  id           text primary key default (gen_random_uuid()::text),
+  lender_id    text not null references public.lenders (id) on delete cascade,
+  community_id text references public.communities (id) on delete cascade,
   title        text not null,
   rate         text,           -- ej. "5.99% APR"
   terms        text,           -- ej. "30-year fixed"
@@ -227,29 +235,30 @@ create index lender_offers_community_idx on public.lender_offers (community_id);
 -- CURADURÍA (solo admin escribe)
 -- =====================================================================
 
--- Carrusel del hero (FeaturedItem)
+-- Carrusel del hero (FeaturedItem). Al borrar la comunidad se elimina la
+-- slide (paridad con el comportamiento actual del repositorio local).
 create table public.featured_items (
-  id           uuid primary key default gen_random_uuid(),
+  id           text primary key default (gen_random_uuid()::text),
   title        text not null,
   subtitle     text not null default '',
   youtube_url  text not null default '',
-  community_id uuid references public.communities (id) on delete set null,
+  community_id text references public.communities (id) on delete cascade,
   sort_order   integer not null default 0,
   created_at   timestamptz not null default now()
 );
 
 -- Row "Featured Communities" (FeaturedCommunityRow)
 create table public.featured_communities (
-  id           uuid primary key default gen_random_uuid(),
-  community_id uuid not null references public.communities (id) on delete cascade,
+  id           text primary key default (gen_random_uuid()::text),
+  community_id text not null references public.communities (id) on delete cascade,
   sort_order   integer not null default 0,
   created_at   timestamptz not null default now()
 );
 
 -- Top 10 (Top10CommunitySlot) — con periodo semana/mes (Fase 6)
 create table public.top10_communities (
-  id           uuid primary key default gen_random_uuid(),
-  community_id uuid not null references public.communities (id) on delete cascade,
+  id           text primary key default (gen_random_uuid()::text),
+  community_id text not null references public.communities (id) on delete cascade,
   rank         integer not null check (rank between 1 and 10),
   period       top10_period not null default 'all-time',
   is_auto      boolean not null default false,  -- true = calculado, false = override manual
@@ -259,27 +268,26 @@ create table public.top10_communities (
 
 -- Rows de series en el homepage (HomepageSeriesRow)
 create table public.homepage_series (
-  id         uuid primary key default gen_random_uuid(),
-  series_id  uuid not null references public.series (id) on delete cascade,
+  id         text primary key default (gen_random_uuid()::text),
+  series_id  text not null references public.series (id) on delete cascade,
   sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
 -- Etiquetas de tags de comunidad personalizadas (customCommunityTagLabels)
 create table public.community_tag_labels (
-  tag_key uuid primary key default gen_random_uuid(),
-  slug    text not null unique,
-  label   text not null
+  slug  text primary key,
+  label text not null
 );
 
 -- =====================================================================
 -- ACTIVIDAD  (feed del admin + señales de personalización, Fases 4 y 6)
 -- =====================================================================
 create table public.activity_events (
-  id         uuid primary key default gen_random_uuid(),
+  id         text primary key default (gen_random_uuid()::text),
   actor_id   uuid references public.profiles (id) on delete set null,
   type       text not null,        -- 'community_created', 'offer_published', 'account_approved', 'community_viewed', ...
-  entity_id  uuid,
+  entity_id  text,
   metadata   jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
@@ -489,7 +497,7 @@ create or replace function public.match_communities(
   match_count int default 12,
   similarity_threshold float default 0.0
 )
-returns table (id uuid, similarity float)
+returns table (id text, similarity float)
 language sql stable as $$
   select c.id, 1 - (c.embedding <=> query_embedding) as similarity
   from public.communities c

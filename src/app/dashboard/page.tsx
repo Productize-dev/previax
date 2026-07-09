@@ -12,6 +12,7 @@ import { FeaturedForm } from "@/components/dashboard/featured-form";
 import { FeaturedList } from "@/components/dashboard/featured-list";
 import { FeaturedCommunitiesManager } from "@/components/dashboard/featured-communities-manager";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
+import { LocalDataImportCard } from "@/components/dashboard/local-data-import-card";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
 import { useData } from "@/context/data-context";
 import type { DashboardTab, FeaturedItem } from "@/lib/types";
@@ -66,7 +67,10 @@ export default function DashboardPage() {
 
         <main className="min-w-0 flex-1">
           {tab === "overview" && (
-            <DashboardOverview onNavigate={setTab} />
+            <div className="space-y-6">
+              <LocalDataImportCard />
+              <DashboardOverview onNavigate={setTab} />
+            </div>
           )}
 
           {tab === "builders" && <BuildersWorkspace />}
