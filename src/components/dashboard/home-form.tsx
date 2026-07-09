@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { AiContentButtons } from "@/components/dashboard/ai-content-buttons";
+import { DuplicateWarning } from "@/components/dashboard/duplicate-warning";
+import { MultiImageInput } from "@/components/dashboard/multi-image-input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { getDefaultSeriesForCommunity } from "@/lib/catalog-utils";
 import {
   homeToModelForm,
@@ -28,14 +31,18 @@ import {
   toHomeInput,
   type HomeModelForm,
 } from "@/lib/dashboard-defaults";
-import type { Home } from "@/lib/types";
-import { isValidYouTubeUrl } from "@/lib/youtube";
+import type { Home, HomeTag } from "@/lib/types";
+import type { DuplicateMatch } from "@/lib/duplicate-detection";
+import { isValidYouTubeUrl, getYouTubeThumbnailUrl } from "@/lib/youtube";
+import { cn } from "@/lib/utils";
 
 type HomeFormProps = {
   editingHome: Home | null;
   editingCommunityId: string | null;
   communityIds?: string[];
   onEditComplete: () => void;
+  prefillKey?: string;
+  initialForm?: HomeModelForm;
 };
 
 export function HomeForm({
@@ -43,25 +50,69 @@ export function HomeForm({
   editingCommunityId,
   communityIds,
   onEditComplete,
+  prefillKey,
+  initialForm,
 }: HomeFormProps) {
-  const { communities, series, addHome, updateHome } = useData();
+  const { communities, series, addHome, updateHome } = useDashboardData();
   const availableCommunities = communityIds?.length
     ? communities.filter((community) => communityIds.includes(community.id))
     : communities;
   const [communityId, setCommunityId] = useState(editingCommunityId ?? "");
   const [form, setForm] = useState<HomeModelForm>(() =>
-    editingHome ? homeToModelForm(editingHome) : newHomeModelForm(),
+    initialForm ??
+      (editingHome ? homeToModelForm(editingHome) : newHomeModelForm()),
   );
   const [youtubeError, setYoutubeError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+
+  useEffect(() => {
+    if (initialForm) setForm(initialForm);
+  }, [prefillKey, initialForm]);
 
   const isEditing = editingHome !== null && editingCommunityId !== null;
+
+  useEffect(() => {
+    if (!form.modelName.trim() || !communityId) {
+      setDuplicates([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void fetch("/api/ai/check-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "home",
+          communities,
+          name: form.modelName,
+          communityId,
+          excludeId: editingHome?.id,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data: { matches?: DuplicateMatch[] }) =>
+          setDuplicates(data.matches ?? []),
+        )
+        .catch(() => setDuplicates([]));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [form.modelName, communityId, communities, editingHome?.id]);
 
   function updateField<K extends keyof HomeModelForm>(
     field: K,
     value: HomeModelForm[K],
   ) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "youtubeUrl" && typeof value === "string") {
+        setYoutubeError("");
+        const thumb = getYouTubeThumbnailUrl(value);
+        if (thumb && isValidYouTubeUrl(value) && next.imageUrls.length === 0) {
+          next.imageUrls = [thumb];
+        }
+      }
+      return next;
+    });
     if (field === "youtubeUrl") setYoutubeError("");
   }
 
@@ -83,11 +134,13 @@ export function HomeForm({
     if (!defaultSeries) return;
 
     const imageUrls =
-      editingHome?.imageUrls?.length
-        ? editingHome.imageUrls
-        : community.thumbnailUrl
-          ? [community.thumbnailUrl]
-          : [];
+      form.imageUrls.length > 0
+        ? form.imageUrls
+        : editingHome?.imageUrls?.length
+          ? editingHome.imageUrls
+          : community.thumbnailUrl
+            ? [community.thumbnailUrl]
+            : [];
 
     const payload = toHomeInput(form, {
       seriesId: editingHome?.seriesId || defaultSeries.id,
@@ -154,7 +207,19 @@ export function HomeForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="description">Description</Label>
+              <AiContentButtons
+                type="home-description"
+                context={{
+                  modelName: form.modelName,
+                  bedrooms: form.bedrooms,
+                  bathrooms: form.bathrooms,
+                  sqft: form.sqft,
+                }}
+                onApply={(result) => updateField("description", String(result))}
+              />
+            </div>
             <Textarea
               id="description"
               value={form.description}
@@ -163,6 +228,95 @@ export function HomeForm({
               placeholder="Short overview of this model home..."
               required
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
+                type="number"
+                value={form.price || ""}
+                onChange={(e) => updateField("price", Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sqft">Sq ft</Label>
+              <Input
+                id="sqft"
+                type="number"
+                value={form.sqft || ""}
+                onChange={(e) => updateField("sqft", Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bedrooms">Bedrooms</Label>
+              <Input
+                id="bedrooms"
+                type="number"
+                value={form.bedrooms || ""}
+                onChange={(e) => updateField("bedrooms", Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bathrooms">Bathrooms</Label>
+              <Input
+                id="bathrooms"
+                type="number"
+                step="0.5"
+                value={form.bathrooms || ""}
+                onChange={(e) => updateField("bathrooms", Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Highlights</Label>
+              <AiContentButtons
+                type="home-highlights"
+                context={{ modelName: form.modelName, description: form.description }}
+                onApply={(result) => {
+                  const items = Array.isArray(result) ? result : [String(result)];
+                  updateField("highlights", items);
+                }}
+              />
+            </div>
+            <Textarea
+              value={form.highlights.join("\n")}
+              onChange={(e) =>
+                updateField(
+                  "highlights",
+                  e.target.value.split("\n").map((l) => l.trim()).filter(Boolean),
+                )
+              }
+              rows={3}
+              placeholder="One highlight per line"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Tags</Label>
+              <AiContentButtons
+                type="home-tags"
+                context={{ modelName: form.modelName, description: form.description }}
+                onApply={(result) => {
+                  const tags = (Array.isArray(result) ? result : [result]) as HomeTag[];
+                  updateField("tags", [...new Set([...form.tags, ...tags])]);
+                }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {form.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-primary bg-primary/10 px-3 py-1 text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -177,7 +331,18 @@ export function HomeForm({
             {youtubeError && (
               <p className="text-sm text-destructive">{youtubeError}</p>
             )}
+            <p className="text-xs text-muted-foreground">
+              A YouTube thumbnail is added to the gallery when no photos exist yet.
+            </p>
           </div>
+
+          <MultiImageInput
+            label="Photo gallery"
+            value={form.imageUrls}
+            onChange={(urls) => updateField("imageUrls", urls)}
+          />
+
+          <DuplicateWarning matches={duplicates} />
 
           <div className="flex gap-2 pt-2">
             <Button

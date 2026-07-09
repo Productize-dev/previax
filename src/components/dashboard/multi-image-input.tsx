@@ -1,12 +1,17 @@
 "use client";
 
-import { Plus, Upload, X } from "lucide-react";
+import { Plus, Sparkles, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  reorderWithPrimary,
+  suggestPrimaryImageIndex,
+} from "@/lib/duplicate-detection";
 import { uploadImageToStorage } from "@/lib/supabase/storage";
+import { cn } from "@/lib/utils";
 
 type MultiImageInputProps = {
   label: string;
@@ -41,7 +46,9 @@ export function MultiImageInput({
     setUploading(true);
     try {
       const publicUrls = await Promise.all(files.map(uploadImageToStorage));
-      onChange([...value, ...publicUrls]);
+      const combined = [...value, ...publicUrls];
+      const primaryIndex = suggestPrimaryImageIndex(combined);
+      onChange(reorderWithPrimary(combined, primaryIndex));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -54,9 +61,33 @@ export function MultiImageInput({
     onChange(value.filter((_, i) => i !== index));
   }
 
+  function setAsCover(index: number) {
+    onChange(reorderWithPrimary(value, index));
+  }
+
+  function handleSuggestCover() {
+    if (value.length <= 1) return;
+    const primaryIndex = suggestPrimaryImageIndex(value);
+    onChange(reorderWithPrimary(value, primaryIndex));
+  }
+
   return (
     <div className="space-y-3">
-      <Label>{label}</Label>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Label>{label}</Label>
+        {value.length > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleSuggestCover}
+          >
+            <Sparkles className="size-3.5" />
+            Suggest cover
+          </Button>
+        )}
+      </div>
       <p className="text-xs text-muted-foreground">
         Add multiple images via URL or upload. First image is the cover photo.
       </p>
@@ -96,6 +127,9 @@ export function MultiImageInput({
         />
       </div>
 
+      {uploading && (
+        <p className="text-xs text-muted-foreground">Uploading photos…</p>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {required && value.length === 0 && (
@@ -107,16 +141,27 @@ export function MultiImageInput({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {value.map((url, index) => (
-            <div key={`${url.slice(0, 32)}-${index}`} className="relative">
+            <div key={`${url.slice(0, 32)}-${index}`} className="relative group">
               <img
                 src={url}
                 alt={`Image ${index + 1}`}
-                className="h-20 w-20 rounded-lg border border-border object-cover"
+                className={cn(
+                  "h-20 w-20 rounded-lg border object-cover",
+                  index === 0 ? "border-primary ring-2 ring-primary/30" : "border-border",
+                )}
               />
-              {index === 0 && (
+              {index === 0 ? (
                 <span className="absolute bottom-1 left-1 rounded bg-primary px-1 text-[10px] text-primary-foreground">
                   Cover
                 </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAsCover(index)}
+                  className="absolute bottom-1 left-1 hidden rounded bg-background/90 px-1 text-[10px] text-foreground shadow group-hover:block"
+                >
+                  Set cover
+                </button>
               )}
               <button
                 type="button"

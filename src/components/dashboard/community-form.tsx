@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { AiContentButtons } from "@/components/dashboard/ai-content-buttons";
+import { DuplicateWarning } from "@/components/dashboard/duplicate-warning";
 import { ImageInput } from "@/components/dashboard/image-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import {
   communityToDashboardForm,
   newCommunityDashboardForm,
@@ -37,6 +39,7 @@ import {
   resolveThumbnailFromYouTube,
 } from "@/lib/youtube";
 import type { Community, CommunityTag } from "@/lib/types";
+import type { DuplicateMatch } from "@/lib/duplicate-detection";
 import { cn } from "@/lib/utils";
 
 function linesToList(text: string): string[] {
@@ -51,6 +54,9 @@ type CommunityFormProps = {
   defaultBuilderId?: string | null;
   lockBuilder?: boolean;
   onEditComplete: () => void;
+  /** Cambia cuando se aplica un borrador IA para resetear el form. */
+  prefillKey?: string;
+  initialForm?: CommunityDashboardForm;
 };
 
 export function CommunityForm({
@@ -58,16 +64,24 @@ export function CommunityForm({
   defaultBuilderId = null,
   lockBuilder = false,
   onEditComplete,
+  prefillKey,
+  initialForm,
 }: CommunityFormProps) {
   const { builders, communities, customCommunityTagLabels, addCommunity, updateCommunity } =
-    useData();
+    useDashboardData();
   const [form, setForm] = useState<CommunityDashboardForm>(() =>
-    editingCommunity
-      ? communityToDashboardForm(editingCommunity)
-      : newCommunityDashboardForm(defaultBuilderId ?? ""),
+    initialForm ??
+      (editingCommunity
+        ? communityToDashboardForm(editingCommunity)
+        : newCommunityDashboardForm(defaultBuilderId ?? "")),
   );
   const [youtubeError, setYoutubeError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+
+  useEffect(() => {
+    if (initialForm) setForm(initialForm);
+  }, [prefillKey, initialForm]);
 
   const isEditing = editingCommunity !== null;
 
@@ -172,6 +186,32 @@ export function CommunityForm({
     communities,
     customCommunityTagLabels,
   );
+
+  useEffect(() => {
+    if (!form.name.trim() || form.name.length < 3) {
+      setDuplicates([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void fetch("/api/ai/check-duplicates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "community",
+          communities,
+          name: form.name,
+          city: form.city,
+          excludeId: editingCommunity?.id,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data: { matches?: DuplicateMatch[] }) =>
+          setDuplicates(data.matches ?? []),
+        )
+        .catch(() => setDuplicates([]));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [form.name, form.city, communities, editingCommunity?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -343,7 +383,16 @@ export function CommunityForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="description">Description</Label>
+              <AiContentButtons
+                type="community-description"
+                context={{ name: form.name, city: form.city, amenities: form.amenities }}
+                onApply={(result) =>
+                  updateField("description", String(result))
+                }
+              />
+            </div>
             <Textarea
               id="description"
               value={form.description}
@@ -354,7 +403,19 @@ export function CommunityForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mainHighlight">Main highlight</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="mainHighlight">Main highlight</Label>
+              <AiContentButtons
+                type="community-highlights"
+                context={{ name: form.name, city: form.city, description: form.description }}
+                onApply={(result) =>
+                  updateField(
+                    "mainHighlight",
+                    String(result).slice(0, MAIN_HIGHLIGHT_MAX_LENGTH),
+                  )
+                }
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               Short label shown on the community page (max{" "}
               {MAIN_HIGHLIGHT_MAX_LENGTH} characters).
@@ -404,7 +465,20 @@ export function CommunityForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Tags</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label>Tags</Label>
+              <AiContentButtons
+                type="community-tags"
+                context={{ name: form.name, description: form.description }}
+                onApply={(result) => {
+                  const tags = Array.isArray(result) ? result : [result];
+                  setForm((prev) => ({
+                    ...prev,
+                    tags: [...new Set([...prev.tags, ...tags])],
+                  }));
+                }}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               Used to group communities on the homepage (e.g. Luxury, Gated).
             </p>
@@ -460,6 +534,8 @@ export function CommunityForm({
               onChange={handleThumbnailChange}
             />
           </div>
+
+          <DuplicateWarning matches={duplicates} />
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" disabled={submitting}>

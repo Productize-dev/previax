@@ -229,12 +229,26 @@ export type HomeModelForm = {
   modelName: string;
   description: string;
   youtubeUrl: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  sqft: number;
+  tags: HomeTag[];
+  highlights: string[];
+  imageUrls: string[];
 };
 
 export const emptyHomeModelForm: HomeModelForm = {
   modelName: "",
   description: "",
   youtubeUrl: "",
+  price: 0,
+  bedrooms: 0,
+  bathrooms: 0,
+  sqft: 0,
+  tags: [...DEFAULT_NEW_HOME_TAGS],
+  highlights: [],
+  imageUrls: [],
 };
 
 export function newHomeModelForm(): HomeModelForm {
@@ -245,11 +259,25 @@ export function homeToModelForm(home: {
   modelName?: string;
   description: string;
   youtubeUrl?: string;
+  price?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  sqft?: number;
+  tags?: HomeTag[];
+  highlights?: string[];
+  imageUrls?: string[];
 }): HomeModelForm {
   return {
     modelName: home.modelName || "",
     description: home.description || "",
     youtubeUrl: home.youtubeUrl ?? "",
+    price: home.price ?? 0,
+    bedrooms: home.bedrooms ?? 0,
+    bathrooms: home.bathrooms ?? 0,
+    sqft: home.sqft ?? 0,
+    tags: home.tags ?? [...DEFAULT_NEW_HOME_TAGS],
+    highlights: home.highlights ?? [],
+    imageUrls: home.imageUrls ?? [],
   };
 }
 
@@ -265,23 +293,23 @@ export function toHomeInput(
 
   return {
     seriesId,
-    price: existing?.price ?? 0,
-    bedrooms: existing?.bedrooms ?? 0,
-    bathrooms: existing?.bathrooms ?? 0,
-    sqft: existing?.sqft ?? 0,
+    price: form.price || existing?.price || 0,
+    bedrooms: form.bedrooms || existing?.bedrooms || 0,
+    bathrooms: form.bathrooms || existing?.bathrooms || 0,
+    sqft: form.sqft || existing?.sqft || 0,
     imageUrls,
     description: form.description.trim(),
     modelName: form.modelName.trim(),
     youtubeUrl: form.youtubeUrl.trim() || undefined,
     address: existing?.address ?? "",
     status: existing?.status ?? "available",
-    tags: existing?.tags ?? [...DEFAULT_NEW_HOME_TAGS],
+    tags: form.tags.length > 0 ? form.tags : existing?.tags ?? [...DEFAULT_NEW_HOME_TAGS],
     listingCategories: existing?.listingCategories ?? [
       ...DEFAULT_NEW_HOME_LISTING_CATEGORIES,
     ],
     tagline: existing?.tagline ?? "",
     featuresOverview: existing?.featuresOverview ?? "",
-    highlights: existing?.highlights ?? [],
+    highlights: form.highlights.length > 0 ? form.highlights : existing?.highlights ?? [],
     rooms: existing?.rooms ?? [],
     mediaGallery: existing?.mediaGallery ?? [],
     reviews: existing?.reviews ?? [],
