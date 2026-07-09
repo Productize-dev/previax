@@ -1,7 +1,15 @@
 import type { BuyerProfile } from "./types";
 
+export type BuyerGuidancePrefs = {
+  budget?: string;
+  city?: string;
+  beds?: string;
+};
+
 const SAVED_KEY = "previax-saved";
 const BUYER_KEY = "previax-buyer";
+const GUIDANCE_KEY = "previax-guidance";
+const VIEWED_CITIES_KEY = "previax-viewed-cities";
 
 const EMPTY_IDS: string[] = [];
 
@@ -9,6 +17,8 @@ const listeners = new Set<() => void>();
 
 let savedSnapshot: string[] = EMPTY_IDS;
 let buyerSnapshot: BuyerProfile | null = null;
+let guidanceSnapshot: BuyerGuidancePrefs | null = null;
+let viewedCitiesSnapshot: string[] = EMPTY_IDS;
 let hydrated = false;
 
 function notifyStorageChange(): void {
@@ -37,6 +47,10 @@ function hydrateFromStorage(): void {
   if (typeof window === "undefined") return;
   savedSnapshot = normalizeIds(readJson<string[]>(SAVED_KEY, EMPTY_IDS));
   buyerSnapshot = readJson<BuyerProfile | null>(BUYER_KEY, null);
+  guidanceSnapshot = readJson<BuyerGuidancePrefs | null>(GUIDANCE_KEY, null);
+  viewedCitiesSnapshot = normalizeIds(
+    readJson<string[]>(VIEWED_CITIES_KEY, EMPTY_IDS),
+  );
   hydrated = true;
 }
 
@@ -49,7 +63,12 @@ export function subscribeBuyerStorage(onStoreChange: () => void): () => void {
 
   if (typeof window !== "undefined") {
     const onStorage = (event: StorageEvent) => {
-      if (event.key === SAVED_KEY || event.key === BUYER_KEY) {
+      if (
+        event.key === SAVED_KEY ||
+        event.key === BUYER_KEY ||
+        event.key === GUIDANCE_KEY ||
+        event.key === VIEWED_CITIES_KEY
+      ) {
         hydrateFromStorage();
         notifyStorageChange();
       }
@@ -100,5 +119,34 @@ export function clearBuyerProfile(): void {
   ensureHydrated();
   buyerSnapshot = null;
   localStorage.removeItem(BUYER_KEY);
+  notifyStorageChange();
+}
+
+export function getGuidancePrefs(): BuyerGuidancePrefs | null {
+  ensureHydrated();
+  return guidanceSnapshot;
+}
+
+export function saveGuidancePrefs(prefs: BuyerGuidancePrefs): void {
+  ensureHydrated();
+  guidanceSnapshot = prefs;
+  writeJson(GUIDANCE_KEY, prefs);
+  notifyStorageChange();
+}
+
+export function getViewedCities(): string[] {
+  ensureHydrated();
+  return viewedCitiesSnapshot;
+}
+
+export function trackViewedCity(city: string): void {
+  ensureHydrated();
+  if (!city.trim()) return;
+  if (viewedCitiesSnapshot.includes(city)) return;
+  viewedCitiesSnapshot = [...viewedCitiesSnapshot, city].slice(-10);
+  writeJson(
+    VIEWED_CITIES_KEY,
+    viewedCitiesSnapshot === EMPTY_IDS ? [] : viewedCitiesSnapshot,
+  );
   notifyStorageChange();
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { useData } from "@/context/data-context";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +17,17 @@ function lenderInitials(name: string): string {
 }
 
 export function NetflixLendersRow() {
-  const { lenders } = useData();
+  const { lenders, lenderOffers } = useData();
   const items = [...lenders].sort((a, b) => a.order - b.order);
+
+  const activeOfferCountByLender = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const offer of lenderOffers) {
+      if (!offer.isActive) continue;
+      counts.set(offer.lenderId, (counts.get(offer.lenderId) ?? 0) + 1);
+    }
+    return counts;
+  }, [lenderOffers]);
 
   const { selectedIndex, selectIndex, selectOnHover, trackRef, itemRefs } =
     useNetflixRowSelection({
@@ -39,6 +50,7 @@ export function NetflixLendersRow() {
       >
         {items.map((lender, index) => {
           const selected = index === selectedIndex;
+          const offerCount = activeOfferCountByLender.get(lender.id) ?? 0;
 
           return (
             <div
@@ -59,7 +71,7 @@ export function NetflixLendersRow() {
                 type="button"
                 onClick={() => selectIndex(index, { immediate: true })}
                 onFocus={() => selectIndex(index, { immediate: true })}
-                className="netflix-lender-button outline-none"
+                className="netflix-lender-button relative outline-none"
                 aria-label={lender.name}
               >
                 <div
@@ -81,6 +93,11 @@ export function NetflixLendersRow() {
                     </span>
                   )}
                 </div>
+                {offerCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#46d369] px-1 text-[10px] font-bold text-black">
+                    {offerCount}
+                  </span>
+                )}
                 <p
                   className={cn(
                     "netflix-lender-name",

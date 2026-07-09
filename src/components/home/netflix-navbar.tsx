@@ -10,6 +10,8 @@ import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/context/auth-context";
 import { useBuyer } from "@/context/buyer-context";
+import { useData } from "@/context/data-context";
+import { useAiSearch } from "@/hooks/use-ai-search";
 import { canAccessDashboard } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
 
@@ -29,13 +31,33 @@ function getActiveHash(pathname: string, hash: string): string {
 
 export function NetflixNavbar() {
   const pathname = usePathname();
-  const { searchQuery, setSearchQuery, savedIds, buyer, signOut } = useBuyer();
+  const { communities } = useData();
+  const {
+    searchQuery,
+    setSearchQuery,
+    savedIds,
+    buyer,
+    signOut,
+    aiSearchLoading,
+    clearAiSearch,
+  } = useBuyer();
+  const { runAiSearch } = useAiSearch(communities);
   const profile = useProfile();
   const showDashboard = canAccessDashboard(profile);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
   const [activeHash, setActiveHash] = useState("home");
+
+  async function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearchOpen(true);
+    await runAiSearch();
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
 
   useEffect(() => {
     function onScroll() {
@@ -106,16 +128,22 @@ export function NetflixNavbar() {
               </Link>
             )}
 
-            <div
+            <form
+              onSubmit={handleSearchSubmit}
               className={cn(
                 "flex items-center overflow-hidden transition-all duration-300",
-                searchOpen ? "w-52 sm:w-64" : "w-6",
+                searchOpen ? "w-52 sm:w-72" : "w-6",
               )}
             >
               <button
                 type="button"
                 aria-label={searchOpen ? "Close search" : "Open search"}
-                onClick={() => setSearchOpen((open) => !open)}
+                onClick={() => {
+                  if (searchOpen && searchQuery) {
+                    clearAiSearch();
+                  }
+                  setSearchOpen((open) => !open);
+                }}
                 className="shrink-0 text-white transition-colors hover:text-white/70"
               >
                 {searchOpen ? (
@@ -127,13 +155,14 @@ export function NetflixNavbar() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Titles, cities, builders..."
+                placeholder="3 bed under $400K near schools..."
+                disabled={aiSearchLoading}
                 className={cn(
                   "h-8 border-0 border-b border-white/70 bg-transparent px-2 text-sm text-white shadow-none placeholder:text-white/50 focus-visible:border-white focus-visible:ring-0",
                   !searchOpen && "pointer-events-none w-0 opacity-0",
                 )}
               />
-            </div>
+            </form>
 
             <Link
               href="/saved"

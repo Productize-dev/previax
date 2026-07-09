@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useData } from "@/context/data-context";
+import { saveGuidancePrefs } from "@/lib/buyer-storage";
 import { getPriceRange } from "@/lib/community-utils";
 
 export function GuidanceQuiz() {
@@ -49,6 +50,7 @@ export function GuidanceQuiz() {
   }
 
   function getResults() {
+    saveGuidancePrefs({ budget, city, beds });
     const scored = communities
       .map((c) => ({ c, score: scoreCommunity(c) }))
       .filter((x) => x.score > 0)
