@@ -25,15 +25,19 @@ import type {
   FeaturedCommunityRow,
   Lender,
   LenderInput,
+  LenderOffer,
+  LenderOfferInput,
   Series,
   SeriesInput,
   Top10CommunitySlot,
+  Top10Period,
 } from "@/lib/types";
 
 type DataContextValue = {
   communities: Community[];
   featured: FeaturedItem[];
   lenders: Lender[];
+  lenderOffers: LenderOffer[];
   featuredCommunities: FeaturedCommunityRow[];
   top10Communities: Top10CommunitySlot[];
   customCommunityTagLabels: Record<string, string>;
@@ -67,12 +71,22 @@ type DataContextValue = {
   updateLender: (id: string, data: Partial<LenderInput>) => Promise<Lender>;
   deleteLender: (id: string) => Promise<void>;
   reorderLenders: (orderedIds: string[]) => Promise<void>;
+  addLenderOffer: (data: LenderOfferInput) => Promise<LenderOffer>;
+  updateLenderOffer: (
+    id: string,
+    data: Partial<LenderOfferInput>,
+  ) => Promise<LenderOffer>;
+  deleteLenderOffer: (id: string) => Promise<void>;
   addFeaturedCommunity: (communityId: string) => Promise<FeaturedCommunityRow>;
   removeFeaturedCommunity: (id: string) => Promise<void>;
   reorderFeaturedCommunities: (orderedIds: string[]) => Promise<void>;
   setTop10Slot: (
     rank: number,
     communityId: string | null,
+    period?: Top10Period,
+  ) => Promise<Top10CommunitySlot[]>;
+  fetchTop10Communities: (
+    period?: Top10Period,
   ) => Promise<Top10CommunitySlot[]>;
   addBuilder: (data: BuilderInput) => Promise<Builder>;
   updateBuilder: (id: string, data: Partial<BuilderInput>) => Promise<Builder>;
@@ -89,6 +103,7 @@ type DataContextValue = {
   importCsvCatalog: (
     communitiesCsv: string,
     modelHomesCsv: string,
+    options?: import("@/lib/csv-catalog-import").CsvImportOptions,
   ) => Promise<CsvImportResult>;
   refresh: () => Promise<void>;
 };
@@ -101,6 +116,7 @@ function applyAppData(
     setCommunities: (value: Community[]) => void;
     setFeatured: (value: FeaturedItem[]) => void;
     setLenders: (value: Lender[]) => void;
+    setLenderOffers: (value: LenderOffer[]) => void;
     setFeaturedCommunities: (value: FeaturedCommunityRow[]) => void;
     setTop10Communities: (value: Top10CommunitySlot[]) => void;
     setCustomCommunityTagLabels: (value: Record<string, string>) => void;
@@ -113,6 +129,7 @@ function applyAppData(
   setters.setCommunities(data.communities);
   setters.setFeatured(data.featured);
   setters.setLenders(data.lenders);
+  setters.setLenderOffers(data.lenderOffers ?? []);
   setters.setFeaturedCommunities(data.featuredCommunities);
   setters.setTop10Communities(data.top10Communities);
   setters.setCustomCommunityTagLabels(data.customCommunityTagLabels ?? {});
@@ -126,6 +143,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [featured, setFeatured] = useState<FeaturedItem[]>([]);
   const [lenders, setLenders] = useState<Lender[]>([]);
+  const [lenderOffers, setLenderOffers] = useState<LenderOffer[]>([]);
   const [featuredCommunities, setFeaturedCommunities] = useState<
     FeaturedCommunityRow[]
   >([]);
@@ -148,6 +166,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setCommunities,
         setFeatured,
         setLenders,
+        setLenderOffers,
         setFeaturedCommunities,
         setTop10Communities,
         setCustomCommunityTagLabels,
@@ -351,6 +370,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setLenders(reordered);
   }, []);
 
+  const addLenderOffer = useCallback(async (data: LenderOfferInput) => {
+    const item = await repository.addLenderOffer(data);
+    setLenderOffers((prev) => [item, ...prev]);
+    return item;
+  }, []);
+
+  const updateLenderOffer = useCallback(
+    async (id: string, data: Partial<LenderOfferInput>) => {
+      const updated = await repository.updateLenderOffer(id, data);
+      setLenderOffers((prev) =>
+        prev.map((item) => (item.id === id ? updated : item)),
+      );
+      return updated;
+    },
+    [],
+  );
+
+  const deleteLenderOffer = useCallback(async (id: string) => {
+    await repository.deleteLenderOffer(id);
+    setLenderOffers((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
   const addFeaturedCommunity = useCallback(async (communityId: string) => {
     const item = await repository.addFeaturedCommunity(communityId);
     setFeaturedCommunities((prev) =>
@@ -370,11 +411,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTop10Slot = useCallback(
-    async (rank: number, communityId: string | null) => {
-      const updated = await repository.setTop10Slot(rank, communityId);
-      setTop10Communities(updated);
+    async (
+      rank: number,
+      communityId: string | null,
+      period: Top10Period = "all-time",
+    ) => {
+      const updated = await repository.setTop10Slot(rank, communityId, period);
+      if (period === "all-time") {
+        setTop10Communities(updated);
+      }
       return updated;
     },
+    [],
+  );
+
+  const fetchTop10Communities = useCallback(
+    async (period: Top10Period = "all-time") =>
+      repository.getTop10Communities(period),
     [],
   );
 
@@ -467,10 +520,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const importCsvCatalog = useCallback(
-    async (communitiesCsv: string, modelHomesCsv: string) => {
+    async (
+      communitiesCsv: string,
+      modelHomesCsv: string,
+      options?: import("@/lib/csv-catalog-import").CsvImportOptions,
+    ) => {
       const result = await repository.importCsvCatalog(
         communitiesCsv,
         modelHomesCsv,
+        options,
       );
       setAll(result.data);
       return result;
@@ -484,6 +542,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         communities,
         featured,
         lenders,
+        lenderOffers,
         featuredCommunities,
         top10Communities,
         customCommunityTagLabels,
@@ -507,10 +566,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         updateLender,
         deleteLender,
         reorderLenders,
+        addLenderOffer,
+        updateLenderOffer,
+        deleteLenderOffer,
         addFeaturedCommunity,
         removeFeaturedCommunity,
         reorderFeaturedCommunities,
         setTop10Slot,
+        fetchTop10Communities,
         addBuilder,
         updateBuilder,
         deleteBuilder,

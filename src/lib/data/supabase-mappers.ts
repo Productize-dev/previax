@@ -17,12 +17,15 @@ import type {
   HomepageSeriesRow,
   Lender,
   LenderInput,
+  LenderOffer,
+  LenderOfferInput,
   MediaItem,
   NearbyPlace,
   SchoolInfo,
   Series,
   SeriesInput,
   Top10CommunitySlot,
+  Top10Period,
 } from "../types";
 
 // ---------------------------------------------------------------------
@@ -135,10 +138,24 @@ export type FeaturedCommunityRowRow = {
   sort_order: number;
 };
 
+export type LenderOfferRow = {
+  id: string;
+  lender_id: string;
+  community_id: string | null;
+  title: string;
+  rate: string | null;
+  terms: string | null;
+  description: string;
+  image_url: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+};
+
 export type Top10Row = {
   id: string;
   community_id: string;
   rank: number;
+  period: Top10Period;
 };
 
 export type HomepageSeriesRowRow = {
@@ -168,6 +185,7 @@ export function rowToBuilder(row: BuilderRow): Builder {
     logoUrl: row.logo_url ?? undefined,
     description: row.description ?? undefined,
     createdAt: toMillis(row.created_at),
+    ownerId: row.owner_id ?? undefined,
   };
 }
 
@@ -245,6 +263,7 @@ export function rowToCommunity(row: CommunityRow, homes: Home[]): Community {
     nearbyPlaces: row.nearby_places ?? [],
     reviews: row.reviews ?? [],
     mediaGallery: row.media_gallery ?? [],
+    ownerId: row.owner_id ?? undefined,
   };
 }
 
@@ -255,6 +274,22 @@ export function rowToLender(row: LenderRow): Lender {
     description: row.description,
     imageUrl: row.image_url ?? undefined,
     order: row.sort_order,
+    ownerId: row.owner_id ?? undefined,
+  };
+}
+
+export function rowToLenderOffer(row: LenderOfferRow): LenderOffer {
+  return {
+    id: row.id,
+    lenderId: row.lender_id,
+    communityId: row.community_id ?? "",
+    title: row.title,
+    rate: row.rate ?? undefined,
+    terms: row.terms ?? undefined,
+    description: row.description,
+    imageUrl: row.image_url ?? undefined,
+    validUntil: row.valid_until ?? undefined,
+    isActive: row.is_active,
   };
 }
 
@@ -276,7 +311,12 @@ export function rowToFeaturedCommunity(
 }
 
 export function rowToTop10(row: Top10Row): Top10CommunitySlot {
-  return { id: row.id, communityId: row.community_id, rank: row.rank };
+  return {
+    id: row.id,
+    communityId: row.community_id,
+    rank: row.rank,
+    period: row.period,
+  };
 }
 
 export function rowToHomepageSeries(
@@ -384,6 +424,22 @@ export function lenderInputToRow(data: Partial<LenderInput>): AnyRow {
   setIfDefined(row, "name", data.name);
   setIfDefined(row, "description", data.description);
   if ("imageUrl" in data) row.image_url = data.imageUrl?.trim() || null;
+  return row;
+}
+
+export function lenderOfferInputToRow(
+  data: Partial<LenderOfferInput>,
+): AnyRow {
+  const row: AnyRow = {};
+  setIfDefined(row, "lender_id", data.lenderId);
+  setIfDefined(row, "community_id", data.communityId);
+  setIfDefined(row, "title", data.title);
+  if ("rate" in data) row.rate = data.rate ?? null;
+  if ("terms" in data) row.terms = data.terms ?? null;
+  setIfDefined(row, "description", data.description);
+  if ("imageUrl" in data) row.image_url = data.imageUrl ?? null;
+  if ("validUntil" in data) row.valid_until = data.validUntil ?? null;
+  if ("isActive" in data) row.is_active = data.isActive ?? true;
   return row;
 }
 

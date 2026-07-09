@@ -16,8 +16,11 @@ import type {
   HomepageHomesRow,
   HomepageSeriesRow,
   Lender,
+  LenderOffer,
+  LenderOfferInput,
   Series,
   Top10CommunitySlot,
+  Top10Period,
 } from "../types";
 import type { SiteRepository } from "./repository";
 
@@ -27,6 +30,7 @@ const EMPTY_APP_DATA: AppData = {
   communities: [],
   featured: [],
   lenders: [],
+  lenderOffers: [],
   featuredCommunities: [],
   top10Communities: [],
   customCommunityTagLabels: {},
@@ -391,6 +395,54 @@ export const localStorageRepository: SiteRepository = {
     return stored.lenders;
   },
 
+  async getLenderOffers() {
+    return ensureSeeded().lenderOffers;
+  },
+
+  async addLenderOffer(data: LenderOfferInput) {
+    const stored = ensureSeeded();
+    const offer: LenderOffer = {
+      id: crypto.randomUUID(),
+      lenderId: data.lenderId,
+      communityId: data.communityId,
+      title: data.title,
+      rate: data.rate,
+      terms: data.terms,
+      description: data.description,
+      imageUrl: data.imageUrl,
+      validUntil: data.validUntil,
+      isActive: data.isActive ?? true,
+    };
+    stored.lenderOffers.unshift(offer);
+    writeStored(stored);
+    return offer;
+  },
+
+  async updateLenderOffer(id, data) {
+    const stored = ensureSeeded();
+    const index = stored.lenderOffers.findIndex((item) => item.id === id);
+    if (index < 0) throw new Error("Lender offer not found");
+    const current = stored.lenderOffers[index];
+    const updated: LenderOffer = {
+      ...current,
+      ...data,
+      isActive: data.isActive ?? current.isActive,
+    };
+    stored.lenderOffers[index] = updated;
+    writeStored(stored);
+    return updated;
+  },
+
+  async deleteLenderOffer(id) {
+    const stored = ensureSeeded();
+    const before = stored.lenderOffers.length;
+    stored.lenderOffers = stored.lenderOffers.filter((item) => item.id !== id);
+    if (stored.lenderOffers.length === before) {
+      throw new Error("Lender offer not found");
+    }
+    writeStored(stored);
+  },
+
   async getFeaturedCommunities() {
     return sortFeaturedCommunities(ensureSeeded().featuredCommunities);
   },
@@ -441,11 +493,14 @@ export const localStorageRepository: SiteRepository = {
     return stored.featuredCommunities;
   },
 
-  async getTop10Communities() {
-    return sortTop10Slots(ensureSeeded().top10Communities);
+  async getTop10Communities(period: Top10Period = "all-time") {
+    const slots = ensureSeeded().top10Communities.filter(
+      (slot) => (slot.period ?? "all-time") === period,
+    );
+    return sortTop10Slots(slots);
   },
 
-  async setTop10Slot(rank, communityId) {
+  async setTop10Slot(rank, communityId, period: Top10Period = "all-time") {
     if (rank < 1 || rank > 10) {
       throw new Error("Rank must be between 1 and 10");
     }
@@ -453,7 +508,7 @@ export const localStorageRepository: SiteRepository = {
     const stored = ensureSeeded();
 
     stored.top10Communities = stored.top10Communities.filter(
-      (slot) => slot.rank !== rank,
+      (slot) => !(slot.rank === rank && (slot.period ?? "all-time") === period),
     );
 
     if (communityId) {
@@ -461,27 +516,42 @@ export const localStorageRepository: SiteRepository = {
       if (!community) throw new Error("Community not found");
 
       stored.top10Communities = stored.top10Communities.filter(
-        (slot) => slot.communityId !== communityId,
+        (slot) =>
+          !(
+            slot.communityId === communityId &&
+            (slot.period ?? "all-time") === period
+          ),
       );
 
       stored.top10Communities.push({
         id: crypto.randomUUID(),
         communityId,
         rank,
+        period,
       });
     }
 
-    stored.top10Communities = sortTop10Slots(stored.top10Communities);
+    const periodSlots = stored.top10Communities.filter(
+      (slot) => (slot.period ?? "all-time") === period,
+    );
+    const sorted = sortTop10Slots(periodSlots);
+    stored.top10Communities = [
+      ...stored.top10Communities.filter(
+        (slot) => (slot.period ?? "all-time") !== period,
+      ),
+      ...sorted,
+    ];
     writeStored(stored);
-    return stored.top10Communities;
+    return sorted;
   },
 
-  async importCsvCatalog(communitiesCsv, modelHomesCsv) {
+  async importCsvCatalog(communitiesCsv, modelHomesCsv, options) {
     const stored = ensureSeeded();
     const result = importCatalogFromCsv(
       stored,
       communitiesCsv,
       modelHomesCsv,
+      options,
     );
     writeStored(result.data);
     return result;

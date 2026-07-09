@@ -10,8 +10,9 @@ import {
   Trophy,
 } from "lucide-react";
 
+import { useProfile } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
-import type { DashboardTab } from "@/lib/types";
+import type { DashboardTab, UserRole } from "@/lib/types";
 
 type NavItem = {
   id: DashboardTab;
@@ -30,7 +31,7 @@ const topItem: NavItem = {
   icon: LayoutDashboard,
 };
 
-const navGroups: NavGroup[] = [
+const adminNavGroups: NavGroup[] = [
   {
     label: "Builders",
     items: [
@@ -56,12 +57,38 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+const builderNavGroups: NavGroup[] = [
+  {
+    label: "Builders",
+    items: [
+      { id: "builders", label: "Builders", icon: Hammer },
+      { id: "communities", label: "My Communities", icon: Building2 },
+    ],
+  },
+];
+
+const lenderNavGroups: NavGroup[] = [
+  {
+    label: "Lenders",
+    items: [{ id: "lenders", label: "Profile & offers", icon: Landmark }],
+  },
+];
+
+function navGroupsForRole(role: UserRole | undefined): NavGroup[] {
+  if (role === "builder") return builderNavGroups;
+  if (role === "lender") return lenderNavGroups;
+  return adminNavGroups;
+}
+
 type DashboardSidebarProps = {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
 };
 
 export function DashboardSidebar({ active, onChange }: DashboardSidebarProps) {
+  const profile = useProfile();
+  const navGroups = navGroupsForRole(profile?.role);
+
   return (
     <aside className="w-full shrink-0 lg:w-56">
       <nav className="flex gap-4 overflow-x-auto lg:flex-col lg:gap-6 lg:overflow-visible">

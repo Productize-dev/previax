@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { Lender, LenderInput } from "@/lib/types";
 
 const emptyForm: LenderInput = {
@@ -29,7 +29,7 @@ type LenderFormProps = {
 };
 
 export function LenderForm({ editingItem, onEditComplete }: LenderFormProps) {
-  const { addLender, updateLender } = useData();
+  const { addLender, updateLender } = useDashboardData();
   const [form, setForm] = useState<LenderInput>(
     editingItem
       ? {

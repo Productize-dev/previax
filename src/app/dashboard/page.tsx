@@ -1,29 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { PreviaxLogo } from "@/components/layout/previax-logo";
+import { AdminOverview } from "@/components/dashboard/admin-overview";
+import { BuilderOverview } from "@/components/dashboard/builder-overview";
 import { BuildersWorkspace } from "@/components/dashboard/builders-workspace";
 import { CommunitiesWorkspace } from "@/components/dashboard/communities-workspace";
-import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { FeaturedForm } from "@/components/dashboard/featured-form";
 import { FeaturedList } from "@/components/dashboard/featured-list";
 import { FeaturedCommunitiesManager } from "@/components/dashboard/featured-communities-manager";
+import { LenderOverview } from "@/components/dashboard/lender-overview";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
 import { LocalDataImportCard } from "@/components/dashboard/local-data-import-card";
 import { PendingAccountsCard } from "@/components/dashboard/pending-accounts-card";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
-import { useData } from "@/context/data-context";
+import { PreviaxLogo } from "@/components/layout/previax-logo";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { PROFILE_COLUMNS } from "@/lib/auth/profile";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { DashboardTab, FeaturedItem } from "@/lib/types";
 
+const BUILDER_TABS: DashboardTab[] = ["overview", "builders", "communities"];
+const LENDER_TABS: DashboardTab[] = ["overview", "lenders"];
+
 export default function DashboardPage() {
-  const { isLoaded, error, communities, builders } = useData();
+  const { isLoaded, error, communities, builders, isAdmin, isBuilder, isLender } =
+    useDashboardData();
   const [tab, setTab] = useState<DashboardTab>("overview");
   const [editingFeatured, setEditingFeatured] = useState<FeaturedItem | null>(
     null,
   );
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+
+    void getSupabaseBrowserClient()
+      .from("profiles")
+      .select(PROFILE_COLUMNS, { count: "exact", head: true })
+      .eq("status", "pending")
+      .then(({ count }) => {
+        if (!cancelled) setPendingCount(count ?? 0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isBuilder && !BUILDER_TABS.includes(tab)) {
+      setTab("overview");
+    }
+    if (isLender && !LENDER_TABS.includes(tab)) {
+      setTab("overview");
+    }
+  }, [isBuilder, isLender, tab]);
 
   if (!isLoaded) {
     return (
@@ -33,6 +68,12 @@ export default function DashboardPage() {
     );
   }
 
+  const subtitle = isBuilder
+    ? `${builders.length} builder${builders.length === 1 ? "" : "s"} · ${communities.length} communit${communities.length === 1 ? "y" : "ies"}`
+    : isLender
+      ? "Lender account"
+      : `${builders.length} builder${builders.length === 1 ? "" : "s"} · ${communities.length} communit${communities.length === 1 ? "y" : "ies"}`;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 px-6 py-5">
@@ -41,11 +82,7 @@ export default function DashboardPage() {
             <PreviaxLogo height={48} asLink={false} />
             <div>
               <h1 className="font-heading text-2xl">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">
-                {builders.length} builder{builders.length === 1 ? "" : "s"} ·{" "}
-                {communities.length} communit
-                {communities.length === 1 ? "y" : "ies"}
-              </p>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -78,19 +115,28 @@ export default function DashboardPage() {
         <main className="min-w-0 flex-1">
           {tab === "overview" && (
             <div className="space-y-6">
-              <PendingAccountsCard />
-              <LocalDataImportCard />
-              <DashboardOverview onNavigate={setTab} />
+              {isAdmin && <PendingAccountsCard />}
+              {isAdmin && <LocalDataImportCard />}
+              {isAdmin && (
+                <AdminOverview
+                  onNavigate={setTab}
+                  pendingCount={pendingCount}
+                />
+              )}
+              {isBuilder && <BuilderOverview onNavigate={setTab} />}
+              {isLender && <LenderOverview onNavigate={setTab} />}
             </div>
           )}
 
-          {tab === "builders" && <BuildersWorkspace />}
+          {(isAdmin || isBuilder) && tab === "builders" && <BuildersWorkspace />}
 
-          {tab === "communities" && <CommunitiesWorkspace />}
+          {(isAdmin || isBuilder) && tab === "communities" && (
+            <CommunitiesWorkspace />
+          )}
 
-          {tab === "lenders" && <LendersWorkspace />}
+          {(isAdmin || isLender) && tab === "lenders" && <LendersWorkspace />}
 
-          {tab === "featured" && (
+          {isAdmin && tab === "featured" && (
             <div className="space-y-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -113,7 +159,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {tab === "featured-communities" && (
+          {isAdmin && tab === "featured-communities" && (
             <div className="space-y-8">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Others
@@ -122,7 +168,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {tab === "top-10" && (
+          {isAdmin && tab === "top-10" && (
             <div className="space-y-8">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Others

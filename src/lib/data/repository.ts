@@ -13,9 +13,12 @@ import type {
   FeaturedCommunityRow,
   Lender,
   LenderInput,
+  LenderOffer,
+  LenderOfferInput,
   Series,
   SeriesInput,
   Top10CommunitySlot,
+  Top10Period,
 } from "../types";
 
 export interface SiteRepository {
@@ -45,20 +48,29 @@ export interface SiteRepository {
   updateLender(id: string, data: Partial<LenderInput>): Promise<Lender>;
   deleteLender(id: string): Promise<void>;
   reorderLenders(orderedIds: string[]): Promise<Lender[]>;
+  getLenderOffers(): Promise<LenderOffer[]>;
+  addLenderOffer(data: LenderOfferInput): Promise<LenderOffer>;
+  updateLenderOffer(
+    id: string,
+    data: Partial<LenderOfferInput>,
+  ): Promise<LenderOffer>;
+  deleteLenderOffer(id: string): Promise<void>;
   getFeaturedCommunities(): Promise<FeaturedCommunityRow[]>;
   addFeaturedCommunity(communityId: string): Promise<FeaturedCommunityRow>;
   removeFeaturedCommunity(id: string): Promise<void>;
   reorderFeaturedCommunities(
     orderedIds: string[],
   ): Promise<FeaturedCommunityRow[]>;
-  getTop10Communities(): Promise<Top10CommunitySlot[]>;
+  getTop10Communities(period?: Top10Period): Promise<Top10CommunitySlot[]>;
   setTop10Slot(
     rank: number,
     communityId: string | null,
+    period?: Top10Period,
   ): Promise<Top10CommunitySlot[]>;
   importCsvCatalog(
     communitiesCsv: string,
     modelHomesCsv: string,
+    options?: import("../csv-catalog-import").CsvImportOptions,
   ): Promise<import("../csv-catalog-import").CsvImportResult>;
   getBuilders(): Promise<Builder[]>;
   addBuilder(data: BuilderInput): Promise<Builder>;

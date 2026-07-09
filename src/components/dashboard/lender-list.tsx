@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { Lender } from "@/lib/types";
 
 function lenderInitials(name: string): string {
@@ -40,7 +40,7 @@ type LenderListProps = {
 };
 
 export function LenderList({ onEdit }: LenderListProps) {
-  const { lenders, deleteLender, reorderLenders } = useData();
+  const { lenders, deleteLender, reorderLenders } = useDashboardData();
   const [deleteTarget, setDeleteTarget] = useState<Lender | null>(null);
 
   const items = [...lenders].sort((a, b) => a.order - b.order);

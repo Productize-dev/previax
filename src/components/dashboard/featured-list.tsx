@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { extractYouTubeId } from "@/lib/youtube";
 import type { FeaturedItem } from "@/lib/types";
 
@@ -32,7 +32,7 @@ type FeaturedListProps = {
 };
 
 export function FeaturedList({ onEdit }: FeaturedListProps) {
-  const { featured, deleteFeatured, reorderFeatured } = useData();
+  const { featured, deleteFeatured, reorderFeatured } = useDashboardData();
   const [deleteTarget, setDeleteTarget] = useState<FeaturedItem | null>(null);
 
   const items = [...featured].sort((a, b) => a.order - b.order);

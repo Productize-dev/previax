@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { communityHasBuilder } from "@/lib/community-builders";
 import type { Builder } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ export function BuilderList({
   onSelect,
   onEdit,
 }: BuilderListProps) {
-  const { builders, communities, deleteBuilder } = useData();
+  const { builders, communities, deleteBuilder } = useDashboardData();
   const [deleteTarget, setDeleteTarget] = useState<Builder | null>(null);
 
   async function confirmDelete() {

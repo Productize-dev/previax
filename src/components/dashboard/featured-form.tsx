@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { isValidYouTubeUrl } from "@/lib/youtube";
 import type { FeaturedItem, FeaturedItemInput } from "@/lib/types";
 
@@ -36,7 +36,7 @@ type FeaturedFormProps = {
 };
 
 export function FeaturedForm({ editingItem, onEditComplete }: FeaturedFormProps) {
-  const { communities, addFeatured, updateFeatured } = useData();
+  const { communities, addFeatured, updateFeatured } = useDashboardData();
   const [form, setForm] = useState<FeaturedItemInput>(
     editingItem
       ? {

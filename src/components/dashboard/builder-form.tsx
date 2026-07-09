@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import {
   builderToDashboardForm,
   emptyBuilderDashboardForm,
@@ -32,7 +32,7 @@ export function BuilderForm({
   editingBuilder,
   onEditComplete,
 }: BuilderFormProps) {
-  const { addBuilder, updateBuilder } = useData();
+  const { addBuilder, updateBuilder } = useDashboardData();
   const [form, setForm] = useState<BuilderDashboardForm>(() =>
     editingBuilder
       ? builderToDashboardForm(editingBuilder)

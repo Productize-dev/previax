@@ -11,8 +11,10 @@ import type {
   Home,
   HomepageSeriesRow,
   Lender,
+  LenderOffer,
   Series,
   Top10CommunitySlot,
+  Top10Period,
 } from "../types";
 import type { SiteRepository } from "./repository";
 import {
@@ -24,6 +26,7 @@ import {
   homeInputToRow,
   homeToRow,
   lenderInputToRow,
+  lenderOfferInputToRow,
   rowToBuilder,
   rowToCommunity,
   rowToFeatured,
@@ -31,6 +34,7 @@ import {
   rowToHome,
   rowToHomepageSeries,
   rowToLender,
+  rowToLenderOffer,
   rowToSeries,
   rowToTop10,
   rowsToTagLabels,
@@ -43,6 +47,7 @@ import {
   type FeaturedItemRow,
   type HomeRow,
   type HomepageSeriesRowRow,
+  type LenderOfferRow,
   type LenderRow,
   type SeriesRow,
   type TagLabelRow,
@@ -128,11 +133,22 @@ async function fetchFeaturedCommunities(): Promise<FeaturedCommunityRow[]> {
   return ((data ?? []) as FeaturedCommunityRowRow[]).map(rowToFeaturedCommunity);
 }
 
-async function fetchTop10(): Promise<Top10CommunitySlot[]> {
+async function fetchLenderOffers(): Promise<LenderOffer[]> {
+  const { data, error } = await db()
+    .from("lender_offers")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) fail("Load lender offers", error.message);
+  return ((data ?? []) as LenderOfferRow[]).map(rowToLenderOffer);
+}
+
+async function fetchTop10(
+  period: Top10Period = "all-time",
+): Promise<Top10CommunitySlot[]> {
   const { data, error } = await db()
     .from("top10_communities")
     .select("*")
-    .eq("period", "all-time")
+    .eq("period", period)
     .order("rank", { ascending: true });
   if (error) fail("Load top 10", error.message);
   return ((data ?? []) as Top10Row[]).map(rowToTop10);
@@ -158,6 +174,7 @@ async function fetchAppData(): Promise<AppData> {
     communities,
     featured,
     lenders,
+    lenderOffers,
     featuredCommunities,
     top10Communities,
     customCommunityTagLabels,
@@ -168,6 +185,7 @@ async function fetchAppData(): Promise<AppData> {
     fetchCommunitiesWithHomes(),
     fetchFeatured(),
     fetchLenders(),
+    fetchLenderOffers(),
     fetchFeaturedCommunities(),
     fetchTop10(),
     fetchTagLabels(),
@@ -180,6 +198,7 @@ async function fetchAppData(): Promise<AppData> {
     communities,
     featured,
     lenders,
+    lenderOffers,
     featuredCommunities,
     top10Communities,
     customCommunityTagLabels,
@@ -406,6 +425,42 @@ export const supabaseRepository: SiteRepository = {
     return fetchLenders();
   },
 
+  async getLenderOffers() {
+    return fetchLenderOffers();
+  },
+
+  async addLenderOffer(data) {
+    const { data: row, error } = await db()
+      .from("lender_offers")
+      .insert(lenderOfferInputToRow(data))
+      .select()
+      .single();
+    if (error) fail("Add lender offer", error.message);
+    return rowToLenderOffer(row as LenderOfferRow);
+  },
+
+  async updateLenderOffer(id, data) {
+    const { data: row, error } = await db()
+      .from("lender_offers")
+      .update(lenderOfferInputToRow(data))
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+    if (error) fail("Update lender offer", error.message);
+    if (!row) throw new Error("Lender offer not found");
+    return rowToLenderOffer(row as LenderOfferRow);
+  },
+
+  async deleteLenderOffer(id) {
+    const { data, error } = await db()
+      .from("lender_offers")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) fail("Delete lender offer", error.message);
+    if (!data?.length) throw new Error("Lender offer not found");
+  },
+
   async getFeaturedCommunities() {
     return fetchFeaturedCommunities();
   },
@@ -442,11 +497,11 @@ export const supabaseRepository: SiteRepository = {
     return fetchFeaturedCommunities();
   },
 
-  async getTop10Communities() {
-    return fetchTop10();
+  async getTop10Communities(period = "all-time") {
+    return fetchTop10(period);
   },
 
-  async setTop10Slot(rank, communityId) {
+  async setTop10Slot(rank, communityId, period = "all-time") {
     if (rank < 1 || rank > 10) {
       throw new Error("Rank must be between 1 and 10");
     }
@@ -454,7 +509,7 @@ export const supabaseRepository: SiteRepository = {
     const clearRank = await db()
       .from("top10_communities")
       .delete()
-      .eq("period", "all-time")
+      .eq("period", period)
       .eq("rank", rank);
     if (clearRank.error) fail("Set Top 10 slot", clearRank.error.message);
 
@@ -462,7 +517,7 @@ export const supabaseRepository: SiteRepository = {
       const clearCommunity = await db()
         .from("top10_communities")
         .delete()
-        .eq("period", "all-time")
+        .eq("period", period)
         .eq("community_id", communityId);
       if (clearCommunity.error) {
         fail("Set Top 10 slot", clearCommunity.error.message);
@@ -470,20 +525,31 @@ export const supabaseRepository: SiteRepository = {
 
       const { error } = await db()
         .from("top10_communities")
-        .insert({ community_id: communityId, rank, period: "all-time" });
+        .insert({ community_id: communityId, rank, period });
       if (error) fail("Set Top 10 slot", error.message);
     }
 
-    return sortTop10Slots(await fetchTop10());
+    return sortTop10Slots(await fetchTop10(period));
   },
 
-  async importCsvCatalog(communitiesCsv, modelHomesCsv) {
+  async importCsvCatalog(communitiesCsv, modelHomesCsv, options) {
     const current = await fetchAppData();
-    const result = importCatalogFromCsv(current, communitiesCsv, modelHomesCsv);
+    const result = importCatalogFromCsv(
+      current,
+      communitiesCsv,
+      modelHomesCsv,
+      options,
+    );
 
     const currentBuilderIds = new Set(current.builders.map((b) => b.id));
     const currentSeriesIds = new Set(current.series.map((s) => s.id));
     const currentCommunityIds = new Set(current.communities.map((c) => c.id));
+    const currentCommunityByKey = new Map(
+      current.communities.map((c) => [
+        `${c.name.trim().toLowerCase()}|${c.city.trim().toLowerCase()}`,
+        c,
+      ]),
+    );
 
     const newBuilders = result.data.builders.filter(
       (b) => !currentBuilderIds.has(b.id),
@@ -491,9 +557,16 @@ export const supabaseRepository: SiteRepository = {
     const newSeries = result.data.series.filter(
       (s) => !currentSeriesIds.has(s.id),
     );
+
     const newCommunities = result.data.communities.filter(
       (c) => !currentCommunityIds.has(c.id),
     );
+    const updatedCommunities = result.data.communities.filter((c) => {
+      if (!currentCommunityIds.has(c.id)) return false;
+      const key = `${c.name.trim().toLowerCase()}|${c.city.trim().toLowerCase()}`;
+      const prev = currentCommunityByKey.get(key);
+      return prev && prev.id === c.id;
+    });
 
     if (newBuilders.length > 0) {
       const { error } = await db()
@@ -521,6 +594,34 @@ export const supabaseRepository: SiteRepository = {
         if (homesError) fail("Import homes", homesError.message);
       }
     }
+
+    for (const community of updatedCommunities) {
+      const { error } = await db()
+        .from("communities")
+        .update(communityInputToRow(community))
+        .eq("id", community.id);
+      if (error) fail("Update community", error.message);
+
+      for (const home of community.homes) {
+        const existing = current.communities
+          .find((c) => c.id === community.id)
+          ?.homes.find((h) => h.id === home.id);
+
+        if (existing) {
+          const { error: homeError } = await db()
+            .from("homes")
+            .update(homeInputToRow(home))
+            .eq("id", home.id);
+          if (homeError) fail("Update home", homeError.message);
+        } else {
+          const { error: homeError } = await db()
+            .from("homes")
+            .insert(homeToRow(home, community.id));
+          if (homeError) fail("Import home", homeError.message);
+        }
+      }
+    }
+
     if (result.tagsAdded.length > 0) {
       const labels = result.data.customCommunityTagLabels ?? {};
       const rows = tagLabelsToRows(

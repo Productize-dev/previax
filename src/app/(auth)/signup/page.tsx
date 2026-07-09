@@ -78,6 +78,14 @@ export default function SignupPage() {
       return;
     }
 
+    // Supabase returns an empty identities array when the email is already registered.
+    if (data.user && data.user.identities?.length === 0) {
+      setError(
+        "An account with this email already exists. Sign in instead, or use a magic link if you forgot your password.",
+      );
+      return;
+    }
+
     if (data.session) {
       // Confirmación de email desactivada: sesión inmediata.
       router.push(role === "buyer" ? "/" : "/pending-approval");

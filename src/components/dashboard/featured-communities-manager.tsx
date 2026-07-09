@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { FeaturedCommunityRow } from "@/lib/types";
 
 export function FeaturedCommunitiesManager() {
@@ -40,7 +40,7 @@ export function FeaturedCommunitiesManager() {
     addFeaturedCommunity,
     removeFeaturedCommunity,
     reorderFeaturedCommunities,
-  } = useData();
+  } = useDashboardData();
   const [selectedCommunityId, setSelectedCommunityId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<FeaturedCommunityRow | null>(
     null,

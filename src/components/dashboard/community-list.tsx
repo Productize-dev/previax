@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useData } from "@/context/data-context";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { getPriceRange } from "@/lib/community-utils";
 import { getHomeModelName } from "@/lib/home-model";
 import {
@@ -44,7 +44,7 @@ export function CommunityList({
   onAddHome,
 }: CommunityListProps) {
   const { communities, builders, customCommunityTagLabels, deleteCommunity, deleteHome } =
-    useData();
+    useDashboardData();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "community" | "home";

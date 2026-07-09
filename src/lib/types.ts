@@ -24,6 +24,8 @@ export type Builder = {
   logoUrl?: string;
   description?: string;
   createdAt: number;
+  /** Dashboard scope — quién gestiona este builder en Supabase. */
+  ownerId?: string;
 };
 
 export type Series = {
@@ -156,6 +158,8 @@ export type Community = {
   nearbyPlaces?: NearbyPlace[];
   reviews?: CommunityReview[];
   mediaGallery?: MediaItem[];
+  /** Dashboard scope — dueño de la comunidad en Supabase. */
+  ownerId?: string;
 };
 
 export type FeaturedItem = {
@@ -179,6 +183,25 @@ export type Lender = {
   description: string;
   imageUrl?: string;
   order: number;
+  /** Dashboard scope — quién gestiona este lender en Supabase. */
+  ownerId?: string;
+};
+
+export type LenderOffer = {
+  id: string;
+  lenderId: string;
+  communityId: string;
+  title: string;
+  rate?: string;
+  terms?: string;
+  description: string;
+  imageUrl?: string;
+  validUntil?: string;
+  isActive: boolean;
+};
+
+export type LenderOfferInput = Omit<LenderOffer, "id" | "isActive"> & {
+  isActive?: boolean;
 };
 
 export type LenderInput = Omit<Lender, "id" | "order">;
@@ -190,11 +213,15 @@ export type FeaturedCommunityRow = {
   order: number;
 };
 
+/** Periodo del ranking Top 10 (badge en detalle de comunidad). */
+export type Top10Period = "all-time" | "week" | "month";
+
 /** Ranked slot (1–10) for the community detail Top 10 badge. */
 export type Top10CommunitySlot = {
   id: string;
   communityId: string;
   rank: number;
+  period?: Top10Period;
 };
 
 /** @deprecated Use FeaturedCommunityRow */
@@ -221,6 +248,7 @@ export type AppData = {
   communities: Community[];
   featured: FeaturedItem[];
   lenders: Lender[];
+  lenderOffers: LenderOffer[];
   featuredCommunities: FeaturedCommunityRow[];
   top10Communities: Top10CommunitySlot[];
   /** Display labels for CSV-imported or custom community tags. */

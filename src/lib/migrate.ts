@@ -226,6 +226,7 @@ export function migrateAppData(raw: LegacyAppData): AppData {
     communities,
     featured,
     lenders: [...(raw.lenders ?? [])].sort((a, b) => a.order - b.order),
+    lenderOffers: raw.lenderOffers ?? [],
     featuredCommunities: [...(raw.featuredCommunities ?? raw.futureCommunities ?? [])].sort(
       (a, b) => a.order - b.order,
     ),

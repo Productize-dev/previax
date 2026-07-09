@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BuilderOffers } from "@/components/communities/builder-offers";
+import { FinancingOffers } from "@/components/communities/financing-offers";
 import { CommunityCard } from "@/components/communities/community-card";
 import { CommunityDiningSection } from "@/components/communities/community-dining-section";
 import { CommunityGallerySection } from "@/components/communities/community-gallery-section";
@@ -25,6 +26,7 @@ import { HomeDetailModal } from "@/components/homes/home-detail-modal";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { useData } from "@/context/data-context";
+import { trackViewedCity } from "@/lib/buyer-storage";
 import { getAvailableModels } from "@/lib/community-media";
 import { getRelatedCommunities } from "@/lib/community-utils";
 import type { Home } from "@/lib/types";
@@ -90,6 +92,10 @@ export default function CommunityDetailContent() {
   const handleOpenModels = useCallback(() => {
     setModelsOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (community?.city) trackViewedCity(community.city);
+  }, [community?.city]);
 
   useEffect(() => {
     if (!homeIdParam || !community) return;
@@ -187,6 +193,10 @@ export default function CommunityDetailContent() {
               builderOffers={community.builderOffers}
               offerExpires={community.offerExpires}
             />
+          </FadeInSection>
+
+          <FadeInSection>
+            <FinancingOffers communityId={community.id} />
           </FadeInSection>
 
           <CommunityReviewsSection community={community} />

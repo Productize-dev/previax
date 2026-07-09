@@ -28,6 +28,7 @@ export function buildSeedAppData(): AppData {
     communities: seedCommunities,
     featured: seedFeatured,
     lenders: seedLenders,
+    lenderOffers: [],
     featuredCommunities: seedFeaturedCommunities,
     top10Communities: seedTop10Communities,
     customCommunityTagLabels: { townhomes: "Townhomes" },
