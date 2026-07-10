@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { memo, useCallback, useState } from "react";
+import { Play } from "lucide-react";
 
+import { HomeListingCategoryBadges } from "@/components/homes/home-listing-category-badges";
+import { TileActionBar } from "@/components/home/tile-action-bar";
+import { NetflixHoverPreview } from "@/components/home/netflix-hover-preview";
+import { VideoQuickActions } from "@/components/video/video-quick-actions";
+import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import type { HomeRowItem } from "@/lib/homepage-sections";
 import { pricePerSqft } from "@/lib/community-utils";
 import { getHomeListingCategories } from "@/lib/home-listing-categories";
-import type { Community, Home } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { HomeListingCategoryBadges } from "@/components/homes/home-listing-category-badges";
 import { useNetflixRowSelection } from "./use-netflix-row-selection";
 
 export type { HomeRowItem };
@@ -19,23 +24,48 @@ type NetflixHomeRowProps = {
   items: HomeRowItem[];
   defaultIndex?: number;
   onSelect?: (item: HomeRowItem) => void;
+  onDeselect?: () => void;
   className?: string;
 };
 
-export function NetflixHomeRow({
+export const NetflixHomeRow = memo(function NetflixHomeRow({
   title,
   id,
   items,
-  defaultIndex = 0,
+  defaultIndex = -1,
   onSelect,
+  onDeselect,
   className,
 }: NetflixHomeRowProps) {
-  const { selectedIndex, selectIndex, selectOnHover, trackRef, itemRefs } =
-    useNetflixRowSelection({
-      items,
-      defaultIndex,
-      onSelect,
-    });
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [playerVideo, setPlayerVideo] = useState<{
+    url: string;
+    title: string;
+    subtitle: string;
+  } | null>(null);
+
+  const openPlayer = useCallback(
+    (videoUrl: string, title: string, subtitle: string) => {
+      setPlayerVideo({ url: videoUrl, title, subtitle });
+      setPlayerOpen(true);
+    },
+    [],
+  );
+
+  const {
+    selectedIndex,
+    selectIndex,
+    selectOnHover,
+    handleTrackMouseLeave,
+    handleTileMouseLeave,
+    trackRef,
+    itemRefs,
+  } = useNetflixRowSelection({
+    items,
+    defaultIndex,
+    onSelect,
+    onDeselect,
+  });
 
   if (items.length === 0) return null;
 
@@ -51,12 +81,14 @@ export function NetflixHomeRow({
         tabIndex={0}
         role="listbox"
         aria-label={title}
+        onMouseLeave={handleTrackMouseLeave}
       >
         {items.map(({ home, community }, index) => {
           const selected = index === selectedIndex;
-          const cover = home.imageUrls[0];
+          const cover = home.imageUrls[0] ?? community.thumbnailUrl;
           const ppsf = pricePerSqft(home);
           const categories = getHomeListingCategories(home, community);
+          const previewUrl = home.youtubeUrl || community.youtubeUrl;
 
           return (
             <div
@@ -73,6 +105,7 @@ export function NetflixHomeRow({
                   : "netflix-focus-tile--portrait",
               )}
               onMouseEnter={() => selectOnHover(index)}
+              onMouseLeave={handleTileMouseLeave}
               onFocus={() => selectIndex(index, { immediate: true })}
             >
               <Link
@@ -94,12 +127,12 @@ export function NetflixHomeRow({
                       : "netflix-tile-media--portrait border-transparent",
                   )}
                 >
-                  {cover ? (
-                    <img
-                      src={cover}
-                      alt={`$${home.price.toLocaleString()} home`}
-                      className="h-full w-full object-cover"
-                      draggable={false}
+                  {cover || previewUrl ? (
+                    <NetflixHoverPreview
+                      youtubeUrl={previewUrl}
+                      posterUrl={cover}
+                      active={selected}
+                      title={home.modelName || community.name}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-[#808080]">
@@ -107,7 +140,7 @@ export function NetflixHomeRow({
                     </div>
                   )}
                   {categories.length > 0 && (
-                    <div className="pointer-events-none absolute top-1.5 left-1.5 right-1.5">
+                    <div className="pointer-events-none absolute left-1.5 right-1.5 top-1.5 z-10">
                       <HomeListingCategoryBadges
                         categories={categories}
                         max={selected ? 4 : 2}
@@ -115,7 +148,7 @@ export function NetflixHomeRow({
                     </div>
                   )}
                   {!selected && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-8">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-8">
                       <p className="text-xs font-semibold text-white sm:text-sm">
                         ${home.price.toLocaleString()}
                       </p>
@@ -160,10 +193,64 @@ export function NetflixHomeRow({
                   </div>
                 </div>
               </Link>
+
+              {selected && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 aspect-video">
+                  <div className="pointer-events-auto absolute left-2 top-2">
+                    <TileActionBar
+                      homeId={home.id}
+                      homeCommunityId={community.id}
+                    />
+                  </div>
+                  {previewUrl && (
+                    <>
+                      <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
+                        <VideoQuickActions
+                          youtubeUrl={previewUrl}
+                          title={home.modelName || community.name}
+                          onOpenPlayer={() =>
+                            openPlayer(
+                              previewUrl,
+                              home.modelName || `$${home.price.toLocaleString()}`,
+                              community.name,
+                            )
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openPlayer(
+                            previewUrl,
+                            home.modelName || `$${home.price.toLocaleString()}`,
+                            community.name,
+                          )
+                        }
+                        className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
+                        aria-label={`Play ${community.name} home video with sound and controls`}
+                      >
+                        <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-black shadow-lg">
+                          <Play className="size-4 fill-black" />
+                        </span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {playerVideo && (
+        <YouTubePlayerDialog
+          open={playerOpen}
+          onOpenChange={setPlayerOpen}
+          youtubeUrl={playerVideo.url}
+          title={playerVideo.title}
+          subtitle={playerVideo.subtitle}
+        />
+      )}
     </section>
   );
-}
+});

@@ -9,6 +9,8 @@ import type {
   Home,
   HomeInput,
   HomepageHomesRow,
+  HomepageSection,
+  HomepageSectionKey,
   HomepageSeriesRow,
   FeaturedCommunityRow,
   Lender,
@@ -92,6 +94,17 @@ export interface SiteRepository {
   removeHomepageHomes(id: string): Promise<void>;
   /** @deprecated Use reorderHomepageSeries */
   reorderHomepageHomes(orderedIds: string[]): Promise<HomepageHomesRow[]>;
+  getHomepageSections(): Promise<HomepageSection[]>;
+  setHomepageSectionEnabled(
+    id: string,
+    enabled: boolean,
+  ): Promise<HomepageSection[]>;
+  updateHomepageSectionTitle(
+    id: string,
+    title: string | null,
+  ): Promise<HomepageSection[]>;
+  reorderHomepageSections(orderedIds: string[]): Promise<HomepageSection[]>;
+  resetHomepageSections(): Promise<HomepageSection[]>;
 }
 
 /** @deprecated Use SiteRepository */

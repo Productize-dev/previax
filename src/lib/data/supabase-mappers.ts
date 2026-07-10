@@ -15,6 +15,8 @@ import type {
   HomeStatus,
   HomeTag,
   HomepageSeriesRow,
+  HomepageSection,
+  HomepageSectionKey,
   Lender,
   LenderInput,
   LenderOffer,
@@ -137,6 +139,14 @@ export type FeaturedItemRow = {
 export type FeaturedCommunityRowRow = {
   id: string;
   community_id: string;
+  sort_order: number;
+};
+
+export type HomepageSectionRow = {
+  id: string;
+  section_key: string;
+  title: string | null;
+  enabled: boolean;
   sort_order: number;
 };
 
@@ -322,6 +332,27 @@ export function rowToFeaturedCommunity(
   row: FeaturedCommunityRowRow,
 ): FeaturedCommunityRow {
   return { id: row.id, communityId: row.community_id, order: row.sort_order };
+}
+
+export function rowToHomepageSection(row: HomepageSectionRow): HomepageSection {
+  return {
+    id: row.id,
+    sectionKey: row.section_key as HomepageSectionKey,
+    title: row.title ?? undefined,
+    enabled: row.enabled,
+    order: row.sort_order,
+  };
+}
+
+export function homepageSectionToRow(
+  section: Pick<HomepageSection, "sectionKey" | "title" | "enabled" | "order">,
+): Omit<HomepageSectionRow, "id"> {
+  return {
+    section_key: section.sectionKey,
+    title: section.title?.trim() || null,
+    enabled: section.enabled,
+    sort_order: section.order,
+  };
 }
 
 export function rowToTop10(row: Top10Row): Top10CommunitySlot {

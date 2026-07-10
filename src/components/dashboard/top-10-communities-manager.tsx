@@ -111,8 +111,9 @@ export function Top10CommunitiesManager() {
         <div>
           <h2 className="font-heading text-2xl">Top 10 Communities</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Auto-ranked from views, saves, and offer clicks. Manual picks override
-            auto slots until cleared.
+            Curate the Top 10 row on the homepage and badges on community
+            detail pages. Auto-ranked from views, saves, and offer clicks.
+            Manual picks override auto slots until cleared.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">

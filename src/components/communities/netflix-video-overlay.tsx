@@ -1,16 +1,19 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import { ChevronLeft, Play, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ExternalLink, Play, X } from "lucide-react";
 
+import { YouTubeEmbed } from "@/components/video/youtube-embed";
 import {
   getCommunityHeroVideoUrl,
   getHomeDisplayName,
   getHomeVideoUrl,
 } from "@/lib/community-media";
 import type { Community, Home } from "@/lib/types";
-import { extractYouTubeId, getEmbedUrl } from "@/lib/youtube";
+import { getWatchUrl } from "@/lib/youtube";
 import { cn } from "@/lib/utils";
+
+const CHROME_HIDE_MS = 3500;
 
 type NetflixVideoOverlayProps = {
   open: boolean;
@@ -31,13 +34,13 @@ export function NetflixVideoOverlay({
   onClose,
   onChangeHome,
 }: NetflixVideoOverlayProps) {
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const videoUrl = home
     ? getHomeVideoUrl(home, community)
     : getCommunityHeroVideoUrl(community);
-  const videoId = videoUrl ? extractYouTubeId(videoUrl) : null;
-  const embedUrl = videoId
-    ? getEmbedUrl(videoId, { autoplay: true, controls: true })
-    : null;
+  const watchUrl = videoUrl ? getWatchUrl(videoUrl) : null;
 
   const hasPrevious = home !== null && homeIndex > 0;
   const hasNext = home !== null && homeIndex < models.length - 1;
@@ -46,6 +49,14 @@ export function NetflixVideoOverlay({
     models.length > 0
       ? `Model ${homeIndex + 1} of ${models.length}`
       : "Community tour";
+
+  const revealChrome = useCallback(() => {
+    setChromeVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setChromeVisible(false);
+    }, CHROME_HIDE_MS);
+  }, []);
 
   const goPrevious = useCallback(() => {
     if (hasPrevious) onChangeHome(homeIndex - 1);
@@ -58,6 +69,8 @@ export function NetflixVideoOverlay({
   useEffect(() => {
     if (!open) return;
 
+    revealChrome();
+
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowLeft") goPrevious();
@@ -66,24 +79,37 @@ export function NetflixVideoOverlay({
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("mousemove", revealChrome);
 
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("mousemove", revealChrome);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, [goNext, goPrevious, onClose, open]);
+  }, [goNext, goPrevious, onClose, open, revealChrome]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black">
-      {embedUrl ? (
-        <iframe
-          key={`${home?.id ?? community.id}-${embedUrl}`}
-          src={embedUrl}
+    <div
+      className="fixed inset-0 z-[80] bg-black"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Video player: ${title}`}
+      onMouseMove={revealChrome}
+    >
+      {videoUrl ? (
+        <YouTubeEmbed
+          key={`${home?.id ?? community.id}-${videoUrl}`}
+          youtubeUrl={videoUrl}
           title={`${title} — ${community.name}`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
+          preset="interactive"
+          autoplay
+          mute={false}
+          loop={false}
+          loading="eager"
+          fillContainer
           className="absolute inset-0 size-full"
         />
       ) : (
@@ -92,7 +118,12 @@ export function NetflixVideoOverlay({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/35 to-transparent px-[4%] pb-16 pt-6">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/35 to-transparent px-[4%] pb-12 pt-6 transition-opacity duration-300",
+          chromeVisible ? "opacity-100" : "opacity-0",
+        )}
+      >
         <div className="pointer-events-auto flex items-start justify-between gap-4">
           <button
             type="button"
@@ -104,17 +135,30 @@ export function NetflixVideoOverlay({
             <span className="hidden sm:inline">{community.name}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
-            aria-label="Close"
-          >
-            <X className="size-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {watchUrl && (
+              <a
+                href={watchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:text-sm"
+              >
+                <ExternalLink className="size-3.5" />
+                YouTube
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
+              aria-label="Close"
+            >
+              <X className="size-6" />
+            </button>
+          </div>
         </div>
 
-        <div className="pointer-events-auto mt-6 max-w-3xl">
+        <div className="pointer-events-auto mt-4 max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#46d369]">
             Now Playing
           </p>
@@ -124,10 +168,19 @@ export function NetflixVideoOverlay({
           <p className="mt-2 text-sm text-[#d2d2d2] md:text-base">
             {modelPosition}
           </p>
+          <p className="mt-2 hidden text-xs text-[#808080] sm:block">
+            Volume, captions (CC), quality & fullscreen — use the YouTube
+            controls on the video
+          </p>
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-[4%] pb-8 pt-20">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-[4%] pb-8 pt-16 transition-opacity duration-300",
+          chromeVisible ? "opacity-100" : "opacity-0",
+        )}
+      >
         <div className="pointer-events-auto flex flex-wrap items-center gap-3">
           {hasPrevious && (
             <button

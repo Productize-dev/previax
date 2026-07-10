@@ -13,7 +13,7 @@ Cinematic real-estate platform for exploring premium residential communities (Ne
 
 - Node.js 20+
 - A [Supabase](https://supabase.com) project
-- (Optional) OpenAI or Anthropic API key for AI features
+- (Optional) OpenAI API key for AI search, onboarding, and content generation
 
 ## Local setup
 
@@ -36,9 +36,10 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key (browser-safe) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Service role key — server only (cron, seed, admin scripts) |
-| `AI_PROVIDER` | No | `openai` or `anthropic` (default: heuristic fallback) |
-| `OPENAI_API_KEY` | No | For AI search, onboarding, content generation |
-| `ANTHROPIC_API_KEY` | No | Alternative AI provider |
+| `OPENAI_API_KEY` | No | AI search, embeddings, onboarding, content generation |
+| `OPENAI_EMBEDDING_MODEL` | No | Default: `text-embedding-3-small` (1536 dims) |
+| `OPENAI_SEARCH_MODEL` | No | Default: `gpt-4.1-mini` (NL search, Structured Outputs) |
+| `OPENAI_CONTENT_MODEL` | No | Default: `gpt-4.1` (listing extract + content generation) |
 | `CRON_SECRET` | Prod | Secret for Vercel cron → `/api/cron/top10` |
 
 \* Required for cron and `npm run seed`. The app runs without it if you only use the dashboard with anon key + RLS.

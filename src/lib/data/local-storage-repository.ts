@@ -1,3 +1,4 @@
+import { buildDefaultHomepageSections } from "../homepage-layout";
 import { buildSeedAppData } from "../seed-featured";
 import { buildFeaturedCommunitiesFromIds } from "../seed-featured-communities";
 import { buildTop10FromCommunityIds } from "../seed-top-10-communities";
@@ -14,6 +15,7 @@ import type {
   FeaturedItem,
   Home,
   HomepageHomesRow,
+  HomepageSection,
   HomepageSeriesRow,
   Lender,
   LenderOffer,
@@ -38,6 +40,7 @@ const EMPTY_APP_DATA: AppData = {
   series: [],
   homepageSeries: [],
   homepageHomes: [],
+  homepageSections: buildDefaultHomepageSections(),
 };
 
 function readStored(): AppData {
@@ -769,5 +772,55 @@ export const localStorageRepository: SiteRepository = {
       .filter((row): row is HomepageHomesRow => row !== null);
     writeStored(stored);
     return stored.homepageHomes;
+  },
+
+  async getHomepageSections() {
+    const stored = ensureSeeded();
+    if (!stored.homepageSections?.length) {
+      stored.homepageSections = buildDefaultHomepageSections();
+      writeStored(stored);
+    }
+    return stored.homepageSections;
+  },
+
+  async setHomepageSectionEnabled(id, enabled) {
+    const stored = ensureSeeded();
+    stored.homepageSections = stored.homepageSections.map((row) =>
+      row.id === id ? { ...row, enabled } : row,
+    );
+    writeStored(stored);
+    return stored.homepageSections;
+  },
+
+  async updateHomepageSectionTitle(id, title) {
+    const stored = ensureSeeded();
+    stored.homepageSections = stored.homepageSections.map((row) =>
+      row.id === id
+        ? { ...row, title: title?.trim() || undefined }
+        : row,
+    );
+    writeStored(stored);
+    return stored.homepageSections;
+  },
+
+  async reorderHomepageSections(orderedIds) {
+    const stored = ensureSeeded();
+    const map = new Map(stored.homepageSections.map((row) => [row.id, row]));
+    stored.homepageSections = orderedIds
+      .map((id, index) => {
+        const item = map.get(id);
+        if (!item) return null;
+        return { ...item, order: index * 10 };
+      })
+      .filter((row): row is HomepageSection => row !== null);
+    writeStored(stored);
+    return stored.homepageSections;
+  },
+
+  async resetHomepageSections() {
+    const stored = ensureSeeded();
+    stored.homepageSections = buildDefaultHomepageSections();
+    writeStored(stored);
+    return stored.homepageSections;
   },
 };

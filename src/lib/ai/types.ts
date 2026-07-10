@@ -37,6 +37,8 @@ export type AiSearchResult = {
   filters: AiSearchFilters;
   semanticIds: string[];
   source: "openai" | "anthropic" | "heuristic";
+  matchMode?: "exact" | "similar" | "semantic";
+  exactCount?: number;
 };
 
 export type AiRecommendationRow = {

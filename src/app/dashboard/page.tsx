@@ -16,6 +16,7 @@ import { LenderOverview } from "@/components/dashboard/lender-overview";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
 import { LocalDataImportCard } from "@/components/dashboard/local-data-import-card";
 import { PendingAccountsCard } from "@/components/dashboard/pending-accounts-card";
+import { HomepageLayoutManager } from "@/components/dashboard/homepage-layout-manager";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
@@ -144,11 +145,15 @@ export default function DashboardPage() {
 
           {(isAdmin || isLender) && tab === "lenders" && <LendersWorkspace />}
 
+          {isAdmin && tab === "homepage-layout" && (
+            <HomepageLayoutManager onNavigate={setTab} />
+          )}
+
           {isAdmin && tab === "featured" && (
             <div className="space-y-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Others
+                  Homepage
                 </p>
                 <h2 className="font-heading mt-1 text-2xl">Featured Carousel</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -170,7 +175,7 @@ export default function DashboardPage() {
           {isAdmin && tab === "featured-communities" && (
             <div className="space-y-8">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Others
+                Homepage
               </p>
               <FeaturedCommunitiesManager />
             </div>
@@ -179,7 +184,7 @@ export default function DashboardPage() {
           {isAdmin && tab === "top-10" && (
             <div className="space-y-8">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Others
+                Homepage
               </p>
               <Top10CommunitiesManager />
             </div>

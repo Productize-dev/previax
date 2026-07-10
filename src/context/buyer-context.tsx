@@ -10,12 +10,19 @@ import {
 
 import { useAuth } from "@/context/auth-context";
 import type { AiRecommendationRow, AiSearchFilters } from "@/lib/ai/types";
+import type { AiSearchMatchMode } from "@/lib/ai/smart-search";
 import {
   getGuidancePrefs,
+  getLikedCommunityIds,
+  getLikedHomeRefs,
   getSavedCommunityIds,
+  getSavedHomeRefs,
   getViewedCities,
   subscribeBuyerStorage,
+  toggleLikedCommunity,
+  toggleLikedHome,
   toggleSavedCommunity,
+  toggleSavedHome,
   type BuyerGuidancePrefs,
 } from "@/lib/buyer-storage";
 import { trackCommunityEvent } from "@/lib/analytics";
@@ -29,16 +36,25 @@ type BuyerContextValue = {
   offersOnly: boolean;
   setOffersOnly: (v: boolean) => void;
   savedIds: string[];
+  savedHomeRefs: string[];
+  likedCommunityIds: string[];
+  likedHomeRefs: string[];
   guidancePrefs: BuyerGuidancePrefs | null;
   viewedCities: string[];
   buyer: BuyerProfile | null;
   toggleSaved: (id: string) => void;
+  toggleSavedHome: (communityId: string, homeId: string) => void;
+  toggleLikedCommunity: (id: string) => void;
+  toggleLikedHome: (communityId: string, homeId: string) => void;
   isSaved: (id: string) => boolean;
-  signOut: () => void;
-  /** Filtros estructurados de la última búsqueda IA. */
+  isHomeSaved: (communityId: string, homeId: string) => boolean;
+  isLiked: (id: string) => boolean;
+  isHomeLiked: (communityId: string, homeId: string) => boolean;
+  signOut: () => Promise<void>;
   aiFilters: AiSearchFilters | null;
-  /** IDs ordenados del resultado IA (null = búsqueda local). */
   aiCommunityIds: string[] | null;
+  aiSearchMatchMode: AiSearchMatchMode | null;
+  aiSearchExactCount: number;
   aiSearchLoading: boolean;
   personalizedRows: AiRecommendationRow[];
   recommendationsLoading: boolean;
@@ -46,6 +62,7 @@ type BuyerContextValue = {
   setAiSearchResult: (
     filters: AiSearchFilters | null,
     communityIds: string[] | null,
+    meta?: { matchMode?: AiSearchMatchMode; exactCount?: number },
   ) => void;
   setAiSearchLoading: (loading: boolean) => void;
   setPersonalizedRows: (rows: AiRecommendationRow[]) => void;
@@ -54,16 +71,11 @@ type BuyerContextValue = {
 
 const BuyerContext = createContext<BuyerContextValue | null>(null);
 
-const serverSaved: string[] = [];
-const serverViewed: string[] = [];
+const serverEmpty: string[] = [];
 const serverGuidance: BuyerGuidancePrefs | null = null;
 
-function getServerSaved(): string[] {
-  return serverSaved;
-}
-
-function getServerViewed(): string[] {
-  return serverViewed;
+function getServerEmpty(): string[] {
+  return serverEmpty;
 }
 
 function getServerGuidance(): BuyerGuidancePrefs | null {
@@ -77,6 +89,9 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
   const [offersOnly, setOffersOnly] = useState(false);
   const [aiFilters, setAiFilters] = useState<AiSearchFilters | null>(null);
   const [aiCommunityIds, setAiCommunityIds] = useState<string[] | null>(null);
+  const [aiSearchMatchMode, setAiSearchMatchMode] =
+    useState<AiSearchMatchMode | null>(null);
+  const [aiSearchExactCount, setAiSearchExactCount] = useState(0);
   const [aiSearchLoading, setAiSearchLoading] = useState(false);
   const [personalizedRows, setPersonalizedRows] = useState<AiRecommendationRow[]>(
     [],
@@ -86,7 +101,25 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
   const savedIds = useSyncExternalStore(
     subscribeBuyerStorage,
     getSavedCommunityIds,
-    getServerSaved,
+    getServerEmpty,
+  );
+
+  const savedHomeRefs = useSyncExternalStore(
+    subscribeBuyerStorage,
+    getSavedHomeRefs,
+    getServerEmpty,
+  );
+
+  const likedCommunityIds = useSyncExternalStore(
+    subscribeBuyerStorage,
+    getLikedCommunityIds,
+    getServerEmpty,
+  );
+
+  const likedHomeRefs = useSyncExternalStore(
+    subscribeBuyerStorage,
+    getLikedHomeRefs,
+    getServerEmpty,
   );
 
   const guidancePrefs = useSyncExternalStore(
@@ -98,7 +131,7 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
   const viewedCities = useSyncExternalStore(
     subscribeBuyerStorage,
     getViewedCities,
-    getServerViewed,
+    getServerEmpty,
   );
 
   const buyer: BuyerProfile | null = user
@@ -117,21 +150,31 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     if (!q.trim()) {
       setAiFilters(null);
       setAiCommunityIds(null);
+      setAiSearchMatchMode(null);
+      setAiSearchExactCount(0);
     }
   }, []);
 
   const clearAiSearch = useCallback(() => {
     setAiFilters(null);
     setAiCommunityIds(null);
+    setAiSearchMatchMode(null);
+    setAiSearchExactCount(0);
     setSearchQueryState("");
     setCityFilter("all");
     setOffersOnly(false);
   }, []);
 
   const setAiSearchResult = useCallback(
-    (filters: AiSearchFilters | null, communityIds: string[] | null) => {
+    (
+      filters: AiSearchFilters | null,
+      communityIds: string[] | null,
+      meta?: { matchMode?: AiSearchMatchMode; exactCount?: number },
+    ) => {
       setAiFilters(filters);
       setAiCommunityIds(communityIds);
+      setAiSearchMatchMode(meta?.matchMode ?? null);
+      setAiSearchExactCount(meta?.exactCount ?? 0);
       if (filters?.city) setCityFilter(filters.city);
       if (filters?.offersOnly) setOffersOnly(true);
     },
@@ -143,6 +186,23 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     [savedIds],
   );
 
+  const isHomeSavedFn = useCallback(
+    (communityId: string, homeId: string) =>
+      savedHomeRefs.includes(`${communityId}:${homeId}`),
+    [savedHomeRefs],
+  );
+
+  const isLikedFn = useCallback(
+    (id: string) => likedCommunityIds.includes(id),
+    [likedCommunityIds],
+  );
+
+  const isHomeLikedFn = useCallback(
+    (communityId: string, homeId: string) =>
+      likedHomeRefs.includes(`${communityId}:${homeId}`),
+    [likedHomeRefs],
+  );
+
   const toggleSaved = useCallback((id: string) => {
     const wasSaved = getSavedCommunityIds().includes(id);
     toggleSavedCommunity(id);
@@ -152,8 +212,20 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const signOut = useCallback(() => {
-    void authSignOut();
+  const toggleSavedHomeFn = useCallback((communityId: string, homeId: string) => {
+    toggleSavedHome(communityId, homeId);
+  }, []);
+
+  const toggleLikedCommunityFn = useCallback((id: string) => {
+    toggleLikedCommunity(id);
+  }, []);
+
+  const toggleLikedHomeFn = useCallback((communityId: string, homeId: string) => {
+    toggleLikedHome(communityId, homeId);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await authSignOut();
   }, [authSignOut]);
 
   return (
@@ -166,14 +238,25 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
         offersOnly,
         setOffersOnly,
         savedIds,
+        savedHomeRefs,
+        likedCommunityIds,
+        likedHomeRefs,
         guidancePrefs,
         viewedCities,
         buyer,
         toggleSaved,
+        toggleSavedHome: toggleSavedHomeFn,
+        toggleLikedCommunity: toggleLikedCommunityFn,
+        toggleLikedHome: toggleLikedHomeFn,
         isSaved: isSavedFn,
+        isHomeSaved: isHomeSavedFn,
+        isLiked: isLikedFn,
+        isHomeLiked: isHomeLikedFn,
         signOut,
         aiFilters,
         aiCommunityIds,
+        aiSearchMatchMode,
+        aiSearchExactCount,
         aiSearchLoading,
         personalizedRows,
         recommendationsLoading,

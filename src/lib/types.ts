@@ -254,6 +254,34 @@ export type HomepageSeriesRow = {
   order: number;
 };
 
+/** Configurable homepage browse section (order, visibility, title). */
+export type HomepageSectionKey =
+  | "hero"
+  | "personalized"
+  | "my-list"
+  | "saved-homes"
+  | "liked-communities"
+  | "liked-homes"
+  | "trending"
+  | "featured-communities"
+  | "top-10"
+  | "listing-categories"
+  | "main-highlights"
+  | "community-tags"
+  | "home-tags"
+  | "lenders"
+  | "cities"
+  | "all-communities";
+
+export type HomepageSection = {
+  id: string;
+  sectionKey: HomepageSectionKey;
+  /** Optional display title override on the homepage. */
+  title?: string;
+  enabled: boolean;
+  order: number;
+};
+
 export type BuilderInput = Omit<Builder, "id" | "createdAt">;
 
 export type SeriesInput = Omit<Series, "id" | "createdAt">;
@@ -272,6 +300,7 @@ export type AppData = {
   homepageSeries: HomepageSeriesRow[];
   /** @deprecated Use homepageSeries */
   homepageHomes: HomepageHomesRow[];
+  homepageSections: HomepageSection[];
 };
 
 export type DashboardTab =
@@ -281,7 +310,8 @@ export type DashboardTab =
   | "lenders"
   | "featured"
   | "featured-communities"
-  | "top-10";
+  | "top-10"
+  | "homepage-layout";
 
 export type BuyerProfile = {
   name: string;

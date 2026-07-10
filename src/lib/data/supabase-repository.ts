@@ -1,3 +1,4 @@
+import { buildDefaultHomepageSections } from "../homepage-layout";
 import { getSupabaseBrowserClient } from "../supabase/client";
 import { importCatalogFromCsv } from "../csv-catalog-import";
 import { syncCommunityBuilderFields, communityHasBuilder } from "../community-builders";
@@ -10,6 +11,7 @@ import type {
   FeaturedCommunityRow,
   FeaturedItem,
   Home,
+  HomepageSection,
   HomepageSeriesRow,
   Lender,
   LenderOffer,
@@ -29,11 +31,13 @@ import {
   homeToRow,
   lenderInputToRow,
   lenderOfferInputToRow,
+  homepageSectionToRow,
   rowToBuilder,
   rowToCommunity,
   rowToFeatured,
   rowToFeaturedCommunity,
   rowToHome,
+  rowToHomepageSection,
   rowToHomepageSeries,
   rowToLender,
   rowToLenderOffer,
@@ -49,6 +53,7 @@ import {
   type FeaturedItemRow,
   type HomeRow,
   type HomepageSeriesRowRow,
+  type HomepageSectionRow,
   type LenderOfferRow,
   type LenderRow,
   type SeriesRow,
@@ -166,6 +171,19 @@ async function fetchHomepageSeries(): Promise<HomepageSeriesRow[]> {
   return ((data ?? []) as HomepageSeriesRowRow[]).map(rowToHomepageSeries);
 }
 
+async function fetchHomepageSections(): Promise<HomepageSection[]> {
+  const { data, error } = await db()
+    .from("homepage_sections")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) fail("Load homepage sections", error.message);
+  const rows = ((data ?? []) as HomepageSectionRow[]).map(rowToHomepageSection);
+  if (rows.length === 0) {
+    return buildDefaultHomepageSections();
+  }
+  return rows;
+}
+
 async function fetchTagLabels(): Promise<Record<string, string>> {
   const { data, error } = await db().from("community_tag_labels").select("*");
   if (error) fail("Load tag labels", error.message);
@@ -195,6 +213,7 @@ async function fetchAppData(): Promise<AppData> {
     builders,
     series,
     homepageSeries,
+    homepageSections,
   ] = await Promise.all([
     fetchCommunitiesWithHomes(),
     fetchFeatured(),
@@ -206,6 +225,7 @@ async function fetchAppData(): Promise<AppData> {
     fetchBuilders(),
     fetchSeries(),
     fetchHomepageSeries(),
+    fetchHomepageSections(),
   ]);
 
   return {
@@ -220,6 +240,7 @@ async function fetchAppData(): Promise<AppData> {
     series,
     homepageSeries,
     homepageHomes: [],
+    homepageSections,
   };
 }
 
@@ -841,5 +862,52 @@ export const supabaseRepository: SiteRepository = {
 
   async reorderHomepageHomes() {
     return [];
+  },
+
+  async getHomepageSections() {
+    return fetchHomepageSections();
+  },
+
+  async setHomepageSectionEnabled(id, enabled) {
+    const { error } = await db()
+      .from("homepage_sections")
+      .update({ enabled })
+      .eq("id", id);
+    if (error) fail("Update homepage section", error.message);
+    return fetchHomepageSections();
+  },
+
+  async updateHomepageSectionTitle(id, title) {
+    const { error } = await db()
+      .from("homepage_sections")
+      .update({ title: title?.trim() || null })
+      .eq("id", id);
+    if (error) fail("Update homepage section title", error.message);
+    return fetchHomepageSections();
+  },
+
+  async reorderHomepageSections(orderedIds) {
+    await updateSortOrder("homepage_sections", orderedIds);
+    return fetchHomepageSections();
+  },
+
+  async resetHomepageSections() {
+    const { error: deleteError } = await db()
+      .from("homepage_sections")
+      .delete()
+      .neq("id", "");
+    if (deleteError) fail("Reset homepage sections", deleteError.message);
+
+    const defaults = buildDefaultHomepageSections();
+    const { error: insertError } = await db()
+      .from("homepage_sections")
+      .insert(
+        defaults.map((section) => ({
+          id: `hp-${section.sectionKey}`,
+          ...homepageSectionToRow(section),
+        })),
+      );
+    if (insertError) fail("Reset homepage sections", insertError.message);
+    return fetchHomepageSections();
   },
 };

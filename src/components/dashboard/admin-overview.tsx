@@ -9,6 +9,7 @@ import {
   Heart,
   Home,
   Landmark,
+  LayoutList,
   Sparkles,
   Tag,
   Trophy,
@@ -230,8 +231,14 @@ export function AdminOverview({ onNavigate, pendingCount = 0 }: AdminOverviewPro
       )}
 
       <section>
-        <h3 className="mb-3 font-heading text-lg">Curation shortcuts</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <h3 className="mb-3 font-heading text-lg">Homepage</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <ShortcutTile
+            icon={LayoutList}
+            title="Homepage Layout"
+            count={undefined}
+            onClick={() => onNavigate("homepage-layout")}
+          />
           <ShortcutTile
             icon={Sparkles}
             title="Featured Carousel"
@@ -264,7 +271,7 @@ function ShortcutTile({
 }: {
   icon: typeof Sparkles;
   title: string;
-  count: number;
+  count?: number;
   onClick: () => void;
 }) {
   return (
@@ -279,7 +286,9 @@ function ShortcutTile({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{title}</span>
         <span className="block text-xs text-muted-foreground">
-          {count} item{count === 1 ? "" : "s"}
+          {count === undefined
+            ? "Order & visibility"
+            : `${count} item${count === 1 ? "" : "s"}`}
         </span>
       </span>
       <span className="text-muted-foreground">→</span>

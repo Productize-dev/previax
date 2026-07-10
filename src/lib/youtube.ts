@@ -28,6 +28,15 @@ export function isValidYouTubeUrl(url: string): boolean {
   return extractYouTubeId(url) !== null;
 }
 
+/** Public watch URL — opens native YouTube controls (quality, captions, share). */
+export function getWatchUrl(videoIdOrUrl: string): string | null {
+  const id =
+    videoIdOrUrl.length === 11 && !videoIdOrUrl.includes("/")
+      ? videoIdOrUrl
+      : extractYouTubeId(videoIdOrUrl);
+  return id ? `https://www.youtube.com/watch?v=${id}` : null;
+}
+
 /** YouTube-hosted poster for a video ID or URL. */
 export function getYouTubeThumbnailUrl(
   videoIdOrUrl: string,
@@ -63,38 +72,69 @@ export function resolveThumbnailFromYouTube(
   return getYouTubeThumbnailUrl(youtubeUrl) ?? "";
 }
 
+export type YouTubeEmbedPreset = "background" | "preview" | "interactive";
+
 type EmbedOptions = {
+  preset?: YouTubeEmbedPreset;
   autoplay?: boolean;
   mute?: boolean;
   loop?: boolean;
+  /** Override preset defaults. */
   controls?: boolean;
+  /** Prefer captions when available (interactive preset). */
+  captions?: boolean;
+  /** Player origin for embed API / security. */
+  origin?: string;
 };
 
 export function getEmbedUrl(
   videoId: string,
   opts: EmbedOptions = {},
 ): string {
-  const {
-    autoplay = false,
-    mute = false,
-    loop = false,
-    controls = true,
-  } = opts;
-
+  const preset = opts.preset ?? "interactive";
   const params = new URLSearchParams();
+
+  const autoplay =
+    opts.autoplay ?? (preset === "background" || preset === "preview");
+  const mute =
+    opts.mute ?? (preset === "background" || preset === "preview");
+  const loop = opts.loop ?? preset !== "interactive";
+  const controls =
+    opts.controls ?? preset === "interactive";
+
   if (autoplay) params.set("autoplay", "1");
   if (mute) params.set("mute", "1");
   if (loop) {
     params.set("loop", "1");
     params.set("playlist", videoId);
   }
-  if (!controls) params.set("controls", "0");
+  params.set("controls", controls ? "1" : "0");
   params.set("rel", "0");
   params.set("modestbranding", "1");
+  params.set("playsinline", "1");
+  params.set("fs", "1");
+  params.set("iv_load_policy", "3");
+
+  if (preset === "interactive") {
+    params.set("enablejsapi", "1");
+    if (opts.captions !== false) {
+      params.set("cc_load_policy", "1");
+    }
+    if (typeof window !== "undefined" && !opts.origin) {
+      params.set("origin", window.location.origin);
+    } else if (opts.origin) {
+      params.set("origin", opts.origin);
+    }
+  }
 
   const query = params.toString();
   return `https://www.youtube-nocookie.com/embed/${videoId}${query ? `?${query}` : ""}`;
 }
+
+export const YOUTUBE_IFRAME_ALLOW =
+  "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share";
+
+export const YOUTUBE_PREVIEW_IFRAME_ALLOW = "autoplay; encrypted-media; picture-in-picture";
 
 /** Default hero background — luxury community aerial footage */
 export const HERO_YOUTUBE_URL =

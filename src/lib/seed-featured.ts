@@ -1,4 +1,5 @@
 import type { AppData, FeaturedItem, HomepageHomesRow, HomepageSeriesRow } from "./types";
+import { buildDefaultHomepageSections } from "./homepage-layout";
 import { seedBuilders, seedHomepageSeries, seedSeries } from "./seed-builders";
 import { seedCommunities } from "./seed-data";
 import { seedLenders } from "./seed-lenders";
@@ -36,5 +37,6 @@ export function buildSeedAppData(): AppData {
     series: seedSeries,
     homepageSeries: seedHomepageSeriesRows,
     homepageHomes: seedHomepageHomes,
+    homepageSections: buildDefaultHomepageSections(),
   };
 }

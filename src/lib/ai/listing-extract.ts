@@ -1,5 +1,17 @@
 import type { CommunityInput, HomeInput, HomeTag } from "@/lib/types";
 
+import { getOpenAiApiKey } from "./config";
+import {
+  getOpenAiContentModel,
+  openAiStructuredChat,
+  openAiTextChat,
+} from "./openai-client";
+import {
+  LISTING_EXTRACT_SCHEMA,
+  STRING_ARRAY_SCHEMA,
+  TEXT_RESULT_SCHEMA,
+} from "./schemas";
+
 export type ExtractedListingDraft = {
   community?: Partial<CommunityInput> & {
     name?: string;
@@ -24,7 +36,7 @@ export type ExtractedListingDraft = {
       youtubeUrl?: string;
     }
   >;
-  source: "openai" | "anthropic" | "heuristic";
+  source: "openai" | "heuristic";
 };
 
 const HEURISTIC_PRICE = /(?:\$|USD\s*)([\d,]+(?:\.\d+)?)\s*(k|m)?/i;
@@ -94,78 +106,27 @@ export async function extractListingWithAi(
   text: string,
   url?: string,
 ): Promise<ExtractedListingDraft> {
-  const key =
-    process.env.OPENAI_API_KEY?.trim() ||
-    process.env.ANTHROPIC_API_KEY?.trim();
-
-  if (!key) return extractListingHeuristic(text);
-
-  const provider =
-    process.env.AI_PROVIDER === "anthropic" && process.env.ANTHROPIC_API_KEY
-      ? "anthropic"
-      : "openai";
-
-  const systemPrompt = `Extract a new-home community listing from brochure text. Return JSON only:
-{
-  "community": { "name", "city", "description", "mainHighlight", "amenities":[], "tags":[], "schoolDistrict", "youtubeUrl", "lenders":[] },
-  "homes": [{ "modelName", "description", "price", "bedrooms", "bathrooms", "sqft", "tags":[], "highlights":[], "youtubeUrl" }]
-}
-Use English field values. Tags should be slug-like (e.g. master-planned, townhomes).`;
+  if (!getOpenAiApiKey()) return extractListingHeuristic(text);
 
   const userContent = url
     ? `URL: ${url}\n\nContent:\n${text}`
     : text;
 
   try {
-    if (provider === "anthropic") {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": process.env.ANTHROPIC_API_KEY!,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
+    const parsed = await openAiStructuredChat<ExtractedListingDraft>({
+      model: getOpenAiContentModel(),
+      schemaName: "listing_extract",
+      schema: LISTING_EXTRACT_SCHEMA,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Extract a new-home community listing from brochure text. Use English field values. Tags should be slug-like (e.g. master-planned, townhomes). Use null for unknown optional fields.",
         },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 2048,
-          messages: [
-            { role: "user", content: `${systemPrompt}\n\n${userContent}` },
-          ],
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as {
-        content?: Array<{ text?: string }>;
-      };
-      const raw = data.content?.[0]?.text ?? "";
-      const json = raw.match(/\{[\s\S]*\}/)?.[0];
-      if (!json) throw new Error("No JSON");
-      return { ...JSON.parse(json), source: "anthropic" };
-    }
-
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
-      }),
+        { role: "user", content: userContent },
+      ],
     });
-    if (!res.ok) throw new Error(await res.text());
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const raw = data.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("Empty response");
-    return { ...JSON.parse(raw), source: "openai" };
+    return { ...parsed, source: "openai" };
   } catch {
     return extractListingHeuristic(text);
   }
@@ -184,53 +145,64 @@ export type ContentGenerateRequest = {
 
 export async function generateContentWithAi(
   req: ContentGenerateRequest,
-): Promise<{ result: string | string[]; source: "openai" | "anthropic" | "heuristic" }> {
+): Promise<{ result: string | string[]; source: "openai" | "heuristic" }> {
   const { type, context } = req;
-  const key = process.env.OPENAI_API_KEY?.trim();
 
-  if (!key) {
+  if (!getOpenAiApiKey()) {
     return { result: heuristicGenerate(type, context), source: "heuristic" };
   }
 
-  const prompts: Record<ContentGenerateRequest["type"], string> = {
-    "community-description": "Write a 2-3 sentence community description for a new home community.",
-    "community-highlights": "Write one short main highlight (max 60 chars) for this community.",
-    "community-tags": "Suggest 3-6 community tags as a JSON array of slug strings.",
-    "home-description": "Write a 2 sentence model home description.",
-    "home-highlights": "Suggest 4 bullet highlights as a JSON array of strings.",
-    "home-tags": "Suggest home tags from: move-in-ready, under-construction, custom-build, patio-home, single-story, basement. Return JSON array.",
-  };
+  const model = getOpenAiContentModel();
+  const contextJson = JSON.stringify(context);
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
+    if (type === "community-tags" || type === "home-tags" || type === "home-highlights") {
+      const prompts: Record<string, string> = {
+        "community-tags":
+          "Suggest 3-6 community tags as slug strings for this community.",
+        "home-tags":
+          "Suggest home tags from: move-in-ready, under-construction, custom-build, patio-home, single-story, basement.",
+        "home-highlights": "Suggest 4 bullet highlights for this home model.",
+      };
+
+      const { items } = await openAiStructuredChat<{ items: string[] }>({
+        model,
+        schemaName: "string_array",
+        schema: STRING_ARRAY_SCHEMA,
         temperature: 0.7,
         messages: [
           {
             role: "system",
-            content: `${prompts[type]} Return plain text for descriptions/highlights, JSON array for tags/highlights lists. Context: ${JSON.stringify(context)}`,
+            content: `${prompts[type]} Context: ${contextJson}`,
           },
           { role: "user", content: "Generate now." },
         ],
-      }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const raw = data.choices?.[0]?.message?.content?.trim() ?? "";
-
-    if (type.endsWith("tags") || type === "home-highlights") {
-      const json = raw.match(/\[[\s\S]*\]/)?.[0];
-      if (json) return { result: JSON.parse(json) as string[], source: "openai" };
+      });
+      return { result: items, source: "openai" };
     }
-    return { result: raw.replace(/^["']|["']$/g, ""), source: "openai" };
+
+    const prompts: Record<string, string> = {
+      "community-description":
+        "Write a 2-3 sentence community description for a new home community.",
+      "community-highlights":
+        "Write one short main highlight (max 60 chars) for this community.",
+      "home-description": "Write a 2 sentence model home description.",
+    };
+
+    const { text } = await openAiStructuredChat<{ text: string }>({
+      model,
+      schemaName: "text_result",
+      schema: TEXT_RESULT_SCHEMA,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: `${prompts[type]} Context: ${contextJson}`,
+        },
+        { role: "user", content: "Generate now." },
+      ],
+    });
+    return { result: text.trim(), source: "openai" };
   } catch {
     return { result: heuristicGenerate(type, context), source: "heuristic" };
   }

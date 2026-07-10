@@ -1,8 +1,7 @@
-import { anthropicProvider } from "./anthropic-provider";
+import { isOpenAiConfigured } from "./config";
 import { parseSearchHeuristic } from "./heuristic";
 import { openAiProvider } from "./openai-provider";
-import type { AiProvider, AiProviderName } from "./provider";
-import type { AiSearchContext, AiSearchFilters } from "./types";
+import type { AiProvider } from "./provider";
 
 const heuristicProvider: AiProvider = {
   name: "heuristic",
@@ -11,21 +10,13 @@ const heuristicProvider: AiProvider = {
   embed: async () => null,
 };
 
+/** OpenAI-first provider selection. Anthropic can be re-enabled later via AI_PROVIDER. */
 export function getAiProvider(): AiProvider {
-  const name = (process.env.AI_PROVIDER ?? "openai").toLowerCase() as AiProviderName;
-
-  if (name === "anthropic" && process.env.ANTHROPIC_API_KEY) {
-    return anthropicProvider;
-  }
-  if (name === "openai" && process.env.OPENAI_API_KEY) {
-    return openAiProvider;
-  }
-  if (process.env.OPENAI_API_KEY) return openAiProvider;
-  if (process.env.ANTHROPIC_API_KEY) return anthropicProvider;
+  if (isOpenAiConfigured()) return openAiProvider;
   return heuristicProvider;
 }
 
-export type { AiProvider, AiProviderName };
+export type { AiProvider, AiProviderName } from "./provider";
 export type {
   AiSearchContext,
   AiSearchFilters,
@@ -36,3 +27,9 @@ export type {
 export { parseSearchHeuristic } from "./heuristic";
 export { applyAiFilters, rankBySemanticIds } from "./apply-filters";
 export { buildRecommendationRows } from "./recommendations";
+export {
+  resolveSmartSearch,
+  scoreCommunityRelevance,
+  type AiSearchMatchMode,
+  type SmartSearchResult,
+} from "./smart-search";

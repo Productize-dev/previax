@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useData } from "@/context/data-context";
 import { previewCsvImport } from "@/lib/csv-catalog-import";
+import { buildDefaultHomepageSections } from "@/lib/homepage-layout";
 import {
   COMMUNITY_CSV_FIELDS,
   getCsvHeaders,
@@ -160,6 +161,7 @@ export function CsvImportManager() {
       customCommunityTagLabels: {},
       homepageSeries: [],
       homepageHomes: [],
+      homepageSections: buildDefaultHomepageSections(),
     }),
     [builders, communities, series],
   );

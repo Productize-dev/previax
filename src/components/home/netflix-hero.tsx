@@ -11,7 +11,8 @@ import {
   hasActiveOffers,
 } from "@/lib/community-utils";
 import type { Community } from "@/lib/types";
-import { extractYouTubeId, getEmbedUrl } from "@/lib/youtube";
+import { YouTubeEmbed } from "@/components/video/youtube-embed";
+import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import { cn } from "@/lib/utils";
 
 const SLIDE_DURATION_MS = 10_000;
@@ -31,6 +32,8 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   const [incomingImage, setIncomingImage] = useState<string | null>(null);
   const [incomingVisible, setIncomingVisible] = useState(false);
   const [copyVisible, setCopyVisible] = useState(true);
+  const [heroVideoReady, setHeroVideoReady] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
   const crossfadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const items = [...featured].sort((a, b) => a.order - b.order);
@@ -74,6 +77,16 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
     const timer = setInterval(goNext, SLIDE_DURATION_MS);
     return () => clearInterval(timer);
   }, [count, goNext, activeIndex, paused, isFocused]);
+
+  useEffect(() => {
+    if (isFocused) {
+      setHeroVideoReady(false);
+      return;
+    }
+    setHeroVideoReady(false);
+    const timer = setTimeout(() => setHeroVideoReady(true), 900);
+    return () => clearTimeout(timer);
+  }, [isFocused, activeIndex]);
 
   useEffect(() => {
     const nextImage = heroCommunity?.thumbnailUrl ?? null;
@@ -163,15 +176,6 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   const videoUrl = isFocused
     ? communityForMedia?.youtubeUrl
     : (active?.youtubeUrl ?? communityForMedia?.youtubeUrl);
-  const videoId = videoUrl ? extractYouTubeId(videoUrl) : null;
-  const embedUrl = videoId
-    ? getEmbedUrl(videoId, {
-        autoplay: true,
-        mute: true,
-        loop: true,
-        controls: false,
-      })
-    : null;
   const priceRange = communityForMedia
     ? getPriceRange(communityForMedia)
     : null;
@@ -181,7 +185,8 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   const communityId = isFocused
     ? focusCommunity!.id
     : (active?.communityId ?? communityForMedia?.id);
-  const showVideo = Boolean(embedUrl && !isFocused);
+  // Row hover preview uses tile video; hero stays on poster when syncing to a row.
+  const showVideo = Boolean(videoUrl && !isFocused && heroVideoReady);
 
   return (
     <section
@@ -191,19 +196,22 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="absolute inset-0">
-        {showVideo ? (
+        {showVideo && videoUrl ? (
           <div
             className={cn(
               "absolute inset-0 transition-opacity duration-700 ease-in-out",
               carouselTransitioning ? "opacity-0" : "opacity-100",
             )}
           >
-            <iframe
-              key={`video-${active?.id}-${activeIndex}`}
-              src={embedUrl!}
+            <YouTubeEmbed
+              key={`video-${isFocused ? focusCommunity?.id : active?.id}-${activeIndex}`}
+              youtubeUrl={videoUrl}
               title={heroTitle}
-              allow="autoplay; encrypted-media"
-              className="pointer-events-none absolute top-1/2 left-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2 scale-105"
+              preset="background"
+              loading="eager"
+              fillContainer
+              cover
+              className="absolute inset-0 size-full"
             />
           </div>
         ) : (
@@ -282,13 +290,25 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-3">
             {communityId ? (
               <>
-                <Link
-                  href={`/communities/${communityId}`}
-                  className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
-                >
-                  <Play className="size-4 fill-black sm:size-5" />
-                  Play
-                </Link>
+                {videoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setPlayerOpen(true)}
+                    className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
+                  >
+                    <Play className="size-4 fill-black sm:size-5" />
+                    Play
+                  </button>
+                )}
+                {!videoUrl && (
+                  <Link
+                    href={`/communities/${communityId}`}
+                    className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
+                  >
+                    <Play className="size-4 fill-black sm:size-5" />
+                    Play
+                  </Link>
+                )}
                 <Link
                   href={`/communities/${communityId}`}
                   className="inline-flex h-9 items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-5 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-11 sm:px-7 sm:text-base"
@@ -309,6 +329,16 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           </div>
         </div>
       </div>
+
+      {videoUrl && (
+        <YouTubePlayerDialog
+          open={playerOpen}
+          onOpenChange={setPlayerOpen}
+          youtubeUrl={videoUrl}
+          title={heroTitle}
+          subtitle={communityForMedia?.city ? `${communityForMedia.city}, NC` : undefined}
+        />
+      )}
     </section>
   );
 }

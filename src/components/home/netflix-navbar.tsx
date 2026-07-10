@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Heart, Search, User, X } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 
-import { SignInDialog } from "@/components/buyer/sign-in-dialog";
+import { NetflixSearchOverlay } from "@/components/home/netflix-search-overlay";
+import { UserMenu } from "@/components/home/user-menu";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
-import { Input } from "@/components/ui/input";
 import { useProfile } from "@/context/auth-context";
 import { useBuyer } from "@/context/buyer-context";
-import { useData } from "@/context/data-context";
-import { useAiSearch } from "@/hooks/use-ai-search";
 import { canAccessDashboard } from "@/lib/auth/profile";
 import { cn } from "@/lib/utils";
 
@@ -31,33 +29,14 @@ function getActiveHash(pathname: string, hash: string): string {
 
 export function NetflixNavbar() {
   const pathname = usePathname();
-  const { communities } = useData();
-  const {
-    searchQuery,
-    setSearchQuery,
-    savedIds,
-    buyer,
-    signOut,
-    aiSearchLoading,
-    clearAiSearch,
-  } = useBuyer();
-  const { runAiSearch } = useAiSearch(communities);
+  const { savedIds, savedHomeRefs } = useBuyer();
   const profile = useProfile();
   const showDashboard = canAccessDashboard(profile);
   const [scrolled, setScrolled] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [signInOpen, setSignInOpen] = useState(false);
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
   const [activeHash, setActiveHash] = useState("home");
 
-  async function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearchOpen(true);
-    await runAiSearch();
-    if (pathname === "/") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }
+  const listCount = savedIds.length + savedHomeRefs.length;
 
   useEffect(() => {
     function onScroll() {
@@ -128,41 +107,14 @@ export function NetflixNavbar() {
               </Link>
             )}
 
-            <form
-              onSubmit={handleSearchSubmit}
-              className={cn(
-                "flex items-center overflow-hidden transition-all duration-300",
-                searchOpen ? "w-52 sm:w-72" : "w-6",
-              )}
+            <button
+              type="button"
+              aria-label="Open smart search"
+              onClick={() => setSearchOverlayOpen(true)}
+              className="shrink-0 text-white transition-colors hover:text-white/70"
             >
-              <button
-                type="button"
-                aria-label={searchOpen ? "Close search" : "Open search"}
-                onClick={() => {
-                  if (searchOpen && searchQuery) {
-                    clearAiSearch();
-                  }
-                  setSearchOpen((open) => !open);
-                }}
-                className="shrink-0 text-white transition-colors hover:text-white/70"
-              >
-                {searchOpen ? (
-                  <X className="size-5" />
-                ) : (
-                  <Search className="size-5" />
-                )}
-              </button>
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="3 bed under $400K near schools..."
-                disabled={aiSearchLoading}
-                className={cn(
-                  "h-8 border-0 border-b border-white/70 bg-transparent px-2 text-sm text-white shadow-none placeholder:text-white/50 focus-visible:border-white focus-visible:ring-0",
-                  !searchOpen && "pointer-events-none w-0 opacity-0",
-                )}
-              />
-            </form>
+              <Search className="size-5" />
+            </button>
 
             <Link
               href="/saved"
@@ -170,44 +122,22 @@ export function NetflixNavbar() {
               aria-label="My List"
             >
               <Heart className="size-5" />
-              {savedIds.length > 0 && (
+              {listCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-sm bg-[#e50914] text-[10px] font-bold text-white">
-                  {savedIds.length}
+                  {listCount > 9 ? "9+" : listCount}
                 </span>
               )}
             </Link>
 
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="hidden text-white transition-colors hover:text-white/70 md:block"
-            >
-              <Bell className="size-5" />
-            </button>
-
-            {buyer ? (
-              <button
-                type="button"
-                onClick={signOut}
-                className="flex size-8 items-center justify-center rounded bg-[#e50914] text-xs font-bold text-white"
-              >
-                {buyer.name.charAt(0).toUpperCase()}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setSignInOpen(true)}
-                className="flex size-8 items-center justify-center rounded bg-[#333] text-white transition-colors hover:bg-[#444]"
-                aria-label="Sign in"
-              >
-                <User className="size-4" />
-              </button>
-            )}
+            <UserMenu />
           </div>
         </div>
       </header>
 
-      <SignInDialog open={signInOpen} onOpenChange={setSignInOpen} />
+      <NetflixSearchOverlay
+        open={searchOverlayOpen}
+        onOpenChange={setSearchOverlayOpen}
+      />
     </>
   );
 }

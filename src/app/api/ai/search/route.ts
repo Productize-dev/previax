@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import {
-  applyAiFilters,
   getAiProvider,
-  rankBySemanticIds,
+  resolveSmartSearch,
 } from "@/lib/ai";
 import type { AiSearchContext, AiSearchResult } from "@/lib/ai";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -22,7 +21,7 @@ type SearchBody = {
 
 async function semanticMatchIds(
   embedding: number[],
-  limit = 20,
+  limit = 30,
 ): Promise<string[]> {
   const admin = createSupabaseAdminClient();
   const client = admin ?? (await createSupabaseServerClient());
@@ -30,7 +29,7 @@ async function semanticMatchIds(
   const { data, error } = await client.rpc("match_communities", {
     query_embedding: embedding,
     match_count: limit,
-    similarity_threshold: 0.2,
+    similarity_threshold: 0.12,
   });
 
   if (error || !data) return [];
@@ -64,27 +63,24 @@ export async function POST(request: Request) {
       semanticIds = await semanticMatchIds(embedding);
     }
 
-    let matched = catalog.length > 0 ? applyAiFilters(catalog, filters) : [];
-    if (semanticIds.length > 0 && matched.length > 0) {
-      matched = rankBySemanticIds(matched, semanticIds);
-    } else if (semanticIds.length > 0 && catalog.length > 0) {
-      const idSet = new Set(semanticIds);
-      matched = rankBySemanticIds(
-        catalog.filter((c) => idSet.has(c.id)),
-        semanticIds,
-      );
+    if (embedding) {
+      semanticIds = await semanticMatchIds(embedding);
     }
+
+    const smart = resolveSmartSearch(catalog, filters, semanticIds);
 
     const result: AiSearchResult = {
       filters,
       semanticIds,
       source: provider.name,
+      matchMode: smart.matchMode,
+      exactCount: smart.exactCount,
     };
 
     return NextResponse.json({
       ...result,
-      communityIds: matched.map((c) => c.id),
-      total: matched.length,
+      communityIds: smart.communityIds,
+      total: smart.total,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Search failed";

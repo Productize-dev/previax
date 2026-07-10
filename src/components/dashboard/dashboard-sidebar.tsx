@@ -6,6 +6,7 @@ import {
   Hammer,
   Landmark,
   LayoutDashboard,
+  LayoutList,
   Sparkles,
   Trophy,
 } from "lucide-react";
@@ -44,8 +45,13 @@ const adminNavGroups: NavGroup[] = [
     items: [{ id: "lenders", label: "Lender profiles", icon: Landmark }],
   },
   {
-    label: "Others",
+    label: "Homepage",
     items: [
+      {
+        id: "homepage-layout",
+        label: "Homepage Layout",
+        icon: LayoutList,
+      },
       { id: "featured", label: "Featured Carousel", icon: Sparkles },
       {
         id: "featured-communities",

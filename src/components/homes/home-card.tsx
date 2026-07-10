@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Bed, Bath, Maximize } from "lucide-react";
 
+import { BuyerActionButtons } from "@/components/buyer/buyer-action-buttons";
+
 import { pricePerSqft } from "@/lib/community-utils";
 import type { Home } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,10 +28,11 @@ export function HomeCard({
   const status = home.status ?? "available";
 
   return (
-    <Link
-      href={`/communities/${communityId}/homes/${home.id}`}
-      className={cn("listing-card group block w-full text-left", className)}
-    >
+    <div className={cn("listing-card group relative", className)}>
+      <Link
+        href={`/communities/${communityId}/homes/${home.id}`}
+        className="block w-full text-left"
+      >
       <div className="relative aspect-[16/10] overflow-hidden">
         {cover ? (
           <img
@@ -86,6 +89,13 @@ export function HomeCard({
           </p>
         )}
       </div>
-    </Link>
+      </Link>
+      <div className="absolute top-3 right-3 z-10">
+        <BuyerActionButtons
+          homeId={home.id}
+          homeCommunityId={communityId}
+        />
+      </div>
+    </div>
   );
 }

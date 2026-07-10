@@ -8,13 +8,14 @@ import { Copy, ExternalLink } from "lucide-react";
 import { BuilderOffers } from "@/components/communities/builder-offers";
 import { RealtorCard } from "@/components/communities/realtor-card";
 import { CalendlyEmbed } from "@/components/buyer/calendly-embed";
+import { BuyerActionButtons } from "@/components/buyer/buyer-action-buttons";
+import { NetflixNavbar } from "@/components/home/netflix-navbar";
 import { HomeGallerySection } from "@/components/homes/home-gallery-section";
 import { HomeHero } from "@/components/homes/home-hero";
 import { HomeHighlightsSection } from "@/components/homes/home-highlights-section";
 import { HomeReviewsSection } from "@/components/homes/home-reviews-section";
 import { HomeRoomsSection } from "@/components/homes/home-rooms-section";
 import { MortgageCalculator } from "@/components/homes/mortgage-calculator";
-import { Navbar } from "@/components/layout/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Button } from "@/components/ui/button";
 import { FadeInSection } from "@/components/ui/fade-in-section";
@@ -83,52 +84,59 @@ export default function HomeDetailContent() {
 
   if (!isLoaded) {
     return (
-      <>
-        <Navbar />
+      <div className="min-h-screen bg-[#141414]">
+        <NetflixNavbar />
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-[#b3b3b3]">Loading...</p>
         </div>
-      </>
+      </div>
     );
   }
 
   if (!community || !home) {
     return (
-      <>
-        <Navbar />
+      <div className="min-h-screen bg-[#141414] text-white">
+        <NetflixNavbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <h1 className="font-heading text-2xl">Home Not Found</h1>
-          <Link href="/" className="text-primary hover:underline">
+          <Link href="/" className="text-[#46d369] hover:underline">
             ← Back to communities
           </Link>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen bg-[#141414] text-white">
+      <NetflixNavbar />
 
-      <nav className="mx-auto max-w-6xl px-6 pt-6 text-sm text-muted-foreground">
-        <Link href="/" className="hover:text-foreground">
+      <nav className="mx-auto max-w-6xl px-[4%] pt-24 text-sm text-[#b3b3b3]">
+        <Link href="/" className="hover:text-white">
           Home
         </Link>
         <span className="mx-2">/</span>
-        <Link href={`/communities/${community.id}`} className="hover:text-foreground">
+        <Link href={`/communities/${community.id}`} className="hover:text-white">
           {community.name}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-foreground">${home.price.toLocaleString()}</span>
+        <span className="text-white">${home.price.toLocaleString()}</span>
       </nav>
 
       <HomeHero home={home} community={community} />
 
-      <main className="mx-auto max-w-6xl px-6 py-10 pb-24 md:pb-12">
+      <main className="mx-auto max-w-6xl px-[4%] py-10 pb-24 md:pb-12">
         <FadeInSection>
-          <p className="max-w-3xl text-lg leading-relaxed text-muted-foreground">
-            {home.description}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <p className="max-w-3xl text-lg leading-relaxed text-[#b3b3b3]">
+              {home.description}
+            </p>
+            <BuyerActionButtons
+              homeId={home.id}
+              homeCommunityId={community.id}
+              variant="dark"
+            />
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" onClick={copyShareLink}>
               <Copy className="size-4" />
@@ -224,6 +232,6 @@ export default function HomeDetailContent() {
       </main>
 
       <SiteFooter />
-    </>
+    </div>
   );
 }

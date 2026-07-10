@@ -1,4 +1,4 @@
-import { extractYouTubeId, getEmbedUrl } from "@/lib/youtube";
+import { YouTubeEmbed } from "@/components/video/youtube-embed";
 import type { Community } from "@/lib/types";
 
 type CommunityHeroProps = {
@@ -6,19 +6,18 @@ type CommunityHeroProps = {
 };
 
 export function CommunityHero({ community }: CommunityHeroProps) {
-  const videoId = extractYouTubeId(community.youtubeUrl);
-  const embedUrl = videoId ? getEmbedUrl(videoId) : null;
-
   return (
     <div className="relative mt-4 min-h-[55vh] overflow-hidden md:min-h-[72vh]">
-      {embedUrl ? (
-        <iframe
-          src={embedUrl}
+      {community.youtubeUrl ? (
+        <YouTubeEmbed
+          youtubeUrl={community.youtubeUrl}
           title={community.name}
+          preset="interactive"
+          autoplay
+          mute={false}
           loading="eager"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 h-full w-full scale-105 object-cover"
+          fillContainer
+          className="absolute inset-0 size-full [&_iframe]:scale-105"
         />
       ) : (
         <div className="absolute inset-0 bg-muted" />

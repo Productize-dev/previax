@@ -20,7 +20,7 @@ import {
 } from "@/components/communities/community-stats";
 import { RealtorCard } from "@/components/communities/realtor-card";
 import { CalendlyEmbed } from "@/components/buyer/calendly-embed";
-import { SaveButton } from "@/components/buyer/save-button";
+import { BuyerActionButtons } from "@/components/buyer/buyer-action-buttons";
 import { NetflixNavbar } from "@/components/home/netflix-navbar";
 import { HomeDetailModal } from "@/components/homes/home-detail-modal";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -170,7 +170,7 @@ export default function CommunityDetailContent() {
 
       <main className="mx-auto max-w-6xl px-[4%] py-12 pb-24 md:pb-12">
         <div className="flex items-start justify-end gap-4">
-          <SaveButton communityId={community.id} />
+          <BuyerActionButtons communityId={community.id} variant="dark" />
         </div>
 
         <FadeInSection>

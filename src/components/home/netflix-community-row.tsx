@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { memo, useCallback, useState } from "react";
+import { Play } from "lucide-react";
 
+import { TileActionBar } from "@/components/home/tile-action-bar";
+import { NetflixHoverPreview } from "@/components/home/netflix-hover-preview";
+import { VideoQuickActions } from "@/components/video/video-quick-actions";
+import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import {
   getAvailableHomeCount,
   getPriceRange,
@@ -18,23 +24,44 @@ type NetflixCommunityRowProps = {
   communities: Community[];
   defaultIndex?: number;
   onSelect?: (community: Community) => void;
+  onDeselect?: () => void;
   className?: string;
 };
 
-export function NetflixCommunityRow({
+export const NetflixCommunityRow = memo(function NetflixCommunityRow({
   title,
   id,
   communities,
-  defaultIndex = 0,
+  defaultIndex = -1,
   onSelect,
+  onDeselect,
   className,
 }: NetflixCommunityRowProps) {
-  const { selectedIndex, selectIndex, selectOnHover, trackRef, itemRefs } =
-    useNetflixRowSelection({
-      items: communities,
-      defaultIndex,
-      onSelect,
-    });
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [playerCommunity, setPlayerCommunity] = useState<Community | null>(
+    null,
+  );
+
+  const openPlayer = useCallback((community: Community) => {
+    if (!community.youtubeUrl) return;
+    setPlayerCommunity(community);
+    setPlayerOpen(true);
+  }, []);
+
+  const {
+    selectedIndex,
+    selectIndex,
+    selectOnHover,
+    handleTrackMouseLeave,
+    handleTileMouseLeave,
+    trackRef,
+    itemRefs,
+  } = useNetflixRowSelection({
+    items: communities,
+    defaultIndex,
+    onSelect,
+    onDeselect,
+  });
 
   if (communities.length === 0) return null;
 
@@ -50,7 +77,12 @@ export function NetflixCommunityRow({
         tabIndex={0}
         role="listbox"
         aria-label={title}
-        aria-activedescendant={`${id ?? title}-item-${selectedIndex}`}
+        aria-activedescendant={
+          selectedIndex >= 0
+            ? `${id ?? title}-item-${selectedIndex}`
+            : undefined
+        }
+        onMouseLeave={handleTrackMouseLeave}
       >
         {communities.map((community, index) => {
           const selected = index === selectedIndex;
@@ -75,6 +107,7 @@ export function NetflixCommunityRow({
                   : "netflix-focus-tile--portrait",
               )}
               onMouseEnter={() => selectOnHover(index)}
+              onMouseLeave={handleTileMouseLeave}
               onFocus={() => selectIndex(index, { immediate: true })}
             >
               <Link
@@ -96,14 +129,14 @@ export function NetflixCommunityRow({
                       : "netflix-tile-media--portrait border-transparent",
                   )}
                 >
-                  <img
-                    src={community.thumbnailUrl}
-                    alt={community.name}
-                    className="h-full w-full object-cover"
-                    draggable={false}
+                  <NetflixHoverPreview
+                    youtubeUrl={community.youtubeUrl}
+                    posterUrl={community.thumbnailUrl}
+                    active={selected}
+                    title={community.name}
                   />
                   {!selected && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-8">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-8">
                       <p className="line-clamp-2 text-xs font-semibold leading-tight text-white sm:text-sm">
                         {community.name}
                       </p>
@@ -148,10 +181,49 @@ export function NetflixCommunityRow({
                   </div>
                 </div>
               </Link>
+
+              {selected && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 aspect-video">
+                  <div className="pointer-events-auto absolute left-2 top-2">
+                    <TileActionBar communityId={community.id} />
+                  </div>
+                  {community.youtubeUrl && (
+                    <>
+                      <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
+                        <VideoQuickActions
+                          youtubeUrl={community.youtubeUrl}
+                          title={community.name}
+                          onOpenPlayer={() => openPlayer(community)}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openPlayer(community)}
+                        className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
+                        aria-label={`Play ${community.name} with sound and controls`}
+                      >
+                        <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-black shadow-lg">
+                          <Play className="size-4 fill-black" />
+                        </span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {playerCommunity?.youtubeUrl && (
+        <YouTubePlayerDialog
+          open={playerOpen}
+          onOpenChange={setPlayerOpen}
+          youtubeUrl={playerCommunity.youtubeUrl}
+          title={playerCommunity.name}
+          subtitle={`${playerCommunity.city}, NC`}
+        />
+      )}
     </section>
   );
-}
+});

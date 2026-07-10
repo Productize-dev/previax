@@ -1,3 +1,4 @@
+import { buildDefaultHomepageSections } from "./homepage-layout";
 import type {
   AppData,
   Builder,
@@ -238,6 +239,8 @@ export function migrateAppData(raw: LegacyAppData): AppData {
     series,
     homepageSeries,
     homepageHomes,
+    homepageSections:
+      raw.homepageSections ?? buildDefaultHomepageSections(),
   });
 }
 

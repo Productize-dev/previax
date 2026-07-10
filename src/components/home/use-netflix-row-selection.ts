@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const TILE_TRANSITION_MS = 520;
-const HOVER_DELAY_MS = 70;
+const HOVER_DELAY_MS = 80;
 
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
@@ -69,14 +69,17 @@ function isTileMostlyVisible(track: HTMLElement, tile: HTMLElement): boolean {
 
 type UseNetflixRowSelectionOptions<T> = {
   items: T[];
+  /** -1 = nothing selected until hover/focus (default). */
   defaultIndex?: number;
   onSelect?: (item: T) => void;
+  onDeselect?: () => void;
 };
 
 export function useNetflixRowSelection<T>({
   items,
-  defaultIndex = 0,
+  defaultIndex = -1,
   onSelect,
+  onDeselect,
 }: UseNetflixRowSelectionOptions<T>) {
   const [selectedIndex, setSelectedIndex] = useState(defaultIndex);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -84,6 +87,12 @@ export function useNetflixRowSelection<T>({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollAnimRef = useRef(0);
+
+  const clearSelection = useCallback(() => {
+    if (selectedIndex === -1) return;
+    setSelectedIndex(-1);
+    onDeselect?.();
+  }, [onDeselect, selectedIndex]);
 
   const selectIndex = useCallback(
     (index: number, options?: { immediate?: boolean }) => {
@@ -108,16 +117,43 @@ export function useNetflixRowSelection<T>({
     [items, onSelect, selectedIndex],
   );
 
+  const cancelHover = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
+
   const selectOnHover = useCallback(
     (index: number) => {
       if (index === selectedIndex) return;
-      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      cancelHover();
       hoverTimerRef.current = setTimeout(
         () => selectIndex(index),
         HOVER_DELAY_MS,
       );
     },
-    [selectIndex, selectedIndex],
+    [cancelHover, selectIndex, selectedIndex],
+  );
+
+  const handleTrackMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const next = e.relatedTarget;
+      if (next instanceof Node && e.currentTarget.contains(next)) return;
+      cancelHover();
+      clearSelection();
+    },
+    [cancelHover, clearSelection],
+  );
+
+  const handleTileMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const track = trackRef.current;
+      const next = e.relatedTarget;
+      if (track && next instanceof Node && track.contains(next)) return;
+      cancelHover();
+    },
+    [cancelHover],
   );
 
   useEffect(() => {
@@ -136,29 +172,42 @@ export function useNetflixRowSelection<T>({
       if (!track?.contains(document.activeElement)) return;
       if (e.key === "ArrowRight") {
         e.preventDefault();
-        selectIndex(Math.min(selectedIndex + 1, items.length - 1), {
-          immediate: true,
-        });
+        const next =
+          selectedIndex < 0
+            ? 0
+            : Math.min(selectedIndex + 1, items.length - 1);
+        selectIndex(next, { immediate: true });
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        selectIndex(Math.max(selectedIndex - 1, 0), { immediate: true });
+        const next =
+          selectedIndex < 0
+            ? 0
+            : Math.max(selectedIndex - 1, 0);
+        selectIndex(next, { immediate: true });
       } else if (e.key === "Home") {
         e.preventDefault();
         selectIndex(0, { immediate: true });
       } else if (e.key === "End") {
         e.preventDefault();
         selectIndex(items.length - 1, { immediate: true });
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        clearSelection();
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [items.length, selectIndex, selectedIndex]);
+  }, [clearSelection, items.length, selectIndex, selectedIndex]);
 
   return {
     selectedIndex,
     selectIndex,
     selectOnHover,
+    cancelHover,
+    clearSelection,
+    handleTrackMouseLeave,
+    handleTileMouseLeave,
     trackRef,
     itemRefs,
   };

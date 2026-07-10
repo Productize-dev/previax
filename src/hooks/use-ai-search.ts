@@ -17,13 +17,19 @@ export function useAiSearch(communities: Community[]) {
     setPersonalizedRows,
     setRecommendationsLoading,
     searchQuery,
+    setSearchQuery,
   } = useBuyer();
 
-  const runAiSearch = useCallback(async () => {
-    const query = searchQuery.trim();
-    if (!query) return;
+  const runAiSearch = useCallback(
+    async (queryOverride?: string) => {
+      const query = (queryOverride ?? searchQuery).trim();
+      if (!query) return;
 
-    setAiSearchLoading(true);
+      if (queryOverride) {
+        setSearchQuery(queryOverride);
+      }
+
+      setAiSearchLoading(true);
     try {
       const res = await fetch("/api/ai/search", {
         method: "POST",
@@ -45,24 +51,32 @@ export function useAiSearch(communities: Community[]) {
       const data = (await res.json()) as {
         filters: Parameters<typeof setAiSearchResult>[0];
         communityIds: string[];
+        matchMode?: "exact" | "similar" | "semantic";
+        exactCount?: number;
       };
-      setAiSearchResult(data.filters, data.communityIds);
+      setAiSearchResult(data.filters, data.communityIds, {
+        matchMode: data.matchMode,
+        exactCount: data.exactCount,
+      });
     } catch {
       setAiSearchResult(null, null);
     } finally {
       setAiSearchLoading(false);
     }
-  }, [
-    buyer?.email,
-    communities,
-    guidancePrefs?.beds,
-    guidancePrefs?.budget,
-    savedIds,
-    searchQuery,
-    setAiSearchLoading,
-    setAiSearchResult,
-    viewedCities,
-  ]);
+  },
+    [
+      buyer?.email,
+      communities,
+      guidancePrefs?.beds,
+      guidancePrefs?.budget,
+      savedIds,
+      searchQuery,
+      setAiSearchLoading,
+      setAiSearchResult,
+      setSearchQuery,
+      viewedCities,
+    ],
+  );
 
   const loadRecommendations = useCallback(async () => {
     if (communities.length === 0) return;

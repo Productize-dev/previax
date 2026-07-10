@@ -21,6 +21,7 @@ import type {
   Home,
   HomeInput,
   HomepageHomesRow,
+  HomepageSection,
   HomepageSeriesRow,
   FeaturedCommunityRow,
   Lender,
@@ -46,6 +47,7 @@ type DataContextValue = {
   series: Series[];
   homepageSeries: HomepageSeriesRow[];
   homepageHomes: HomepageHomesRow[];
+  homepageSections: HomepageSection[];
   isLoaded: boolean;
   error: string | null;
   addCommunity: (data: CommunityInput) => Promise<Community>;
@@ -103,6 +105,18 @@ type DataContextValue = {
   addHomepageHomes: (communityId: string) => Promise<HomepageHomesRow>;
   removeHomepageHomes: (id: string) => Promise<void>;
   reorderHomepageHomes: (orderedIds: string[]) => Promise<void>;
+  setHomepageSectionEnabled: (
+    id: string,
+    enabled: boolean,
+  ) => Promise<HomepageSection[]>;
+  updateHomepageSectionTitle: (
+    id: string,
+    title: string | null,
+  ) => Promise<HomepageSection[]>;
+  reorderHomepageSections: (
+    orderedIds: string[],
+  ) => Promise<HomepageSection[]>;
+  resetHomepageSections: () => Promise<HomepageSection[]>;
   importCsvCatalog: (
     communitiesCsv: string,
     modelHomesCsv: string,
@@ -127,6 +141,7 @@ function applyAppData(
     setSeries: (value: Series[]) => void;
     setHomepageSeries: (value: HomepageSeriesRow[]) => void;
     setHomepageHomes: (value: HomepageHomesRow[]) => void;
+    setHomepageSections: (value: HomepageSection[]) => void;
   },
 ) {
   setters.setCommunities(data.communities);
@@ -140,6 +155,7 @@ function applyAppData(
   setters.setSeries(data.series);
   setters.setHomepageSeries(data.homepageSeries);
   setters.setHomepageHomes(data.homepageHomes);
+  setters.setHomepageSections(data.homepageSections ?? []);
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
@@ -160,6 +176,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [series, setSeries] = useState<Series[]>([]);
   const [homepageSeries, setHomepageSeries] = useState<HomepageSeriesRow[]>([]);
   const [homepageHomes, setHomepageHomes] = useState<HomepageHomesRow[]>([]);
+  const [homepageSections, setHomepageSections] = useState<HomepageSection[]>(
+    [],
+  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -177,6 +196,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setSeries,
         setHomepageSeries,
         setHomepageHomes,
+        setHomepageSections,
       });
     },
     [],
@@ -539,6 +559,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setHomepageHomes(reordered);
   }, []);
 
+  const setHomepageSectionEnabled = useCallback(
+    async (id: string, enabled: boolean) => {
+      const updated = await repository.setHomepageSectionEnabled(id, enabled);
+      setHomepageSections(updated);
+      return updated;
+    },
+    [],
+  );
+
+  const updateHomepageSectionTitle = useCallback(
+    async (id: string, title: string | null) => {
+      const updated = await repository.updateHomepageSectionTitle(id, title);
+      setHomepageSections(updated);
+      return updated;
+    },
+    [],
+  );
+
+  const reorderHomepageSections = useCallback(async (orderedIds: string[]) => {
+    const updated = await repository.reorderHomepageSections(orderedIds);
+    setHomepageSections(updated);
+    return updated;
+  }, []);
+
+  const resetHomepageSections = useCallback(async () => {
+    const updated = await repository.resetHomepageSections();
+    setHomepageSections(updated);
+    return updated;
+  }, []);
+
   const importCsvCatalog = useCallback(
     async (
       communitiesCsv: string,
@@ -570,6 +620,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         series,
         homepageSeries,
         homepageHomes,
+        homepageSections,
         isLoaded,
         error,
         addCommunity,
@@ -608,6 +659,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addHomepageHomes,
         removeHomepageHomes,
         reorderHomepageHomes,
+        setHomepageSectionEnabled,
+        updateHomepageSectionTitle,
+        reorderHomepageSections,
+        resetHomepageSections,
         importCsvCatalog,
         refresh,
       }}

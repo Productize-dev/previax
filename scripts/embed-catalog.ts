@@ -6,7 +6,8 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
-const EMBED_MODEL = "text-embedding-3-small";
+const EMBED_MODEL =
+  process.env.OPENAI_EMBEDDING_MODEL?.trim() || "text-embedding-3-small";
 
 function communityText(row: {
   name: string;

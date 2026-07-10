@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Play } from "lucide-react";
 
-import { SaveButton } from "@/components/buyer/save-button";
+import { BuyerActionButtons } from "@/components/buyer/buyer-action-buttons";
 import {
   getAvailableHomeCount,
   getFirstOfferTeaser,
@@ -68,7 +68,7 @@ export function CommunityCard({
           </div>
         </Link>
         <div className="absolute top-3 right-3 z-10">
-          <SaveButton communityId={community.id} />
+          <BuyerActionButtons communityId={community.id} />
         </div>
       </div>
     );
@@ -125,7 +125,7 @@ export function CommunityCard({
         </div>
       </Link>
       <div className="absolute top-3 right-3 z-10">
-        <SaveButton communityId={community.id} />
+        <BuyerActionButtons communityId={community.id} />
       </div>
     </div>
   );
