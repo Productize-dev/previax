@@ -161,7 +161,7 @@ export function NetflixCommunityDetailHero({
               )}
             >
               <LayoutGrid className="size-5" />
-              Models
+              Models &amp; More
             </button>
           </div>
         </div>

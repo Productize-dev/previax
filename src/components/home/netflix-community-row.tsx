@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { memo, useCallback } from "react";
 import { Play } from "lucide-react";
 
 import { TileActionBar } from "@/components/home/tile-action-bar";
 import { NetflixHoverPreview } from "@/components/home/netflix-hover-preview";
 import { VideoQuickActions } from "@/components/video/video-quick-actions";
-import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import {
   getAvailableHomeCount,
   getPriceRange,
@@ -37,16 +37,14 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
   onDeselect,
   className,
 }: NetflixCommunityRowProps) {
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [playerCommunity, setPlayerCommunity] = useState<Community | null>(
-    null,
-  );
+  const router = useRouter();
 
-  const openPlayer = useCallback((community: Community) => {
-    if (!community.youtubeUrl) return;
-    setPlayerCommunity(community);
-    setPlayerOpen(true);
-  }, []);
+  const openCommunity = useCallback(
+    (community: Community) => {
+      router.push(`/communities/${community.id}`);
+    },
+    [router],
+  );
 
   const {
     selectedIndex,
@@ -193,19 +191,18 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
                         <VideoQuickActions
                           youtubeUrl={community.youtubeUrl}
                           title={community.name}
-                          onOpenPlayer={() => openPlayer(community)}
+                          onOpenPlayer={() => openCommunity(community)}
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => openPlayer(community)}
+                      <Link
+                        href={`/communities/${community.id}`}
                         className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
-                        aria-label={`Play ${community.name} with sound and controls`}
+                        aria-label={`Open ${community.name} community page`}
                       >
                         <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-black shadow-lg">
                           <Play className="size-4 fill-black" />
                         </span>
-                      </button>
+                      </Link>
                     </>
                   )}
                 </div>
@@ -214,16 +211,6 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
           );
         })}
       </div>
-
-      {playerCommunity?.youtubeUrl && (
-        <YouTubePlayerDialog
-          open={playerOpen}
-          onOpenChange={setPlayerOpen}
-          youtubeUrl={playerCommunity.youtubeUrl}
-          title={playerCommunity.name}
-          subtitle={`${playerCommunity.city}, NC`}
-        />
-      )}
     </section>
   );
 });

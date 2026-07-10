@@ -117,6 +117,8 @@ export function getEmbedUrl(
 
   if (preset === "interactive") {
     params.set("enablejsapi", "1");
+    params.set("disablekb", "0");
+    params.set("color", "white");
     if (opts.captions !== false) {
       params.set("cc_load_policy", "1");
     }

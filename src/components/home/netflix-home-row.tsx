@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { memo, useCallback } from "react";
 import { Play } from "lucide-react";
 
 import { HomeListingCategoryBadges } from "@/components/homes/home-listing-category-badges";
 import { TileActionBar } from "@/components/home/tile-action-bar";
 import { NetflixHoverPreview } from "@/components/home/netflix-hover-preview";
 import { VideoQuickActions } from "@/components/video/video-quick-actions";
-import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import type { HomeRowItem } from "@/lib/homepage-sections";
 import { pricePerSqft } from "@/lib/community-utils";
 import { getHomeListingCategories } from "@/lib/home-listing-categories";
@@ -37,19 +37,15 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
   onDeselect,
   className,
 }: NetflixHomeRowProps) {
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [playerVideo, setPlayerVideo] = useState<{
-    url: string;
-    title: string;
-    subtitle: string;
-  } | null>(null);
+  const router = useRouter();
 
-  const openPlayer = useCallback(
-    (videoUrl: string, title: string, subtitle: string) => {
-      setPlayerVideo({ url: videoUrl, title, subtitle });
-      setPlayerOpen(true);
+  const openModelPage = useCallback(
+    (communityId: string, homeId: string) => {
+      router.push(
+        `/communities/${communityId}?models=1&model=${encodeURIComponent(homeId)}`,
+      );
     },
-    [],
+    [router],
   );
 
   const {
@@ -209,30 +205,19 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                           youtubeUrl={previewUrl}
                           title={home.modelName || community.name}
                           onOpenPlayer={() =>
-                            openPlayer(
-                              previewUrl,
-                              home.modelName || `$${home.price.toLocaleString()}`,
-                              community.name,
-                            )
+                            openModelPage(community.id, home.id)
                           }
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openPlayer(
-                            previewUrl,
-                            home.modelName || `$${home.price.toLocaleString()}`,
-                            community.name,
-                          )
-                        }
+                      <Link
+                        href={`/communities/${community.id}?models=1&model=${encodeURIComponent(home.id)}`}
                         className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
-                        aria-label={`Play ${community.name} home video with sound and controls`}
+                        aria-label={`Open ${home.modelName || community.name} on community page`}
                       >
                         <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-black shadow-lg">
                           <Play className="size-4 fill-black" />
                         </span>
-                      </button>
+                      </Link>
                     </>
                   )}
                 </div>
@@ -241,16 +226,6 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
           );
         })}
       </div>
-
-      {playerVideo && (
-        <YouTubePlayerDialog
-          open={playerOpen}
-          onOpenChange={setPlayerOpen}
-          youtubeUrl={playerVideo.url}
-          title={playerVideo.title}
-          subtitle={playerVideo.subtitle}
-        />
-      )}
     </section>
   );
 });

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import CommunityDetailContent from "./community-detail-content";
+import CommunityDetailContent from "@/components/communities/community-detail-content";
 
 export default function CommunityDetailPage() {
   return (

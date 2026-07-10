@@ -104,7 +104,9 @@ export function NetflixModelsBrowser({
             </p>
           </div>
 
-          <h1 className="mt-2 text-3xl font-bold md:mt-0 md:text-4xl">Models</h1>
+          <h1 className="mt-2 text-3xl font-bold md:mt-0 md:text-4xl">
+            Models &amp; More
+          </h1>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#b3b3b3]">
             <span>{year}</span>

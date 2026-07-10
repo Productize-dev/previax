@@ -88,6 +88,7 @@ export function YouTubeEmbed({
         title={title}
         allow={allow}
         allowFullScreen={preset === "interactive"}
+        referrerPolicy="strict-origin-when-cross-origin"
         loading={loading}
         className={cn(
           "absolute border-0",

@@ -93,38 +93,19 @@ export function NetflixVideoOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[80] bg-black"
+      className="fixed inset-0 z-[80] flex flex-col bg-black"
       role="dialog"
       aria-modal="true"
       aria-label={`Video player: ${title}`}
       onMouseMove={revealChrome}
     >
-      {videoUrl ? (
-        <YouTubeEmbed
-          key={`${home?.id ?? community.id}-${videoUrl}`}
-          youtubeUrl={videoUrl}
-          title={`${title} — ${community.name}`}
-          preset="interactive"
-          autoplay
-          mute={false}
-          loop={false}
-          loading="eager"
-          fillContainer
-          className="absolute inset-0 size-full"
-        />
-      ) : (
-        <div className="flex size-full items-center justify-center px-6 text-center text-[#b3b3b3]">
-          <p>No video is available for this model yet.</p>
-        </div>
-      )}
-
-      <div
+      <header
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/35 to-transparent px-[4%] pb-12 pt-6 transition-opacity duration-300",
-          chromeVisible ? "opacity-100" : "opacity-0",
+          "shrink-0 border-b border-white/10 bg-black px-[4%] py-3 transition-opacity duration-300",
+          chromeVisible ? "opacity-100" : "hidden",
         )}
       >
-        <div className="pointer-events-auto flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <button
             type="button"
             onClick={onClose}
@@ -158,54 +139,87 @@ export function NetflixVideoOverlay({
           </div>
         </div>
 
-        <div className="pointer-events-auto mt-4 max-w-3xl">
+        <div className="mt-3 max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#46d369]">
             Now Playing
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-white md:text-4xl">
+          <h2 className="mt-1 text-xl font-bold text-white md:text-2xl">
             {title}
           </h2>
-          <p className="mt-2 text-sm text-[#d2d2d2] md:text-base">
-            {modelPosition}
-          </p>
-          <p className="mt-2 hidden text-xs text-[#808080] sm:block">
-            Volume, captions (CC), quality & fullscreen — use the YouTube
+          <p className="mt-1 text-sm text-[#d2d2d2]">{modelPosition}</p>
+        </div>
+      </header>
+
+      <div className="relative min-h-0 flex-1">
+        {videoUrl ? (
+          <YouTubeEmbed
+            key={`${home?.id ?? community.id}-${videoUrl}`}
+            youtubeUrl={videoUrl}
+            title={`${title} — ${community.name}`}
+            preset="interactive"
+            autoplay
+            mute={false}
+            loop={false}
+            loading="eager"
+            fillContainer
+            className="size-full"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center px-6 text-center text-[#b3b3b3]">
+            <p>No video is available for this model yet.</p>
+          </div>
+        )}
+
+        {!chromeVisible && (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-2.5 bg-gradient-to-t from-black/60 to-transparent pb-5 pt-10"
+            aria-hidden
+          >
+            <p className="text-[11px] font-medium tracking-wide text-white/55">
+              Move mouse for options · Esc to close
+            </p>
+            <div className="h-[3px] w-10 rounded-full bg-white/70 shadow-[0_0_8px_rgba(255,255,255,0.35)]" />
+          </div>
+        )}
+      </div>
+
+      <footer
+        className={cn(
+          "shrink-0 border-t border-white/10 bg-black px-[4%] py-3 transition-opacity duration-300",
+          chromeVisible ? "opacity-100" : "hidden",
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {hasPrevious && (
+              <button
+                type="button"
+                onClick={goPrevious}
+                className="inline-flex items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[rgba(109,109,110,0.55)]"
+              >
+                Previous model
+              </button>
+            )}
+            {hasNext && (
+              <button
+                type="button"
+                onClick={goNext}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded bg-white px-5 py-2.5 text-sm font-semibold text-[#141414] transition-colors",
+                  "hover:bg-white/85",
+                )}
+              >
+                <Play className="size-4 fill-current" />
+                Next model
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-[#808080]">
+            Volume, captions (CC), quality &amp; fullscreen — use the YouTube
             controls on the video
           </p>
         </div>
-      </div>
-
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-[4%] pb-8 pt-16 transition-opacity duration-300",
-          chromeVisible ? "opacity-100" : "opacity-0",
-        )}
-      >
-        <div className="pointer-events-auto flex flex-wrap items-center gap-3">
-          {hasPrevious && (
-            <button
-              type="button"
-              onClick={goPrevious}
-              className="inline-flex items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[rgba(109,109,110,0.55)]"
-            >
-              Previous model
-            </button>
-          )}
-          {hasNext && (
-            <button
-              type="button"
-              onClick={goNext}
-              className={cn(
-                "inline-flex items-center gap-2 rounded bg-white px-5 py-2.5 text-sm font-semibold text-[#141414] transition-colors",
-                "hover:bg-white/85",
-              )}
-            >
-              <Play className="size-4 fill-current" />
-              Next model
-            </button>
-          )}
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }

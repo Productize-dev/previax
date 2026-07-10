@@ -42,7 +42,8 @@ export default function CommunityDetailContent() {
   const [activeModelIndex, setActiveModelIndex] = useState(0);
 
   const community = communities.find((c) => c.id === params.id);
-  const homeIdParam = searchParams.get("home");
+  const modelsParam = searchParams.get("models");
+  const modelParam = searchParams.get("model") ?? searchParams.get("home");
 
   const models = useMemo(
     () => (community ? getAvailableModels(community) : []),
@@ -53,9 +54,9 @@ export default function CommunityDetailContent() {
 
   const selectedHome = useMemo(() => {
     if (manualHome) return manualHome;
-    if (!community || !homeIdParam) return null;
-    return community.homes.find((h) => h.id === homeIdParam) ?? null;
-  }, [manualHome, community, homeIdParam]);
+    if (!community || !modelParam) return null;
+    return community.homes.find((h) => h.id === modelParam) ?? null;
+  }, [manualHome, community, modelParam]);
 
   const related = useMemo(
     () => (community ? getRelatedCommunities(community, communities) : []),
@@ -103,13 +104,24 @@ export default function CommunityDetailContent() {
   }, [community?.id]);
 
   useEffect(() => {
-    if (!homeIdParam || !community) return;
-    const index = models.findIndex((model) => model.id === homeIdParam);
+    if (!community) return;
+
+    const shouldOpenModels =
+      modelsParam === "1" ||
+      modelsParam === "true" ||
+      Boolean(modelParam);
+
+    if (!shouldOpenModels) return;
+
+    setModelsOpen(true);
+
+    if (!modelParam) return;
+
+    const index = models.findIndex((model) => model.id === modelParam);
     if (index >= 0) {
       setActiveModelIndex(index);
-      setPlayerOpen(true);
     }
-  }, [community, homeIdParam, models]);
+  }, [community, modelParam, models, modelsParam]);
 
   if (!isLoaded) {
     return (

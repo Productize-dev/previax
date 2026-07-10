@@ -12,7 +12,6 @@ import {
 } from "@/lib/community-utils";
 import type { Community } from "@/lib/types";
 import { YouTubeEmbed } from "@/components/video/youtube-embed";
-import { YouTubePlayerDialog } from "@/components/video/youtube-player-dialog";
 import { cn } from "@/lib/utils";
 
 const SLIDE_DURATION_MS = 10_000;
@@ -33,7 +32,6 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   const [incomingVisible, setIncomingVisible] = useState(false);
   const [copyVisible, setCopyVisible] = useState(true);
   const [heroVideoReady, setHeroVideoReady] = useState(false);
-  const [playerOpen, setPlayerOpen] = useState(false);
   const crossfadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const items = [...featured].sort((a, b) => a.order - b.order);
@@ -290,31 +288,19 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-3">
             {communityId ? (
               <>
-                {videoUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setPlayerOpen(true)}
-                    className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
-                  >
-                    <Play className="size-4 fill-black sm:size-5" />
-                    Play
-                  </button>
-                )}
-                {!videoUrl && (
-                  <Link
-                    href={`/communities/${communityId}`}
-                    className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
-                  >
-                    <Play className="size-4 fill-black sm:size-5" />
-                    Play
-                  </Link>
-                )}
                 <Link
                   href={`/communities/${communityId}`}
+                  className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
+                >
+                  <Play className="size-4 fill-black sm:size-5" />
+                  Play
+                </Link>
+                <Link
+                  href={`/communities/${communityId}?models=1`}
                   className="inline-flex h-9 items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-5 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-11 sm:px-7 sm:text-base"
                 >
                   <Info className="size-4 sm:size-5" />
-                  More Info
+                  Models &amp; More
                 </Link>
               </>
             ) : (
@@ -329,16 +315,6 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           </div>
         </div>
       </div>
-
-      {videoUrl && (
-        <YouTubePlayerDialog
-          open={playerOpen}
-          onOpenChange={setPlayerOpen}
-          youtubeUrl={videoUrl}
-          title={heroTitle}
-          subtitle={communityForMedia?.city ? `${communityForMedia.city}, NC` : undefined}
-        />
-      )}
     </section>
   );
 }
