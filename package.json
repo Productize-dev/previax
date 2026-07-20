@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
+    "import:csv": "tsx scripts/import-csv.ts",
     "embed": "tsx scripts/embed-catalog.ts"
   },
   "dependencies": {
