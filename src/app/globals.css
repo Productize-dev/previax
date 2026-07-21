@@ -174,7 +174,7 @@
     contain-intrinsic-size: auto 360px;
   }
 
-  #tags {
+  .netflix-nav-anchor {
     @apply scroll-mt-20 md:scroll-mt-[4.5rem];
   }
 

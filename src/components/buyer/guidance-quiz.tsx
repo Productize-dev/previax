@@ -18,6 +18,7 @@ import {
 import { useData } from "@/context/data-context";
 import { saveGuidancePrefs } from "@/lib/buyer-storage";
 import { getPriceRange } from "@/lib/community-utils";
+import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
 
 export function GuidanceQuiz() {
   const { communities } = useData();
@@ -171,7 +172,7 @@ export function GuidancePageContent() {
         </div>
 
         <p className="mt-12 text-center text-sm text-muted-foreground">
-          Or <Link href="/#communities" className="text-primary hover:underline">browse all communities</Link>
+          Or <Link href={`/#${NAV_COMMUNITIES_ID}`} className="text-primary hover:underline">browse all communities</Link>
         </p>
       </main>
       <SiteFooter />

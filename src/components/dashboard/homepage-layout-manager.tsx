@@ -626,6 +626,14 @@ function SortableSectionRow({
             />
           )}
 
+          {isFilterableHomepageSectionKey(row.sectionKey) &&
+            (!filterOptions || filterOptions.length === 0) && (
+              <p className="text-sm text-muted-foreground">
+                No options available yet for this section. Add tagged homes or
+                communities first.
+              </p>
+            )}
+
           {isCustom && (
             <CustomVideosEditor
               videos={row.videos ?? []}

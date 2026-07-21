@@ -8,6 +8,7 @@ import {
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { Button } from "@/components/ui/button";
 import { CONTACT_EMAIL } from "@/lib/config";
+import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
 
 const cards = [
   {
@@ -16,7 +17,7 @@ const cards = [
     description:
       "Explore new construction communities across North Carolina, compare builders, watch video tours, and connect with a dedicated realtor — all in one place.",
     cta: "Explore Communities",
-    href: "/#communities",
+    href: `/#${NAV_COMMUNITIES_ID}`,
     external: false,
   },
   {

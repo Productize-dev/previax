@@ -112,13 +112,13 @@ export function collectListingCategoryOptions(
       counts.set(category, (counts.get(category) ?? 0) + 1);
     }
   }
-  return CATEGORY_ORDER.filter((category) => counts.has(category)).map(
-    (category) => ({
-      key: category,
-      label: HOME_LISTING_CATEGORY_LABELS[category],
-      count: counts.get(category)!,
-    }),
-  );
+  // Always list every catalog category so admins can pre-select filters
+  // even when a category currently has zero matching homes.
+  return CATEGORY_ORDER.map((category) => ({
+    key: category,
+    label: HOME_LISTING_CATEGORY_LABELS[category],
+    count: counts.get(category) ?? 0,
+  }));
 }
 
 export function buildMainHighlightSections(

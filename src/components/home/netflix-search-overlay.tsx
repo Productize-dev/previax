@@ -25,6 +25,7 @@ import {
   subscribeBuyerStorage,
 } from "@/lib/buyer-storage";
 import { getUniqueCities } from "@/lib/community-utils";
+import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
 
 const SUGGESTED_PROMPTS = [
   "3 bed under $400K near good schools",
@@ -136,7 +137,7 @@ export function NetflixSearchOverlay({
   function handleBrowseMap() {
     onOpenChange(false);
     if (pathname !== "/") {
-      router.push("/#cities");
+      router.push(`/#${NAV_COMMUNITIES_ID}`);
       return;
     }
     window.location.hash = "cities";

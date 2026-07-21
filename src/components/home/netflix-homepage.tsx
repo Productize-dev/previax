@@ -21,6 +21,13 @@ import {
   resolveTop10Communities,
 } from "@/lib/homepage-layout";
 import {
+  customVideoNavId,
+  isCommunityNavSection,
+  isHomeNavSection,
+  NAV_COMMUNITIES_ID,
+  NAV_HOMES_ID,
+} from "@/lib/homepage-nav";
+import {
   buildCitySections,
   buildCommunityTagSections,
   buildHomeTagSections,
@@ -332,7 +339,6 @@ export function NetflixHomepage() {
         return (
           <NetflixCommunityRow
             title={title}
-            id="communities"
             communities={featuredCommunityRow}
           />
         );
@@ -349,10 +355,9 @@ export function NetflixHomepage() {
 
       case "listing-categories":
         if (listingCategorySections.length === 0) return null;
-        return listingCategorySections.map((categorySection, index) => (
+        return listingCategorySections.map((categorySection) => (
           <NetflixHomeRow
             key={categorySection.id}
-            id={index === 0 ? "houses" : categorySection.id}
             title={categorySection.title}
             items={categorySection.items}
           />
@@ -360,15 +365,9 @@ export function NetflixHomepage() {
 
       case "main-highlights":
         if (mainHighlightSections.length === 0) return null;
-        return mainHighlightSections.map((highlightSection, index) => (
+        return mainHighlightSections.map((highlightSection) => (
           <NetflixHomeRow
             key={highlightSection.id}
-            id={
-              !isSectionVisible(layoutSections, "listing-categories") &&
-              index === 0
-                ? "houses"
-                : highlightSection.id
-            }
             title={highlightSection.title}
             items={highlightSection.items}
           />
@@ -399,10 +398,9 @@ export function NetflixHomepage() {
 
       case "cities":
         if (citySections.length === 0) return null;
-        return citySections.map((citySection, index) => (
+        return citySections.map((citySection) => (
           <NetflixCommunityRow
             key={citySection.id}
-            id={index === 0 ? "cities" : citySection.id}
             title={citySection.title}
             communities={citySection.communities}
           />
@@ -412,9 +410,6 @@ export function NetflixHomepage() {
         return (
           <NetflixCommunityRow
             title={title}
-            id={
-              featuredCommunityRow.length > 0 ? "all-communities" : "communities"
-            }
             communities={filtered}
           />
         );
@@ -436,7 +431,8 @@ export function NetflixHomepage() {
     }
   }
 
-  let tagsAnchorAssigned = false;
+  let communitiesAnchorAssigned = false;
+  let homesAnchorAssigned = false;
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
@@ -518,20 +514,32 @@ export function NetflixHomepage() {
                 const rendered = renderBrowseSection(section);
                 if (!rendered) return null;
 
-                const isTagSection =
-                  section.sectionKey === "community-tags" ||
-                  section.sectionKey === "home-tags";
-
-                if (!tagsAnchorAssigned && isTagSection) {
-                  tagsAnchorAssigned = true;
-                  return (
-                    <div key={section.id} id="tags">
-                      {rendered}
-                    </div>
-                  );
+                let anchorId: string | undefined;
+                if (
+                  isCommunityNavSection(section.sectionKey) &&
+                  !communitiesAnchorAssigned
+                ) {
+                  communitiesAnchorAssigned = true;
+                  anchorId = NAV_COMMUNITIES_ID;
+                } else if (
+                  isHomeNavSection(section.sectionKey) &&
+                  !homesAnchorAssigned
+                ) {
+                  homesAnchorAssigned = true;
+                  anchorId = NAV_HOMES_ID;
+                } else if (section.sectionKey === "custom-videos") {
+                  anchorId = customVideoNavId(section.id);
                 }
 
-                return <div key={section.id}>{rendered}</div>;
+                return (
+                  <div
+                    key={section.id}
+                    id={anchorId}
+                    className={anchorId ? "netflix-nav-anchor" : undefined}
+                  >
+                    {rendered}
+                  </div>
+                );
               })
             )}
           </>
