@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
+  Bot,
   Compass,
   Eye,
   Hammer,
@@ -231,6 +232,18 @@ export function AdminOverview({ onNavigate, pendingCount = 0 }: AdminOverviewPro
       )}
 
       <section>
+        <h3 className="mb-3 font-heading text-lg">Assistant</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <ShortcutTile
+            icon={Bot}
+            title="AI Assistant"
+            count={undefined}
+            onClick={() => onNavigate("assistant")}
+          />
+        </div>
+      </section>
+
+      <section>
         <h3 className="mb-3 font-heading text-lg">Homepage</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <ShortcutTile
@@ -287,7 +300,9 @@ function ShortcutTile({
         <span className="block truncate text-sm font-medium">{title}</span>
         <span className="block text-xs text-muted-foreground">
           {count === undefined
-            ? "Order & visibility"
+            ? title === "AI Assistant"
+              ? "Add communities & models"
+              : "Order & visibility"
             : `${count} item${count === 1 ? "" : "s"}`}
         </span>
       </span>

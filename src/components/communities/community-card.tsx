@@ -35,11 +35,11 @@ export function CommunityCard({
         )}
       >
         <Link href={`/communities/${community.id}`} className="block">
-          <div className="relative aspect-[2/3] overflow-hidden">
+          <div className="relative aspect-video overflow-hidden">
             <img
               src={community.thumbnailUrl}
               alt={community.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">

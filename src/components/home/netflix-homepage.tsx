@@ -314,7 +314,11 @@ export function NetflixHomepage() {
       case "top-10":
         if (top10Row.length === 0) return null;
         return (
-          <NetflixCommunityRow title={title} communities={top10Row} />
+          <NetflixCommunityRow
+            title={title}
+            communities={top10Row}
+            variant="top10"
+          />
         );
 
       case "listing-categories":
@@ -405,8 +409,8 @@ export function NetflixHomepage() {
       <main
         className={
           hasActiveSearch
-            ? "relative z-10 space-y-1 pb-20 pt-20 md:space-y-2"
-            : "relative z-10 -mt-12 space-y-1 pb-20 sm:-mt-16 md:-mt-20 md:space-y-2"
+            ? "relative z-10 space-y-2 pb-24 pt-20 md:space-y-3"
+            : "netflix-rows-stack"
         }
       >
         {showSkeleton ? (

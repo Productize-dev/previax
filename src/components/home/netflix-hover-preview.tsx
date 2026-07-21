@@ -64,7 +64,7 @@ export function NetflixHoverPreview({
           loading="lazy"
           decoding="async"
           className={cn(
-            "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
+            "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300",
             showVideo ? "opacity-0" : "opacity-100",
           )}
           draggable={false}

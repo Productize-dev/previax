@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AdminAssistant } from "@/components/dashboard/admin-assistant";
 import { AdminOverview } from "@/components/dashboard/admin-overview";
 import { DashboardOverviewSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { BuilderOverview } from "@/components/dashboard/builder-overview";
@@ -20,7 +21,16 @@ import { HomepageLayoutManager } from "@/components/dashboard/homepage-layout-ma
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import type { ExtractedListingDraft } from "@/lib/ai/listing-extract";
 import { PROFILE_COLUMNS } from "@/lib/auth/profile";
+import {
+  draftToCommunityForm,
+  draftToHomeForm,
+} from "@/lib/listing-draft";
+import type {
+  CommunityDashboardForm,
+  HomeModelForm,
+} from "@/lib/dashboard-defaults";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { DashboardTab, FeaturedItem } from "@/lib/types";
 
@@ -28,13 +38,25 @@ const BUILDER_TABS: DashboardTab[] = ["overview", "builders", "communities"];
 const LENDER_TABS: DashboardTab[] = ["overview", "lenders"];
 
 export default function DashboardPage() {
-  const { isLoaded, error, communities, builders, isAdmin, isBuilder, isLender } =
-    useDashboardData();
+  const {
+    isLoaded,
+    error,
+    communities,
+    builders,
+    isAdmin,
+    isBuilder,
+    isLender,
+  } = useDashboardData();
   const [tab, setTab] = useState<DashboardTab>("overview");
   const [editingFeatured, setEditingFeatured] = useState<FeaturedItem | null>(
     null,
   );
   const [pendingCount, setPendingCount] = useState(0);
+  const [communityPrefillKey, setCommunityPrefillKey] = useState<string>();
+  const [communityInitialForm, setCommunityInitialForm] =
+    useState<CommunityDashboardForm>();
+  const [homePrefillKey, setHomePrefillKey] = useState<string>();
+  const [homeInitialForm, setHomeInitialForm] = useState<HomeModelForm>();
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -61,6 +83,33 @@ export default function DashboardPage() {
       setTab("overview");
     }
   }, [isBuilder, isLender, tab]);
+
+  function handleAssistantDraft(
+    draft: ExtractedListingDraft,
+    _focus: "community" | "model",
+  ) {
+    const builderId = builders[0]?.id ?? "";
+    setCommunityInitialForm(draftToCommunityForm(draft, builderId));
+    setCommunityPrefillKey(`assistant-community-${Date.now()}`);
+
+    const homeForm = draftToHomeForm(draft, 0);
+    if (homeForm) {
+      setHomeInitialForm(homeForm);
+      setHomePrefillKey(`assistant-home-${Date.now()}`);
+    } else {
+      setHomeInitialForm(undefined);
+      setHomePrefillKey(undefined);
+    }
+
+    setTab("communities");
+  }
+
+  function clearPrefills() {
+    setCommunityInitialForm(undefined);
+    setCommunityPrefillKey(undefined);
+    setHomeInitialForm(undefined);
+    setHomePrefillKey(undefined);
+  }
 
   if (!isLoaded) {
     return (
@@ -137,10 +186,32 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {isAdmin && tab === "assistant" && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="font-heading text-2xl">AI Assistant</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Admin-only helper for adding communities, models, and managing
+                  the catalog.
+                </p>
+              </div>
+              <AdminAssistant
+                onApplyDraft={handleAssistantDraft}
+                onOpenCommunities={() => setTab("communities")}
+              />
+            </div>
+          )}
+
           {(isAdmin || isBuilder) && tab === "builders" && <BuildersWorkspace />}
 
           {(isAdmin || isBuilder) && tab === "communities" && (
-            <CommunitiesWorkspace />
+            <CommunitiesWorkspace
+              communityPrefillKey={communityPrefillKey}
+              communityInitialForm={communityInitialForm}
+              homePrefillKey={homePrefillKey}
+              homeInitialForm={homeInitialForm}
+              onPrefillConsumed={clearPrefills}
+            />
           )}
 
           {(isAdmin || isLender) && tab === "lenders" && <LendersWorkspace />}

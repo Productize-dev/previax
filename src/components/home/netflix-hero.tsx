@@ -122,10 +122,7 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
 
   if (!isLoaded) {
     return (
-      <section
-        id="home"
-        className="relative flex h-[56vw] max-h-[85vh] min-h-[320px] items-center justify-center bg-black sm:min-h-[420px] lg:min-h-[520px]"
-      >
+      <section id="home" className="netflix-billboard flex items-center justify-center">
         <p className="text-[#808080]">Loading...</p>
       </section>
     );
@@ -133,16 +130,13 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
 
   if (count === 0 && !focusCommunity) {
     return (
-      <section
-        id="home"
-        className="relative flex aspect-video max-h-[85vh] min-h-[320px] items-end bg-black pb-24 sm:min-h-[420px]"
-      >
+      <section id="home" className="netflix-billboard flex items-end pb-24">
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className="relative z-10 max-w-2xl px-[4%] pb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#46d369]">
             Previax Original
           </p>
-          <h1 className="mt-3 text-3xl font-bold text-white sm:text-5xl md:text-6xl">
+          <h1 className="netflix-hero-title mt-3 text-3xl sm:text-5xl md:text-6xl">
             Explore North Carolina Communities
           </h1>
           <p className="mt-4 max-w-lg text-sm text-white/90 sm:text-base md:text-lg">
@@ -152,14 +146,14 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/#communities"
-              className="inline-flex h-10 items-center gap-2 rounded bg-white px-6 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:text-base"
+              className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-white px-6 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-12 sm:text-lg"
             >
-              <Play className="size-4 fill-black sm:size-5" />
+              <Play className="size-4 fill-black sm:size-6" />
               Explore
             </Link>
             <Link
               href="/guidance"
-              className="inline-flex h-10 items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-6 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-11 sm:text-base"
+              className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-[rgba(109,109,110,0.7)] px-6 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-12 sm:text-lg"
             >
               <Info className="size-4 sm:size-5" />
               More Info
@@ -189,7 +183,7 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   return (
     <section
       id="home"
-      className="relative aspect-video max-h-[85vh] w-full min-h-[320px] overflow-hidden bg-black sm:min-h-[420px] lg:min-h-[520px]"
+      className="netflix-billboard"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -235,80 +229,78 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
         )}
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/50 to-black/30" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/55 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/35 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent" />
 
       <div
         className={cn(
-          "relative z-10 flex h-full items-end px-[4%] pb-[16%] sm:pb-[14%] md:pb-[12%]",
+          "relative z-10 flex h-full items-end px-[4%] pb-[18%] sm:pb-[15%] md:pb-[12%]",
           "transition-opacity duration-300 ease-out",
           copyVisible ? "opacity-100" : "opacity-70",
         )}
       >
-        <div className="max-w-xl md:max-w-2xl lg:max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#46d369] sm:text-sm">
+        <div className="max-w-xl md:max-w-2xl lg:max-w-[42rem]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#46d369] sm:text-sm">
             {isFocused ? "Now Previewing" : "Previax Original"}
           </p>
-          <h1 className="mt-2 text-2xl font-bold leading-tight text-white drop-shadow-lg sm:mt-3 sm:text-4xl md:text-5xl lg:text-6xl">
+          <h1 className="netflix-hero-title mt-2 text-3xl leading-[1.05] sm:mt-3 sm:text-5xl md:text-6xl lg:text-7xl">
             {heroTitle}
           </h1>
 
           {communityForMedia && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#bcbcbc] sm:text-sm">
-              <span>{communityForMedia.city}, NC</span>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {hasActiveOffers(communityForMedia) && (
+                <span className="rounded-[2px] bg-[#46d369] px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-black">
+                  Offers
+                </span>
+              )}
               {homeCount > 0 && (
-                <>
-                  <span>•</span>
-                  <span>
-                    {homeCount} home{homeCount !== 1 ? "s" : ""}
-                  </span>
-                </>
+                <span className="rounded-[2px] bg-white/15 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                  {homeCount} home{homeCount !== 1 ? "s" : ""}
+                </span>
               )}
               {priceRange && (
-                <>
-                  <span>•</span>
-                  <span>{priceRange.label}</span>
-                </>
+                <span className="rounded-[2px] bg-white/15 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                  {priceRange.label}
+                </span>
               )}
-              {hasActiveOffers(communityForMedia) && (
-                <>
-                  <span>•</span>
-                  <span className="text-[#46d369]">Offers</span>
-                </>
-              )}
+              <span className="text-sm text-[#bcbcbc]">
+                {communityForMedia.city}, NC
+              </span>
             </div>
           )}
 
           {heroDescription && (
-            <p className="mt-3 line-clamp-2 max-w-lg text-sm leading-relaxed text-white/95 sm:line-clamp-3 sm:text-base">
+            <p className="mt-4 line-clamp-3 max-w-xl text-sm leading-relaxed text-white/95 sm:text-base md:text-lg">
               {heroDescription}
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-3">
+          <div className="mt-5 flex flex-wrap gap-2 sm:mt-6 sm:gap-3">
             {communityId ? (
               <>
                 <Link
                   href={`/communities/${communityId}`}
-                  className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
+                  className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-12 sm:px-7 sm:text-lg"
                 >
-                  <Play className="size-4 fill-black sm:size-5" />
+                  <Play className="size-5 fill-black sm:size-6" />
                   Play
                 </Link>
                 <Link
                   href={`/communities/${communityId}?models=1`}
-                  className="inline-flex h-9 items-center gap-2 rounded bg-[rgba(109,109,110,0.7)] px-5 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-11 sm:px-7 sm:text-base"
+                  className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-[rgba(109,109,110,0.7)] px-5 text-sm font-bold text-white transition-colors hover:bg-[rgba(109,109,110,0.5)] sm:h-12 sm:px-7 sm:text-lg"
                 >
-                  <Info className="size-4 sm:size-5" />
-                  Models &amp; More
+                  <Info className="size-5" />
+                  More Info
                 </Link>
               </>
             ) : (
               <Link
                 href="/#communities"
-                className="inline-flex h-9 items-center gap-2 rounded bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-11 sm:px-7 sm:text-base"
+                className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-12 sm:px-7 sm:text-lg"
               >
-                <Play className="size-4 fill-black sm:size-5" />
+                <Play className="size-5 fill-black sm:size-6" />
                 Explore
               </Link>
             )}

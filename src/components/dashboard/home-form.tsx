@@ -33,8 +33,11 @@ import {
 } from "@/lib/dashboard-defaults";
 import type { Home, HomeTag } from "@/lib/types";
 import type { DuplicateMatch } from "@/lib/duplicate-detection";
-import { isValidYouTubeUrl, getYouTubeThumbnailUrl } from "@/lib/youtube";
-import { cn } from "@/lib/utils";
+import {
+  getYouTubeThumbnailUrl,
+  isValidYouTubeUrl,
+  isYouTubeThumbnailUrl,
+} from "@/lib/youtube";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 type HomeFormProps = {
@@ -108,7 +111,18 @@ export function HomeForm({
       if (field === "youtubeUrl" && typeof value === "string") {
         setYoutubeError("");
         const thumb = getYouTubeThumbnailUrl(value);
-        if (thumb && isValidYouTubeUrl(value) && next.imageUrls.length === 0) {
+        if (!thumb || !isValidYouTubeUrl(value)) return next;
+
+        const previousAuto = getYouTubeThumbnailUrl(prev.youtubeUrl);
+        const cover = prev.imageUrls[0];
+        const coverIsAuto =
+          !cover ||
+          (previousAuto != null && cover === previousAuto) ||
+          isYouTubeThumbnailUrl(cover);
+
+        if (coverIsAuto) {
+          next.imageUrls = [thumb, ...prev.imageUrls.filter((u) => u !== cover && u !== thumb)];
+        } else if (prev.imageUrls.length === 0) {
           next.imageUrls = [thumb];
         }
       }
@@ -116,6 +130,30 @@ export function HomeForm({
     });
     if (field === "youtubeUrl") setYoutubeError("");
   }
+
+  function useYouTubeThumbnailAsCover() {
+    const thumb = getYouTubeThumbnailUrl(form.youtubeUrl);
+    if (!thumb || !isValidYouTubeUrl(form.youtubeUrl)) {
+      setYoutubeError("Enter a valid YouTube URL first");
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      imageUrls: [
+        thumb,
+        ...prev.imageUrls.filter(
+          (url) => url !== thumb && !isYouTubeThumbnailUrl(url),
+        ),
+      ],
+    }));
+    setYoutubeError("");
+  }
+
+  const youtubeThumbPreview = isValidYouTubeUrl(form.youtubeUrl)
+    ? getYouTubeThumbnailUrl(form.youtubeUrl)
+    : null;
+  const coverIsYouTube =
+    form.imageUrls[0] != null && isYouTubeThumbnailUrl(form.imageUrls[0]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -134,14 +172,20 @@ export function HomeForm({
     const defaultSeries = getDefaultSeriesForCommunity(community, series);
     if (!defaultSeries) return;
 
+    const youtubeCover = form.youtubeUrl.trim()
+      ? getYouTubeThumbnailUrl(form.youtubeUrl)
+      : null;
+
     const imageUrls =
       form.imageUrls.length > 0
         ? form.imageUrls
-        : editingHome?.imageUrls?.length
-          ? editingHome.imageUrls
-          : community.thumbnailUrl
-            ? [community.thumbnailUrl]
-            : [];
+        : youtubeCover
+          ? [youtubeCover]
+          : editingHome?.imageUrls?.length
+            ? editingHome.imageUrls
+            : community.thumbnailUrl
+              ? [community.thumbnailUrl]
+              : [];
 
     const payload = toHomeInput(form, {
       seriesId: editingHome?.seriesId || defaultSeries.id,
@@ -324,7 +368,7 @@ export function HomeForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="youtubeUrl">YouTube URL</Label>
             <Input
               id="youtubeUrl"
@@ -336,8 +380,35 @@ export function HomeForm({
             {youtubeError && (
               <p className="text-sm text-destructive">{youtubeError}</p>
             )}
+            {youtubeThumbPreview && (
+              <div className="flex flex-wrap items-start gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <img
+                  src={youtubeThumbPreview}
+                  alt="YouTube video thumbnail"
+                  className="aspect-video w-40 rounded-md object-cover"
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    {coverIsYouTube
+                      ? "Cover photo is this YouTube thumbnail."
+                      : "You can use this frame as the model cover photo."}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={coverIsYouTube ? "outline" : "default"}
+                    onClick={useYouTubeThumbnailAsCover}
+                  >
+                    {coverIsYouTube
+                      ? "Refresh YouTube cover"
+                      : "Use YouTube thumbnail as cover"}
+                  </Button>
+                </div>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
-              A YouTube thumbnail is added to the gallery when no photos exist yet.
+              Leave the gallery empty to auto-use the YouTube thumbnail, or click
+              the button above to set it as cover anytime.
             </p>
           </div>
 

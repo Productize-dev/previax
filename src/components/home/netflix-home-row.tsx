@@ -8,10 +8,16 @@ import { Play } from "lucide-react";
 import { HomeListingCategoryBadges } from "@/components/homes/home-listing-category-badges";
 import { TileActionBar } from "@/components/home/tile-action-bar";
 import { NetflixHoverPreview } from "@/components/home/netflix-hover-preview";
+import {
+  NetflixStatusBar,
+  NetflixTileBadges,
+} from "@/components/home/netflix-tile-badges";
 import { VideoQuickActions } from "@/components/video/video-quick-actions";
 import type { HomeRowItem } from "@/lib/homepage-sections";
 import { pricePerSqft } from "@/lib/community-utils";
-import { getHomeListingCategories } from "@/lib/home-listing-categories";
+import { getHomePosterUrl } from "@/lib/community-media";
+import { getHomeListingCategories, HOME_LISTING_CATEGORY_LABELS } from "@/lib/home-listing-categories";
+import { getHomeTileBadges } from "@/lib/netflix-tile-badges";
 import { cn } from "@/lib/utils";
 
 import { useNetflixRowSelection } from "./use-netflix-row-selection";
@@ -81,10 +87,16 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
       >
         {items.map(({ home, community }, index) => {
           const selected = index === selectedIndex;
-          const cover = home.imageUrls[0] ?? community.thumbnailUrl;
+          const cover = getHomePosterUrl(home, community);
           const ppsf = pricePerSqft(home);
           const categories = getHomeListingCategories(home, community);
           const previewUrl = home.youtubeUrl || community.youtubeUrl;
+          const badges = getHomeTileBadges(home, community);
+          const statusLabel = badges.find((b) => b.id === "offers" || b.id === "ready")
+            ?.label;
+          const overlayBadges = badges.filter(
+            (b) => b.id !== "offers" && b.id !== "ready",
+          );
 
           return (
             <div
@@ -117,7 +129,7 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
               >
                 <div
                   className={cn(
-                    "netflix-tile-media overflow-hidden rounded-[4px] border-2 bg-[#2f2f2f]",
+                    "netflix-tile-media overflow-hidden border-2 bg-[#2f2f2f]",
                     selected
                       ? "netflix-tile-media--landscape border-white"
                       : "netflix-tile-media--portrait border-transparent",
@@ -135,21 +147,29 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                       No image
                     </div>
                   )}
-                  {categories.length > 0 && (
-                    <div className="pointer-events-none absolute left-1.5 right-1.5 top-1.5 z-10">
-                      <HomeListingCategoryBadges
-                        categories={categories}
-                        max={selected ? 4 : 2}
-                      />
-                    </div>
-                  )}
                   {!selected && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-8">
-                      <p className="text-xs font-semibold text-white sm:text-sm">
+                    <NetflixTileBadges
+                      badges={[
+                        ...overlayBadges,
+                        ...categories.slice(0, 1).map((category) => ({
+                          id: `cat-${category}`,
+                          label: HOME_LISTING_CATEGORY_LABELS[category],
+                          tone: "tag" as const,
+                        })),
+                      ]}
+                      compact
+                    />
+                  )}
+                  {!selected && statusLabel && (
+                    <NetflixStatusBar label={statusLabel} />
+                  )}
+                  {!selected && !statusLabel && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/50 to-transparent px-2.5 pb-2.5 pt-10">
+                      <p className="font-sans text-sm font-semibold text-white sm:text-[0.95rem]">
                         ${home.price.toLocaleString()}
                       </p>
-                      <p className="mt-0.5 line-clamp-1 text-[11px] text-white/80 sm:text-xs">
-                        {community.name}
+                      <p className="mt-0.5 line-clamp-1 text-xs text-white/80 sm:text-[0.8rem]">
+                        {home.modelName || community.name}
                       </p>
                     </div>
                   )}
@@ -162,11 +182,14 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                   )}
                 >
                   <div className="overflow-hidden">
+                    <p className="mt-3 font-sans text-base font-semibold text-white sm:text-lg">
+                      {home.modelName || `$${home.price.toLocaleString()}`}
+                    </p>
                     <HomeListingCategoryBadges
                       categories={categories}
                       max={5}
                       size="md"
-                      className="mt-3"
+                      className="mt-2"
                     />
                     <p className="mt-2 text-xs text-[#bcbcbc] sm:text-sm">
                       {community.city}, NC

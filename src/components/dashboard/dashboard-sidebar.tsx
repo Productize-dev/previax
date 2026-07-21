@@ -2,6 +2,7 @@
 
 import {
   Building2,
+  Bot,
   Compass,
   Hammer,
   Landmark,
@@ -33,6 +34,10 @@ const topItem: NavItem = {
 };
 
 const adminNavGroups: NavGroup[] = [
+  {
+    label: "Assistant",
+    items: [{ id: "assistant", label: "AI Assistant", icon: Bot }],
+  },
   {
     label: "Builders",
     items: [

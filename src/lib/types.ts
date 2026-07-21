@@ -305,6 +305,7 @@ export type AppData = {
 
 export type DashboardTab =
   | "overview"
+  | "assistant"
   | "builders"
   | "communities"
   | "lenders"
