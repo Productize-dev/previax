@@ -11,6 +11,9 @@ import type {
   HomepageHomesRow,
   HomepageSection,
   HomepageSectionKey,
+  HomepageSectionConfig,
+  HomepageSectionVideo,
+  HomepageSectionVideoInput,
   HomepageSeriesRow,
   FeaturedCommunityRow,
   Lender,
@@ -103,8 +106,23 @@ export interface SiteRepository {
     id: string,
     title: string | null,
   ): Promise<HomepageSection[]>;
+  updateHomepageSectionConfig(
+    id: string,
+    config: HomepageSectionConfig,
+  ): Promise<HomepageSection[]>;
   reorderHomepageSections(orderedIds: string[]): Promise<HomepageSection[]>;
   resetHomepageSections(): Promise<HomepageSection[]>;
+  addCustomVideoSection(title?: string): Promise<HomepageSection[]>;
+  deleteHomepageSection(id: string): Promise<HomepageSection[]>;
+  addHomepageSectionVideo(
+    sectionId: string,
+    data: HomepageSectionVideoInput,
+  ): Promise<HomepageSection[]>;
+  updateHomepageSectionVideo(
+    id: string,
+    data: Partial<HomepageSectionVideoInput>,
+  ): Promise<HomepageSection[]>;
+  deleteHomepageSectionVideo(id: string): Promise<HomepageSection[]>;
 }
 
 /** @deprecated Use SiteRepository */

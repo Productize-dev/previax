@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Info, Play } from "lucide-react";
 
 import { useData } from "@/context/data-context";
 import {
   getAvailableHomeCount,
   getPriceRange,
+  getPublicCommunities,
   hasActiveOffers,
 } from "@/lib/community-utils";
 import type { Community } from "@/lib/types";
@@ -23,7 +24,11 @@ type NetflixHeroProps = {
 };
 
 export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
-  const { featured, communities, isLoaded } = useData();
+  const { featured, communities: allCommunities, isLoaded } = useData();
+  const communities = useMemo(
+    () => getPublicCommunities(allCommunities),
+    [allCommunities],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [carouselTransitioning, setCarouselTransitioning] = useState(false);
   const [paused, setPaused] = useState(false);

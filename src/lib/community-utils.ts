@@ -51,6 +51,15 @@ export function getUniqueCities(communities: Community[]): string[] {
   return [...new Set(communities.map((c) => c.city))].sort();
 }
 
+/** Visible on the public site (not hidden by admin/builder). */
+export function isCommunityPublic(community: Community): boolean {
+  return !community.isHidden;
+}
+
+export function getPublicCommunities(communities: Community[]): Community[] {
+  return communities.filter(isCommunityPublic);
+}
+
 export function filterCommunities(
   communities: Community[],
   opts: {
@@ -59,7 +68,7 @@ export function filterCommunities(
     offersOnly?: boolean;
   },
 ): Community[] {
-  let result = communities;
+  let result = getPublicCommunities(communities);
 
   if (opts.query?.trim()) {
     const q = opts.query.toLowerCase();
@@ -87,7 +96,7 @@ export function getRelatedCommunities(
   all: Community[],
   limit = 3,
 ): Community[] {
-  return all
+  return getPublicCommunities(all)
     .filter((c) => c.id !== community.id && c.city === community.city)
     .slice(0, limit);
 }

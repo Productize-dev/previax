@@ -22,6 +22,8 @@ import type {
   HomeInput,
   HomepageHomesRow,
   HomepageSection,
+  HomepageSectionConfig,
+  HomepageSectionVideoInput,
   HomepageSeriesRow,
   FeaturedCommunityRow,
   Lender,
@@ -113,10 +115,25 @@ type DataContextValue = {
     id: string,
     title: string | null,
   ) => Promise<HomepageSection[]>;
+  updateHomepageSectionConfig: (
+    id: string,
+    config: HomepageSectionConfig,
+  ) => Promise<HomepageSection[]>;
   reorderHomepageSections: (
     orderedIds: string[],
   ) => Promise<HomepageSection[]>;
   resetHomepageSections: () => Promise<HomepageSection[]>;
+  addCustomVideoSection: (title?: string) => Promise<HomepageSection[]>;
+  deleteHomepageSection: (id: string) => Promise<HomepageSection[]>;
+  addHomepageSectionVideo: (
+    sectionId: string,
+    data: HomepageSectionVideoInput,
+  ) => Promise<HomepageSection[]>;
+  updateHomepageSectionVideo: (
+    id: string,
+    data: Partial<HomepageSectionVideoInput>,
+  ) => Promise<HomepageSection[]>;
+  deleteHomepageSectionVideo: (id: string) => Promise<HomepageSection[]>;
   importCsvCatalog: (
     communitiesCsv: string,
     modelHomesCsv: string,
@@ -213,6 +230,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setIsLoaded(true);
     }
   }, [setAll]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem("previax-data");
+    } catch {
+      // ignore quota / private mode
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -577,6 +602,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const updateHomepageSectionConfig = useCallback(
+    async (id: string, config: HomepageSectionConfig) => {
+      const updated = await repository.updateHomepageSectionConfig(id, config);
+      setHomepageSections(updated);
+      return updated;
+    },
+    [],
+  );
+
   const reorderHomepageSections = useCallback(async (orderedIds: string[]) => {
     const updated = await repository.reorderHomepageSections(orderedIds);
     setHomepageSections(updated);
@@ -585,6 +619,42 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const resetHomepageSections = useCallback(async () => {
     const updated = await repository.resetHomepageSections();
+    setHomepageSections(updated);
+    return updated;
+  }, []);
+
+  const addCustomVideoSection = useCallback(async (title?: string) => {
+    const updated = await repository.addCustomVideoSection(title);
+    setHomepageSections(updated);
+    return updated;
+  }, []);
+
+  const deleteHomepageSection = useCallback(async (id: string) => {
+    const updated = await repository.deleteHomepageSection(id);
+    setHomepageSections(updated);
+    return updated;
+  }, []);
+
+  const addHomepageSectionVideo = useCallback(
+    async (sectionId: string, data: HomepageSectionVideoInput) => {
+      const updated = await repository.addHomepageSectionVideo(sectionId, data);
+      setHomepageSections(updated);
+      return updated;
+    },
+    [],
+  );
+
+  const updateHomepageSectionVideo = useCallback(
+    async (id: string, data: Partial<HomepageSectionVideoInput>) => {
+      const updated = await repository.updateHomepageSectionVideo(id, data);
+      setHomepageSections(updated);
+      return updated;
+    },
+    [],
+  );
+
+  const deleteHomepageSectionVideo = useCallback(async (id: string) => {
+    const updated = await repository.deleteHomepageSectionVideo(id);
     setHomepageSections(updated);
     return updated;
   }, []);
@@ -661,8 +731,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         reorderHomepageHomes,
         setHomepageSectionEnabled,
         updateHomepageSectionTitle,
+        updateHomepageSectionConfig,
         reorderHomepageSections,
         resetHomepageSections,
+        addCustomVideoSection,
+        deleteHomepageSection,
+        addHomepageSectionVideo,
+        updateHomepageSectionVideo,
+        deleteHomepageSectionVideo,
         importCsvCatalog,
         refresh,
       }}

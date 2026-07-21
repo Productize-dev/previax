@@ -17,6 +17,7 @@ import type {
   HomepageSeriesRow,
   HomepageSection,
   HomepageSectionKey,
+  HomepageSectionVideo,
   Lender,
   LenderInput,
   LenderOffer,
@@ -90,6 +91,7 @@ export type CommunityRow = {
   media_gallery: MediaItem[];
   view_count: number;
   save_count: number;
+  is_hidden: boolean;
   created_at: string;
 };
 
@@ -147,6 +149,17 @@ export type HomepageSectionRow = {
   section_key: string;
   title: string | null;
   enabled: boolean;
+  sort_order: number;
+  config?: Record<string, unknown> | null;
+};
+
+export type HomepageSectionVideoRow = {
+  id: string;
+  section_id: string;
+  title: string;
+  subtitle: string | null;
+  youtube_url: string;
+  thumbnail_url: string | null;
   sort_order: number;
 };
 
@@ -288,6 +301,7 @@ export function rowToCommunity(row: CommunityRow, homes: Home[]): Community {
     ownerId: row.owner_id ?? undefined,
     viewCount: row.view_count ?? 0,
     saveCount: row.save_count ?? 0,
+    isHidden: row.is_hidden ?? false,
   };
 }
 
@@ -335,23 +349,55 @@ export function rowToFeaturedCommunity(
 }
 
 export function rowToHomepageSection(row: HomepageSectionRow): HomepageSection {
+  const raw = row.config;
+  let config: HomepageSection["config"];
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const includeKeys = (raw as { includeKeys?: unknown }).includeKeys;
+    if (Array.isArray(includeKeys)) {
+      config = {
+        includeKeys: includeKeys.filter(
+          (key): key is string => typeof key === "string",
+        ),
+      };
+    } else if (includeKeys === null) {
+      config = { includeKeys: null };
+    } else {
+      config = {};
+    }
+  }
+
   return {
     id: row.id,
     sectionKey: row.section_key as HomepageSectionKey,
     title: row.title ?? undefined,
     enabled: row.enabled,
     order: row.sort_order,
+    config,
+  };
+}
+
+export function rowToHomepageSectionVideo(
+  row: HomepageSectionVideoRow,
+): HomepageSectionVideo {
+  return {
+    id: row.id,
+    sectionId: row.section_id,
+    title: row.title,
+    youtubeUrl: row.youtube_url,
+    thumbnailUrl: row.thumbnail_url ?? undefined,
+    order: row.sort_order,
   };
 }
 
 export function homepageSectionToRow(
-  section: Pick<HomepageSection, "sectionKey" | "title" | "enabled" | "order">,
+  section: Pick<HomepageSection, "sectionKey" | "title" | "enabled" | "order" | "config">,
 ): Omit<HomepageSectionRow, "id"> {
   return {
     section_key: section.sectionKey,
     title: section.title?.trim() || null,
     enabled: section.enabled,
     sort_order: section.order,
+    config: section.config ?? {},
   };
 }
 
@@ -438,6 +484,7 @@ export function communityInputToRow(data: Partial<CommunityInput>): AnyRow {
   setIfDefined(row, "nearby_places", data.nearbyPlaces);
   setIfDefined(row, "reviews", data.reviews);
   setIfDefined(row, "media_gallery", data.mediaGallery);
+  setIfDefined(row, "is_hidden", data.isHidden);
   return row;
 }
 

@@ -1,13 +1,16 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AiPasteModal } from "@/components/dashboard/ai-paste-modal";
 import { BuilderForm } from "@/components/dashboard/builder-form";
 import { BuilderList } from "@/components/dashboard/builder-list";
 import { CommunityForm } from "@/components/dashboard/community-form";
 import { CommunityList } from "@/components/dashboard/community-list";
+import {
+  DashboardCreateMenu,
+  type CreateMenuAction,
+} from "@/components/dashboard/dashboard-create-menu";
 import { HomeForm } from "@/components/dashboard/home-form";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { communityHasBuilder } from "@/lib/community-builders";
@@ -18,12 +21,12 @@ import {
 import type { ExtractedListingDraft } from "@/lib/ai/listing-extract";
 import type { CommunityDashboardForm, HomeModelForm } from "@/lib/dashboard-defaults";
 import type { Builder, Community, Home } from "@/lib/types";
-import { Button } from "@/components/ui/button";
 
 export function BuildersWorkspace() {
   const { builders, communities } = useDashboardData();
   const [selectedBuilderId, setSelectedBuilderId] = useState<string | null>(null);
   const [editingBuilder, setEditingBuilder] = useState<Builder | null>(null);
+  const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [editingCommunity, setEditingCommunity] = useState<Community | null>(
     null,
   );
@@ -41,6 +44,7 @@ export function BuildersWorkspace() {
   const [homePrefillKey, setHomePrefillKey] = useState<string>();
   const [homeInitialForm, setHomeInitialForm] = useState<HomeModelForm>();
   const [pasteStatus, setPasteStatus] = useState<string | null>(null);
+  const formPanelRef = useRef<HTMLDivElement>(null);
 
   const selectedBuilder = useMemo(
     () => builders.find((builder) => builder.id === selectedBuilderId) ?? null,
@@ -59,38 +63,92 @@ export function BuildersWorkspace() {
     [communities, selectedBuilderId],
   );
 
+  const showCommunityForm =
+    creatingCommunity ||
+    editingCommunity !== null ||
+    Boolean(communityInitialForm) ||
+    Boolean(communityPrefillKey);
+
+  const showHomeForm =
+    (editingHome !== null && editingHomeCommunityId !== null) ||
+    addingHomeForCommunityId !== null ||
+    Boolean(homeInitialForm);
+
   useEffect(() => {
     if (builders.length > 0 && !selectedBuilderId) {
       setSelectedBuilderId(builders[0].id);
     }
   }, [builders, selectedBuilderId]);
 
-  function handleSelectBuilder(builderId: string) {
-    setSelectedBuilderId(builderId || null);
+  useEffect(() => {
+    if (!(showCommunityForm || showHomeForm)) return;
+    formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showCommunityForm, showHomeForm, editingCommunity?.id, editingHome?.id]);
+
+  function clearCommunityPanel() {
+    setCreatingCommunity(false);
     setEditingCommunity(null);
+    setCommunityInitialForm(undefined);
+    setCommunityPrefillKey(undefined);
+  }
+
+  function clearHomePanel() {
     setEditingHome(null);
     setEditingHomeCommunityId(null);
     setAddingHomeForCommunityId(null);
+    setHomeInitialForm(undefined);
+    setHomePrefillKey(undefined);
+  }
+
+  function handleSelectBuilder(builderId: string) {
+    setSelectedBuilderId(builderId || null);
+    clearCommunityPanel();
+    clearHomePanel();
+  }
+
+  function handleEditCommunity(community: Community) {
+    setCreatingCommunity(false);
+    setEditingCommunity(community);
+    setCommunityInitialForm(undefined);
+    setCommunityPrefillKey(undefined);
+    clearHomePanel();
   }
 
   function handleEditHome(communityId: string, home: Home) {
     setEditingHome(home);
     setEditingHomeCommunityId(communityId);
     setAddingHomeForCommunityId(null);
+    clearCommunityPanel();
   }
 
   function handleAddHome(communityId: string) {
     setEditingHome(null);
     setEditingHomeCommunityId(communityId);
     setAddingHomeForCommunityId(communityId);
+    clearCommunityPanel();
   }
 
-  function handleHomeEditComplete() {
+  function openCreateCommunity() {
+    clearHomePanel();
+    setEditingCommunity(null);
+    setCommunityInitialForm(undefined);
+    setCommunityPrefillKey(undefined);
+    setCreatingCommunity(true);
+  }
+
+  function openCreateModel() {
+    clearCommunityPanel();
     setEditingHome(null);
     setEditingHomeCommunityId(null);
-    setAddingHomeForCommunityId(null);
+    setAddingHomeForCommunityId("__new__");
     setHomeInitialForm(undefined);
     setHomePrefillKey(undefined);
+  }
+
+  function handleCreateSelect(action: CreateMenuAction) {
+    if (action === "community") openCreateCommunity();
+    if (action === "model") openCreateModel();
+    if (action === "paste") setPasteOpen(true);
   }
 
   function handleDraftExtracted(draft: ExtractedListingDraft) {
@@ -100,6 +158,7 @@ export function BuildersWorkspace() {
     setCommunityInitialForm(communityForm);
     setCommunityPrefillKey(`paste-${Date.now()}`);
     setEditingCommunity(null);
+    setCreatingCommunity(true);
 
     const homeForm = draftToHomeForm(draft, 0);
     if (homeForm) {
@@ -107,7 +166,7 @@ export function BuildersWorkspace() {
       setHomePrefillKey(`paste-home-${Date.now()}`);
       setEditingHome(null);
       setEditingHomeCommunityId(null);
-      setAddingHomeForCommunityId(null);
+      setAddingHomeForCommunityId("__new__");
     }
 
     const homeCount = draft.homes?.length ?? 0;
@@ -118,9 +177,9 @@ export function BuildersWorkspace() {
     );
   }
 
-  const showHomeForm =
-    (editingHome !== null && editingHomeCommunityId !== null) ||
-    addingHomeForCommunityId !== null;
+  const homeCommunityId =
+    editingHomeCommunityId ??
+    (addingHomeForCommunityId === "__new__" ? null : addingHomeForCommunityId);
 
   return (
     <div className="space-y-10">
@@ -151,47 +210,37 @@ export function BuildersWorkspace() {
             <div>
               <h3 className="font-heading text-xl">{selectedBuilder.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Communities and models for this builder.
+                Browse and manage communities for this builder. Use Add to
+                create.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2"
-              onClick={() => setPasteOpen(true)}
-            >
-              <Sparkles className="size-4" />
-              Paste & autofill
-            </Button>
+            <DashboardCreateMenu onSelect={handleCreateSelect} />
           </div>
 
           {pasteStatus && (
-            <p className="text-sm text-muted-foreground">{pasteStatus}</p>
+            <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-foreground">
+              {pasteStatus}
+            </p>
           )}
 
-          <AiPasteModal
-            open={pasteOpen}
-            onOpenChange={setPasteOpen}
-            onExtracted={handleDraftExtracted}
-          />
+          {(showCommunityForm || showHomeForm) && (
+            <div
+              ref={formPanelRef}
+              className="grid gap-8 rounded-xl border border-border bg-card/40 p-4 sm:p-6 xl:grid-cols-2"
+            >
+              {showCommunityForm && (
+                <CommunityForm
+                  key={`${selectedBuilder.id}-${editingCommunity?.id ?? communityPrefillKey ?? "new-community"}`}
+                  editingCommunity={editingCommunity}
+                  defaultBuilderId={selectedBuilder.id}
+                  lockBuilder
+                  onEditComplete={clearCommunityPanel}
+                  prefillKey={communityPrefillKey}
+                  initialForm={communityInitialForm}
+                />
+              )}
 
-          <div className="grid gap-8 xl:grid-cols-2">
-            <div className="space-y-8">
-              <CommunityForm
-                key={`${selectedBuilder.id}-${editingCommunity?.id ?? communityPrefillKey ?? "new-community"}`}
-                editingCommunity={editingCommunity}
-                defaultBuilderId={selectedBuilder.id}
-                lockBuilder
-                onEditComplete={() => {
-                  setEditingCommunity(null);
-                  setCommunityInitialForm(undefined);
-                  setCommunityPrefillKey(undefined);
-                }}
-                prefillKey={communityPrefillKey}
-                initialForm={communityInitialForm}
-              />
-
-              {(showHomeForm || homeInitialForm) && (
+              {showHomeForm && (
                 <HomeForm
                   key={
                     editingHome?.id ??
@@ -199,24 +248,28 @@ export function BuildersWorkspace() {
                     `new-home-${addingHomeForCommunityId ?? editingHomeCommunityId}`
                   }
                   editingHome={editingHome}
-                  editingCommunityId={
-                    editingHomeCommunityId ?? addingHomeForCommunityId
-                  }
+                  editingCommunityId={homeCommunityId}
                   communityIds={builderCommunityIds}
-                  onEditComplete={handleHomeEditComplete}
+                  onEditComplete={clearHomePanel}
                   prefillKey={homePrefillKey}
                   initialForm={homeInitialForm}
                 />
               )}
             </div>
+          )}
 
-            <CommunityList
-              filterBuilderId={selectedBuilder.id}
-              onEditCommunity={setEditingCommunity}
-              onEditHome={handleEditHome}
-              onAddHome={handleAddHome}
-            />
-          </div>
+          <CommunityList
+            filterBuilderId={selectedBuilder.id}
+            onEditCommunity={handleEditCommunity}
+            onEditHome={handleEditHome}
+            onAddHome={handleAddHome}
+          />
+
+          <AiPasteModal
+            open={pasteOpen}
+            onOpenChange={setPasteOpen}
+            onExtracted={handleDraftExtracted}
+          />
         </div>
       )}
     </div>

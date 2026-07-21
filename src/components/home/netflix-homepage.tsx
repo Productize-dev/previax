@@ -8,11 +8,12 @@ import { NetflixHomeRow } from "@/components/home/netflix-home-row";
 import { NetflixLendersRow } from "@/components/home/netflix-lenders-row";
 import { NetflixNavbar } from "@/components/home/netflix-navbar";
 import { NetflixSearchSkeleton } from "@/components/home/netflix-search-skeleton";
+import { NetflixVideoRow } from "@/components/home/netflix-video-row";
 import { useBuyer } from "@/context/buyer-context";
 import { useData } from "@/context/data-context";
 import { useAiSearch } from "@/hooks/use-ai-search";
 import { applyAiFilters } from "@/lib/ai";
-import { filterCommunities } from "@/lib/community-utils";
+import { filterCommunities, getPublicCommunities } from "@/lib/community-utils";
 import { resolveFeaturedCommunities } from "@/lib/homepage-featured-communities";
 import {
   resolveHomepageSectionTitle,
@@ -87,13 +88,17 @@ function isSectionVisible(
 
 export function NetflixHomepage() {
   const {
-    communities,
+    communities: allCommunities,
     featuredCommunities,
     top10Communities,
     homepageSections,
     customCommunityTagLabels,
     isLoaded,
   } = useData();
+  const communities = useMemo(
+    () => getPublicCommunities(allCommunities),
+    [allCommunities],
+  );
   const {
     searchQuery,
     cityFilter,
@@ -206,29 +211,55 @@ export function NetflixHomepage() {
     [communities, likedHomeRefs],
   );
 
+  const sectionByKey = useMemo(
+    () => new Map(layoutSections.map((section) => [section.sectionKey, section])),
+    [layoutSections],
+  );
+
+  const sectionConfigByKey = useMemo(() => {
+    const map = new Map(
+      homepageSections.map((section) => [section.sectionKey, section.config]),
+    );
+    return map;
+  }, [homepageSections]);
+
   const listingCategorySections = useMemo(
-    () => buildListingCategorySections(filtered),
-    [filtered],
+    () =>
+      buildListingCategorySections(
+        filtered,
+        sectionConfigByKey.get("listing-categories"),
+      ),
+    [filtered, sectionConfigByKey],
   );
 
   const mainHighlightSections = useMemo(
-    () => buildMainHighlightSections(filtered),
-    [filtered],
+    () =>
+      buildMainHighlightSections(
+        filtered,
+        sectionConfigByKey.get("main-highlights"),
+      ),
+    [filtered, sectionConfigByKey],
   );
 
   const communityTagSections = useMemo(
-    () => buildCommunityTagSections(filtered, customCommunityTagLabels),
-    [filtered, customCommunityTagLabels],
+    () =>
+      buildCommunityTagSections(
+        filtered,
+        customCommunityTagLabels,
+        sectionConfigByKey.get("community-tags"),
+      ),
+    [filtered, customCommunityTagLabels, sectionConfigByKey],
   );
 
   const homeTagSections = useMemo(
-    () => buildHomeTagSections(filtered),
-    [filtered],
+    () =>
+      buildHomeTagSections(filtered, sectionConfigByKey.get("home-tags")),
+    [filtered, sectionConfigByKey],
   );
 
   const citySections = useMemo(
-    () => buildCitySections(filtered),
-    [filtered],
+    () => buildCitySections(filtered, sectionConfigByKey.get("cities")),
+    [filtered, sectionConfigByKey],
   );
 
   const showSkeleton = !isLoaded || aiSearchLoading;
@@ -237,11 +268,6 @@ export function NetflixHomepage() {
     Boolean(searchQuery.trim()) ||
     aiCommunityIds !== null ||
     aiFilters !== null;
-
-  const sectionByKey = useMemo(
-    () => new Map(layoutSections.map((section) => [section.sectionKey, section])),
-    [layoutSections],
-  );
 
   const showHero =
     !hasActiveSearch && isSectionVisible(layoutSections, "hero");
@@ -392,6 +418,18 @@ export function NetflixHomepage() {
             communities={filtered}
           />
         );
+
+      case "custom-videos": {
+        const videos = section.videos ?? [];
+        if (videos.length === 0) return null;
+        return (
+          <NetflixVideoRow
+            key={section.id}
+            title={title}
+            videos={videos}
+          />
+        );
+      }
 
       default:
         return null;

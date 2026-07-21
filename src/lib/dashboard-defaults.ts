@@ -46,6 +46,7 @@ export const DEFAULT_COMMUNITY_FIELDS: Omit<
   nearbyPlaces: [],
   reviews: [],
   mediaGallery: [],
+  isHidden: false,
 };
 
 export type CommunityDashboardForm = {

@@ -162,6 +162,8 @@ export type Community = {
   ownerId?: string;
   viewCount?: number;
   saveCount?: number;
+  /** When true, community is hidden from the public site. */
+  isHidden?: boolean;
 };
 
 export type FeaturedItem = {
@@ -271,7 +273,32 @@ export type HomepageSectionKey =
   | "home-tags"
   | "lenders"
   | "cities"
-  | "all-communities";
+  | "all-communities"
+  | "custom-videos";
+
+/** Video tile inside a custom homepage video row (e.g. By Previax). */
+export type HomepageSectionVideo = {
+  id: string;
+  sectionId: string;
+  title: string;
+  youtubeUrl: string;
+  thumbnailUrl?: string;
+  order: number;
+};
+
+export type HomepageSectionVideoInput = Omit<
+  HomepageSectionVideo,
+  "id" | "sectionId" | "order"
+>;
+
+/**
+ * Per-section options. For auto-generated rows (tags, cities, categories),
+ * `includeKeys` selects which sub-rows appear (and in what order).
+ * `null` / omitted = show all available.
+ */
+export type HomepageSectionConfig = {
+  includeKeys?: string[] | null;
+};
 
 export type HomepageSection = {
   id: string;
@@ -280,6 +307,9 @@ export type HomepageSection = {
   title?: string;
   enabled: boolean;
   order: number;
+  config?: HomepageSectionConfig;
+  /** Populated for custom-videos sections. */
+  videos?: HomepageSectionVideo[];
 };
 
 export type BuilderInput = Omit<Builder, "id" | "createdAt">;

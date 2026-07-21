@@ -1,14 +1,16 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AiPasteModal } from "@/components/dashboard/ai-paste-modal";
 import { CommunityForm } from "@/components/dashboard/community-form";
 import { CommunityList } from "@/components/dashboard/community-list";
 import { CsvImportManager } from "@/components/dashboard/csv-import-manager";
+import {
+  DashboardCreateMenu,
+  type CreateMenuAction,
+} from "@/components/dashboard/dashboard-create-menu";
 import { HomeForm } from "@/components/dashboard/home-form";
-import { Button } from "@/components/ui/button";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { ExtractedListingDraft } from "@/lib/ai/listing-extract";
 import {
@@ -37,6 +39,7 @@ export function CommunitiesWorkspace({
   onPrefillConsumed,
 }: CommunitiesWorkspaceProps) {
   const { builders } = useDashboardData();
+  const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [editingCommunity, setEditingCommunity] = useState<Community | null>(
     null,
   );
@@ -48,62 +51,132 @@ export function CommunitiesWorkspace({
     string | null
   >(null);
   const [pasteOpen, setPasteOpen] = useState(false);
-  const [localCommunityPrefillKey, setLocalCommunityPrefillKey] = useState<
-    string | undefined
-  >();
-  const [localCommunityInitialForm, setLocalCommunityInitialForm] = useState<
-    CommunityDashboardForm | undefined
-  >();
-  const [localHomePrefillKey, setLocalHomePrefillKey] = useState<
-    string | undefined
-  >();
-  const [localHomeInitialForm, setLocalHomeInitialForm] = useState<
-    HomeModelForm | undefined
-  >();
+  const [showCsvImport, setShowCsvImport] = useState(false);
+  const [communityPrefill, setCommunityPrefill] = useState<{
+    key: string;
+    form: CommunityDashboardForm;
+  } | null>(null);
+  const [homePrefill, setHomePrefill] = useState<{
+    key: string;
+    form: HomeModelForm;
+  } | null>(null);
   const [pasteStatus, setPasteStatus] = useState<string | null>(null);
+  const formPanelRef = useRef<HTMLDivElement>(null);
 
-  const activeCommunityPrefillKey =
-    communityPrefillKey ?? localCommunityPrefillKey;
-  const activeCommunityInitialForm =
-    communityInitialForm ?? localCommunityInitialForm;
-  const activeHomePrefillKey = homePrefillKey ?? localHomePrefillKey;
-  const activeHomeInitialForm = homeInitialForm ?? localHomeInitialForm;
+  const showCommunityForm =
+    creatingCommunity || editingCommunity !== null || communityPrefill !== null;
+
+  const showHomeForm =
+    (editingHome !== null && editingHomeCommunityId !== null) ||
+    addingHomeForCommunityId !== null ||
+    homePrefill !== null;
+
+  // Adopt assistant / parent prefills into local state, then release parent.
+  useEffect(() => {
+    let adopted = false;
+    if (communityPrefillKey && communityInitialForm) {
+      setCommunityPrefill({
+        key: communityPrefillKey,
+        form: communityInitialForm,
+      });
+      setCreatingCommunity(true);
+      setEditingCommunity(null);
+      adopted = true;
+    }
+    if (homePrefillKey && homeInitialForm) {
+      setHomePrefill({ key: homePrefillKey, form: homeInitialForm });
+      setEditingHome(null);
+      setEditingHomeCommunityId(null);
+      setAddingHomeForCommunityId("__new__");
+      adopted = true;
+    }
+    if (adopted) onPrefillConsumed?.();
+    // Intentionally keyed only on prefill tokens from the parent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityPrefillKey, homePrefillKey]);
+
+  useEffect(() => {
+    if (!(showCommunityForm || showHomeForm)) return;
+    formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showCommunityForm, showHomeForm, editingCommunity?.id, editingHome?.id]);
+
+  function clearCommunityPanel() {
+    setCreatingCommunity(false);
+    setEditingCommunity(null);
+    setCommunityPrefill(null);
+  }
+
+  function clearHomePanel() {
+    setEditingHome(null);
+    setEditingHomeCommunityId(null);
+    setAddingHomeForCommunityId(null);
+    setHomePrefill(null);
+  }
+
+  function handleEditCommunity(community: Community) {
+    clearHomePanel();
+    setCommunityPrefill(null);
+    setCreatingCommunity(false);
+    setEditingCommunity(community);
+  }
 
   function handleEditHome(communityId: string, home: Home) {
+    clearCommunityPanel();
+    setHomePrefill(null);
     setEditingHome(home);
     setEditingHomeCommunityId(communityId);
     setAddingHomeForCommunityId(null);
   }
 
   function handleAddHome(communityId: string) {
+    clearCommunityPanel();
+    setHomePrefill(null);
     setEditingHome(null);
     setEditingHomeCommunityId(communityId);
     setAddingHomeForCommunityId(communityId);
   }
 
-  function handleHomeEditComplete() {
+  function openCreateCommunity() {
+    clearHomePanel();
+    setEditingCommunity(null);
+    setCommunityPrefill(null);
+    setCreatingCommunity(true);
+  }
+
+  function openCreateModel() {
+    clearCommunityPanel();
     setEditingHome(null);
     setEditingHomeCommunityId(null);
-    setAddingHomeForCommunityId(null);
-    setLocalHomeInitialForm(undefined);
-    setLocalHomePrefillKey(undefined);
-    onPrefillConsumed?.();
+    setHomePrefill(null);
+    setAddingHomeForCommunityId("__new__");
+  }
+
+  function handleCreateSelect(action: CreateMenuAction) {
+    if (action === "community") openCreateCommunity();
+    if (action === "model") openCreateModel();
+    if (action === "paste") setPasteOpen(true);
+    if (action === "import-csv") setShowCsvImport(true);
   }
 
   function handleDraftExtracted(draft: ExtractedListingDraft) {
     const builderId = builders[0]?.id ?? "";
     const communityForm = draftToCommunityForm(draft, builderId);
-    setLocalCommunityInitialForm(communityForm);
-    setLocalCommunityPrefillKey(`paste-${Date.now()}`);
+    setCommunityPrefill({
+      key: `paste-${Date.now()}`,
+      form: communityForm,
+    });
     setEditingCommunity(null);
+    setCreatingCommunity(true);
 
     const homeForm = draftToHomeForm(draft, 0);
     if (homeForm) {
-      setLocalHomeInitialForm(homeForm);
-      setLocalHomePrefillKey(`paste-home-${Date.now()}`);
+      setHomePrefill({
+        key: `paste-home-${Date.now()}`,
+        form: homeForm,
+      });
       setEditingHome(null);
       setEditingHomeCommunityId(null);
-      setAddingHomeForCommunityId(null);
+      setAddingHomeForCommunityId("__new__");
     }
 
     const homeCount = draft.homes?.length ?? 0;
@@ -114,10 +187,9 @@ export function CommunitiesWorkspace({
     );
   }
 
-  const showHomeForm =
-    (editingHome !== null && editingHomeCommunityId !== null) ||
-    addingHomeForCommunityId !== null ||
-    Boolean(activeHomeInitialForm);
+  const homeCommunityId =
+    editingHomeCommunityId ??
+    (addingHomeForCommunityId === "__new__" ? null : addingHomeForCommunityId);
 
   return (
     <div className="space-y-8">
@@ -125,13 +197,14 @@ export function CommunitiesWorkspace({
         <div>
           <h2 className="font-heading text-2xl">All Communities</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Visual catalog with previews. Tags organize rows on the homepage.
+            Browse and manage the catalog. Use Add to create communities or
+            models.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={() => setPasteOpen(true)}>
-          <Sparkles className="mr-1.5 size-4" />
-          Paste & autofill
-        </Button>
+        <DashboardCreateMenu
+          onSelect={handleCreateSelect}
+          actions={["community", "model", "paste", "import-csv"]}
+        />
       </div>
 
       {pasteStatus && (
@@ -140,50 +213,61 @@ export function CommunitiesWorkspace({
         </p>
       )}
 
-      <CsvImportManager />
+      {showCsvImport && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-foreground">CSV import</p>
+            <button
+              type="button"
+              className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+              onClick={() => setShowCsvImport(false)}
+            >
+              Hide import
+            </button>
+          </div>
+          <CsvImportManager />
+        </div>
+      )}
 
-      <div className="grid gap-8 xl:grid-cols-2">
-        <div className="space-y-8">
-          <CommunityForm
-            key={
-              activeCommunityPrefillKey ?? editingCommunity?.id ?? "new-community"
-            }
-            editingCommunity={editingCommunity}
-            onEditComplete={() => {
-              setEditingCommunity(null);
-              setLocalCommunityInitialForm(undefined);
-              setLocalCommunityPrefillKey(undefined);
-              onPrefillConsumed?.();
-            }}
-            prefillKey={activeCommunityPrefillKey}
-            initialForm={activeCommunityInitialForm}
-          />
+      {(showCommunityForm || showHomeForm) && (
+        <div
+          ref={formPanelRef}
+          className="grid gap-8 rounded-xl border border-border bg-card/40 p-4 sm:p-6 xl:grid-cols-2"
+        >
+          {showCommunityForm && (
+            <CommunityForm
+              key={communityPrefill?.key ?? editingCommunity?.id ?? "new-community"}
+              editingCommunity={editingCommunity}
+              onEditComplete={clearCommunityPanel}
+              prefillKey={communityPrefill?.key}
+              initialForm={communityPrefill?.form}
+            />
+          )}
 
           {showHomeForm && (
             <HomeForm
               key={
-                activeHomePrefillKey ??
+                homePrefill?.key ??
                 editingHome?.id ??
                 `new-home-${addingHomeForCommunityId ?? editingHomeCommunityId}`
               }
               editingHome={editingHome}
-              editingCommunityId={
-                editingHomeCommunityId ?? addingHomeForCommunityId
-              }
-              onEditComplete={handleHomeEditComplete}
-              prefillKey={activeHomePrefillKey}
-              initialForm={activeHomeInitialForm}
+              editingCommunityId={homeCommunityId}
+              onEditComplete={clearHomePanel}
+              prefillKey={homePrefill?.key}
+              initialForm={homePrefill?.form}
             />
           )}
         </div>
+      )}
 
-        <CommunityList
-          showBuilder
-          onEditCommunity={setEditingCommunity}
-          onEditHome={handleEditHome}
-          onAddHome={handleAddHome}
-        />
-      </div>
+      <CommunityList
+        showBuilder
+        hideTitle
+        onEditCommunity={handleEditCommunity}
+        onEditHome={handleEditHome}
+        onAddHome={handleAddHome}
+      />
 
       <AiPasteModal
         open={pasteOpen}

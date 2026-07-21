@@ -42,6 +42,7 @@ export default function CommunityDetailContent() {
   const [activeModelIndex, setActiveModelIndex] = useState(0);
 
   const community = communities.find((c) => c.id === params.id);
+  const isHiddenFromPublic = Boolean(community?.isHidden);
   const modelsParam = searchParams.get("models");
   const modelParam = searchParams.get("model") ?? searchParams.get("home");
 
@@ -134,7 +135,7 @@ export default function CommunityDetailContent() {
     );
   }
 
-  if (!community) {
+  if (!community || isHiddenFromPublic) {
     return (
       <div className="min-h-screen bg-[#141414] text-white">
         <NetflixNavbar />

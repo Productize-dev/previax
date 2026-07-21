@@ -432,11 +432,9 @@ export function HomeForm({
             >
               {isEditing ? "Save Changes" : "Add Model Home"}
             </Button>
-            {isEditing && (
-              <Button type="button" variant="outline" onClick={onEditComplete}>
-                Cancel
-              </Button>
-            )}
+            <Button type="button" variant="outline" onClick={onEditComplete}>
+              Cancel
+            </Button>
           </div>
         </form>
       </CardContent>

@@ -15,7 +15,6 @@ import { FeaturedList } from "@/components/dashboard/featured-list";
 import { FeaturedCommunitiesManager } from "@/components/dashboard/featured-communities-manager";
 import { LenderOverview } from "@/components/dashboard/lender-overview";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
-import { LocalDataImportCard } from "@/components/dashboard/local-data-import-card";
 import { PendingAccountsCard } from "@/components/dashboard/pending-accounts-card";
 import { HomepageLayoutManager } from "@/components/dashboard/homepage-layout-manager";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
@@ -174,7 +173,6 @@ export default function DashboardPage() {
           {tab === "overview" && (
             <div className="space-y-6">
               {isAdmin && <PendingAccountsCard />}
-              {isAdmin && <LocalDataImportCard />}
               {isAdmin && (
                 <AdminOverview
                   onNavigate={setTab}

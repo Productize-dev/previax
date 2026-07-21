@@ -563,11 +563,9 @@ export function CommunityForm({
             <Button type="submit" disabled={submitting}>
               {isEditing ? "Save Changes" : "Add Community"}
             </Button>
-            {isEditing && (
-              <Button type="button" variant="outline" onClick={onEditComplete}>
-                Cancel
-              </Button>
-            )}
+            <Button type="button" variant="outline" onClick={onEditComplete}>
+              Cancel
+            </Button>
           </div>
         </form>
       </CardContent>

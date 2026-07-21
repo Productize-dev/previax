@@ -3,6 +3,8 @@
 import {
   ChevronDown,
   ChevronRight,
+  Eye,
+  EyeOff,
   LayoutGrid,
   List,
   Pencil,
@@ -38,13 +40,15 @@ import {
   getHomePosterUrl,
 } from "@/lib/community-media";
 import { getCommunityTagLabel } from "@/lib/tag-labels";
-import { toastSuccess } from "@/lib/toast";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { Community, Home } from "@/lib/types";
 
 type CommunityListProps = {
   filterBuilderId?: string;
   showBuilder?: boolean;
+  /** Hide the section title when the parent page already provides one. */
+  hideTitle?: boolean;
   onEditCommunity: (community: Community) => void;
   onEditHome?: (communityId: string, home: Home) => void;
   onAddHome?: (communityId: string) => void;
@@ -55,6 +59,7 @@ type ViewMode = "grid" | "list";
 export function CommunityList({
   filterBuilderId,
   showBuilder = false,
+  hideTitle = false,
   onEditCommunity,
   onEditHome,
   onAddHome,
@@ -65,6 +70,7 @@ export function CommunityList({
     customCommunityTagLabels,
     deleteCommunity,
     deleteHome,
+    updateCommunity,
   } = useDashboardData();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -79,6 +85,10 @@ export function CommunityList({
   const [cityFilter, setCityFilter] = useState<string>("all");
   const [onlyWithModels, setOnlyWithModels] = useState(false);
   const [onlyWithVideo, setOnlyWithVideo] = useState(false);
+  const [visibilityFilter, setVisibilityFilter] = useState<
+    "all" | "visible" | "hidden"
+  >("all");
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const baseItems = filterBuilderId
     ? communities.filter((community) =>
@@ -90,6 +100,11 @@ export function CommunityList({
     const set = new Set(baseItems.map((c) => c.city).filter(Boolean));
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [baseItems]);
+
+  const hiddenCount = useMemo(
+    () => baseItems.filter((c) => c.isHidden).length,
+    [baseItems],
+  );
 
   const items = useMemo(() => {
     let filtered = filterBySearch(
@@ -112,6 +127,11 @@ export function CommunityList({
           c.homes.some((h) => Boolean(h.youtubeUrl?.trim())),
       );
     }
+    if (visibilityFilter === "visible") {
+      filtered = filtered.filter((c) => !c.isHidden);
+    } else if (visibilityFilter === "hidden") {
+      filtered = filtered.filter((c) => c.isHidden);
+    }
 
     return sortByLabel(filtered, (c) => c.name, sortDir);
   }, [
@@ -121,6 +141,7 @@ export function CommunityList({
     cityFilter,
     onlyWithModels,
     onlyWithVideo,
+    visibilityFilter,
   ]);
 
   function toggleExpanded(id: string) {
@@ -130,6 +151,22 @@ export function CommunityList({
       else next.add(id);
       return next;
     });
+  }
+
+  async function toggleHidden(community: Community) {
+    setTogglingId(community.id);
+    try {
+      await updateCommunity(community.id, {
+        isHidden: !community.isHidden,
+      });
+      toastSuccess(
+        community.isHidden ? "Community unhidden" : "Community hidden",
+      );
+    } catch {
+      toastError("Failed to update visibility");
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function confirmDelete() {
@@ -148,8 +185,8 @@ export function CommunityList({
     return (
       <p className="text-muted-foreground">
         {filterBuilderId
-          ? "No communities for this builder yet. Add one using the form."
-          : "No communities yet. Add one using the form."}
+          ? "No communities for this builder yet. Use Add to create one."
+          : "No communities yet. Use Add to create one."}
       </p>
     );
   }
@@ -159,11 +196,18 @@ export function CommunityList({
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-heading text-xl">
-              {filterBuilderId ? "Communities" : "All Communities"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {baseItems.length} total · browse with previews
+            {!hideTitle && (
+              <h2 className="font-heading text-xl">
+                {filterBuilderId ? "Communities" : "All Communities"}
+              </h2>
+            )}
+            <p
+              className={cn(
+                "text-sm text-muted-foreground",
+                !hideTitle && "mt-0",
+              )}
+            >
+              {baseItems.length} total · {hiddenCount} hidden
             </p>
           </div>
           <div className="flex rounded-lg border border-border p-0.5">
@@ -233,6 +277,20 @@ export function CommunityList({
             onClick={() => setOnlyWithVideo((v) => !v)}
             label="Has video"
           />
+          <FilterChip
+            active={visibilityFilter === "visible"}
+            onClick={() =>
+              setVisibilityFilter((v) => (v === "visible" ? "all" : "visible"))
+            }
+            label="Visible only"
+          />
+          <FilterChip
+            active={visibilityFilter === "hidden"}
+            onClick={() =>
+              setVisibilityFilter((v) => (v === "hidden" ? "all" : "hidden"))
+            }
+            label={`Hidden (${hiddenCount})`}
+          />
         </div>
 
         {items.length === 0 && (
@@ -257,6 +315,8 @@ export function CommunityList({
                   onAddHome ? () => onAddHome(community.id) : undefined
                 }
                 onEditHome={onEditHome}
+                onToggleHidden={() => toggleHidden(community)}
+                togglingHidden={togglingId === community.id}
                 onDeleteCommunity={() =>
                   setDeleteTarget({
                     type: "community",
@@ -291,6 +351,8 @@ export function CommunityList({
                   onAddHome ? () => onAddHome(community.id) : undefined
                 }
                 onEditHome={onEditHome}
+                onToggleHidden={() => toggleHidden(community)}
+                togglingHidden={togglingId === community.id}
                 onDeleteCommunity={() =>
                   setDeleteTarget({
                     type: "community",
@@ -374,6 +436,8 @@ type CardSharedProps = {
   onEdit: () => void;
   onAddHome?: () => void;
   onEditHome?: (communityId: string, home: Home) => void;
+  onToggleHidden: () => void;
+  togglingHidden: boolean;
   onDeleteCommunity: () => void;
   onDeleteHome: (home: Home) => void;
 };
@@ -388,14 +452,24 @@ function CommunityPreviewCard({
   onEdit,
   onAddHome,
   onEditHome,
+  onToggleHidden,
+  togglingHidden,
   onDeleteCommunity,
   onDeleteHome,
 }: CardSharedProps) {
   const poster = getCommunityHeroPosterUrl(community);
   const priceRange = getPriceRange(community);
+  const isHidden = Boolean(community.isHidden);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <article
+      className={cn(
+        "overflow-hidden rounded-xl border bg-card shadow-sm",
+        isHidden
+          ? "border-amber-500/40 opacity-80"
+          : "border-border",
+      )}
+    >
       <button type="button" onClick={onToggle} className="relative block w-full text-left">
         <div className="relative aspect-[16/10] bg-muted">
           {poster ? (
@@ -418,12 +492,19 @@ function CommunityPreviewCard({
               {showBuilder ? ` · ${builderName}` : ""}
             </p>
           </div>
-          {community.youtubeUrl && (
-            <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
-              <Video className="size-3" />
-              Video
-            </span>
-          )}
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            {isHidden && (
+              <span className="rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                Hidden
+              </span>
+            )}
+            {community.youtubeUrl && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                <Video className="size-3" />
+                Video
+              </span>
+            )}
+          </div>
         </div>
       </button>
 
@@ -445,6 +526,19 @@ function CommunityPreviewCard({
                 <Plus className="size-4" />
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onToggleHidden}
+              disabled={togglingHidden}
+              aria-label={isHidden ? "Unhide community" : "Hide community"}
+            >
+              {isHidden ? (
+                <Eye className="size-4" />
+              ) : (
+                <EyeOff className="size-4" />
+              )}
+            </Button>
             <Button variant="ghost" size="icon-sm" onClick={onEdit}>
               <Pencil className="size-4" />
             </Button>
@@ -503,14 +597,24 @@ function CommunityListRow(props: CardSharedProps) {
     onEdit,
     onAddHome,
     onEditHome,
+    onToggleHidden,
+    togglingHidden,
     onDeleteCommunity,
     onDeleteHome,
   } = props;
   const poster = getCommunityHeroPosterUrl(community);
   const priceRange = getPriceRange(community);
+  const isHidden = Boolean(community.isHidden);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border bg-card",
+        isHidden
+          ? "border-amber-500/40 opacity-80"
+          : "border-border",
+      )}
+    >
       <div className="flex items-stretch gap-3 p-3">
         <button
           type="button"
@@ -528,7 +632,14 @@ function CommunityListRow(props: CardSharedProps) {
             className="size-14 shrink-0 rounded-md object-cover"
           />
           <div className="min-w-0">
-            <p className="truncate font-medium">{community.name}</p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate font-medium">{community.name}</p>
+              {isHidden && (
+                <span className="shrink-0 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                  Hidden
+                </span>
+              )}
+            </div>
             <p className="truncate text-sm text-muted-foreground">
               {community.city}
               {showBuilder ? ` · ${builderName}` : ""}
@@ -562,6 +673,19 @@ function CommunityListRow(props: CardSharedProps) {
               <Plus className="size-4" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onToggleHidden}
+            disabled={togglingHidden}
+            aria-label={isHidden ? "Unhide community" : "Hide community"}
+          >
+            {isHidden ? (
+              <Eye className="size-4" />
+            ) : (
+              <EyeOff className="size-4" />
+            )}
+          </Button>
           <Button variant="ghost" size="icon-sm" onClick={onEdit}>
             <Pencil className="size-4" />
           </Button>

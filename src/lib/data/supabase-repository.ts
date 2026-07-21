@@ -1,4 +1,4 @@
-import { buildDefaultHomepageSections } from "../homepage-layout";
+import { buildDefaultHomepageSections, isCustomVideoSection } from "../homepage-layout";
 import { getSupabaseBrowserClient } from "../supabase/client";
 import { importCatalogFromCsv } from "../csv-catalog-import";
 import { syncCommunityBuilderFields, communityHasBuilder } from "../community-builders";
@@ -12,6 +12,7 @@ import type {
   FeaturedItem,
   Home,
   HomepageSection,
+  HomepageSectionVideoInput,
   HomepageSeriesRow,
   Lender,
   LenderOffer,
@@ -38,6 +39,7 @@ import {
   rowToFeaturedCommunity,
   rowToHome,
   rowToHomepageSection,
+  rowToHomepageSectionVideo,
   rowToHomepageSeries,
   rowToLender,
   rowToLenderOffer,
@@ -54,6 +56,7 @@ import {
   type HomeRow,
   type HomepageSeriesRowRow,
   type HomepageSectionRow,
+  type HomepageSectionVideoRow,
   type LenderOfferRow,
   type LenderRow,
   type SeriesRow,
@@ -181,7 +184,29 @@ async function fetchHomepageSections(): Promise<HomepageSection[]> {
   if (rows.length === 0) {
     return buildDefaultHomepageSections();
   }
-  return rows;
+
+  const { data: videoData, error: videoError } = await db()
+    .from("homepage_section_videos")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (videoError) fail("Load homepage section videos", videoError.message);
+
+  const videosBySection = new Map<
+    string,
+    ReturnType<typeof rowToHomepageSectionVideo>[]
+  >();
+  for (const row of (videoData ?? []) as HomepageSectionVideoRow[]) {
+    const video = rowToHomepageSectionVideo(row);
+    const list = videosBySection.get(video.sectionId) ?? [];
+    list.push(video);
+    videosBySection.set(video.sectionId, list);
+  }
+
+  return rows.map((section) =>
+    isCustomVideoSection(section)
+      ? { ...section, videos: videosBySection.get(section.id) ?? [] }
+      : section,
+  );
 }
 
 async function fetchTagLabels(): Promise<Record<string, string>> {
@@ -886,6 +911,15 @@ export const supabaseRepository: SiteRepository = {
     return fetchHomepageSections();
   },
 
+  async updateHomepageSectionConfig(id, config) {
+    const { error } = await db()
+      .from("homepage_sections")
+      .update({ config })
+      .eq("id", id);
+    if (error) fail("Update homepage section config", error.message);
+    return fetchHomepageSections();
+  },
+
   async reorderHomepageSections(orderedIds) {
     await updateSortOrder("homepage_sections", orderedIds);
     return fetchHomepageSections();
@@ -895,7 +929,7 @@ export const supabaseRepository: SiteRepository = {
     const { error: deleteError } = await db()
       .from("homepage_sections")
       .delete()
-      .neq("id", "");
+      .neq("section_key", "custom-videos");
     if (deleteError) fail("Reset homepage sections", deleteError.message);
 
     const defaults = buildDefaultHomepageSections();
@@ -908,6 +942,85 @@ export const supabaseRepository: SiteRepository = {
         })),
       );
     if (insertError) fail("Reset homepage sections", insertError.message);
+    return fetchHomepageSections();
+  },
+
+  async addCustomVideoSection(title = "By Previax") {
+    const existing = await fetchHomepageSections();
+    const maxOrder = existing.reduce((max, row) => Math.max(max, row.order), 0);
+    const { error } = await db().from("homepage_sections").insert({
+      section_key: "custom-videos",
+      title: title.trim() || "By Previax",
+      enabled: true,
+      sort_order: maxOrder + 10,
+    });
+    if (error) fail("Add custom video section", error.message);
+    return fetchHomepageSections();
+  },
+
+  async deleteHomepageSection(id) {
+    const sections = await fetchHomepageSections();
+    const target = sections.find((section) => section.id === id);
+    if (!target) return sections;
+    if (!isCustomVideoSection(target)) {
+      fail(
+        "Delete homepage section",
+        "Only custom video sections can be deleted",
+      );
+    }
+    const { error } = await db().from("homepage_sections").delete().eq("id", id);
+    if (error) fail("Delete homepage section", error.message);
+    return fetchHomepageSections();
+  },
+
+  async addHomepageSectionVideo(sectionId, data) {
+    const sections = await fetchHomepageSections();
+    const section = sections.find((row) => row.id === sectionId);
+    if (!section || !isCustomVideoSection(section)) {
+      fail(
+        "Add section video",
+        "Videos can only be added to custom video rows",
+      );
+    }
+    const maxOrder = (section.videos ?? []).reduce(
+      (max, video) => Math.max(max, video.order),
+      0,
+    );
+    const { error } = await db().from("homepage_section_videos").insert({
+      section_id: sectionId,
+      title: data.title.trim(),
+      subtitle: null,
+      youtube_url: data.youtubeUrl.trim(),
+      thumbnail_url: data.thumbnailUrl?.trim() || null,
+      sort_order: maxOrder + 10,
+    });
+    if (error) fail("Add section video", error.message);
+    return fetchHomepageSections();
+  },
+
+  async updateHomepageSectionVideo(id, data) {
+    const patch: Record<string, unknown> = {};
+    if (data.title !== undefined) patch.title = data.title.trim();
+    if (data.youtubeUrl !== undefined) {
+      patch.youtube_url = data.youtubeUrl.trim();
+    }
+    if (data.thumbnailUrl !== undefined) {
+      patch.thumbnail_url = data.thumbnailUrl?.trim() || null;
+    }
+    const { error } = await db()
+      .from("homepage_section_videos")
+      .update(patch)
+      .eq("id", id);
+    if (error) fail("Update section video", error.message);
+    return fetchHomepageSections();
+  },
+
+  async deleteHomepageSectionVideo(id) {
+    const { error } = await db()
+      .from("homepage_section_videos")
+      .delete()
+      .eq("id", id);
+    if (error) fail("Delete section video", error.message);
     return fetchHomepageSections();
   },
 };

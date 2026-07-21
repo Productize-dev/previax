@@ -36,7 +36,8 @@ export default function SavedPageClient() {
   const { communities, isLoaded } = useData();
 
   const savedCommunities = useMemo(
-    () => communities.filter((c) => savedIds.includes(c.id)),
+    () =>
+      communities.filter((c) => !c.isHidden && savedIds.includes(c.id)),
     [communities, savedIds],
   );
 
@@ -46,7 +47,9 @@ export default function SavedPageClient() {
         .map((ref) => {
           const parsed = parseHomeRef(ref);
           if (!parsed) return null;
-          const community = communities.find((c) => c.id === parsed.communityId);
+          const community = communities.find(
+            (c) => c.id === parsed.communityId && !c.isHidden,
+          );
           const home = community?.homes.find((h) => h.id === parsed.homeId);
           if (!community || !home) return null;
           return { community, home };
@@ -56,7 +59,10 @@ export default function SavedPageClient() {
   );
 
   const likedCommunities = useMemo(
-    () => communities.filter((c) => likedCommunityIds.includes(c.id)),
+    () =>
+      communities.filter(
+        (c) => !c.isHidden && likedCommunityIds.includes(c.id),
+      ),
     [communities, likedCommunityIds],
   );
 
@@ -66,7 +72,9 @@ export default function SavedPageClient() {
         .map((ref) => {
           const parsed = parseHomeRef(ref);
           if (!parsed) return null;
-          const community = communities.find((c) => c.id === parsed.communityId);
+          const community = communities.find(
+            (c) => c.id === parsed.communityId && !c.isHidden,
+          );
           const home = community?.homes.find((h) => h.id === parsed.homeId);
           if (!community || !home) return null;
           return { community, home };
