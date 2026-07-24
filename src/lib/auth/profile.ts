@@ -25,14 +25,15 @@ export function mapProfileRow(row: ProfileRow): Profile {
   };
 }
 
-/** Roles con acceso al dashboard. */
+/** Roles with dashboard access. */
 export function canAccessDashboard(profile: Profile | null): boolean {
   return (
     !!profile &&
     profile.status === "active" &&
     (profile.role === "builder" ||
       profile.role === "lender" ||
-      profile.role === "admin")
+      profile.role === "admin" ||
+      profile.role === "sales")
   );
 }
 

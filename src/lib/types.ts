@@ -18,6 +18,16 @@ export type HomeListingCategory =
   | "big-incentives"
   | "top-ten";
 
+/** Publishing pipeline for sales-submitted communities. */
+export type CommunityPipelineStatus =
+  | "draft"
+  | "awaiting_video"
+  | "video_review"
+  | "pending_admin"
+  | "pending_builder"
+  | "live"
+  | "rejected";
+
 export type Builder = {
   id: string;
   name: string;
@@ -164,6 +174,17 @@ export type Community = {
   saveCount?: number;
   /** When true, community is hidden from the public site. */
   isHidden?: boolean;
+  /** Sales publishing workflow status. Defaults to live for legacy rows. */
+  pipelineStatus?: CommunityPipelineStatus;
+  submittedBy?: string;
+  step1CompletedAt?: number;
+  step2SubmittedAt?: number;
+  adminApprovedAt?: number;
+  adminApprovedBy?: string;
+  builderApprovedAt?: number;
+  builderDeadlineAt?: number;
+  rejectedAt?: number;
+  rejectionReason?: string;
 };
 
 export type FeaturedItem = {
@@ -338,6 +359,8 @@ export type DashboardTab =
   | "assistant"
   | "builders"
   | "communities"
+  | "pipeline"
+  | "sales-team"
   | "lenders"
   | "featured"
   | "featured-communities"
@@ -349,9 +372,21 @@ export type BuyerProfile = {
   email: string;
 };
 
-export type UserRole = "buyer" | "builder" | "lender" | "admin";
+export type UserRole = "buyer" | "builder" | "lender" | "admin" | "sales";
 
 export type UserStatus = "active" | "pending" | "rejected";
+
+export type AppNotification = {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  communityId?: string;
+  href?: string;
+  readAt?: number;
+  createdAt: number;
+};
 
 /** Fila de public.profiles mapeada a camelCase. */
 export type Profile = {

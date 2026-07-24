@@ -10,6 +10,8 @@ import {
   LayoutList,
   Sparkles,
   Trophy,
+  Users,
+  Workflow,
 } from "lucide-react";
 
 import { useProfile } from "@/context/auth-context";
@@ -46,6 +48,13 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Sales pipeline",
+    items: [
+      { id: "pipeline", label: "Publishing pipeline", icon: Workflow },
+      { id: "sales-team", label: "Sales team", icon: Users },
+    ],
+  },
+  {
     label: "Lenders",
     items: [{ id: "lenders", label: "Lender profiles", icon: Landmark }],
   },
@@ -74,6 +83,17 @@ const builderNavGroups: NavGroup[] = [
     items: [
       { id: "builders", label: "Builders", icon: Hammer },
       { id: "communities", label: "My Communities", icon: Building2 },
+      { id: "pipeline", label: "Approvals", icon: Workflow },
+    ],
+  },
+];
+
+const salesNavGroups: NavGroup[] = [
+  {
+    label: "Sales",
+    items: [
+      { id: "pipeline", label: "My pipeline", icon: Workflow },
+      { id: "communities", label: "Submit community", icon: Building2 },
     ],
   },
 ];
@@ -88,6 +108,7 @@ const lenderNavGroups: NavGroup[] = [
 function navGroupsForRole(role: UserRole | undefined): NavGroup[] {
   if (role === "builder") return builderNavGroups;
   if (role === "lender") return lenderNavGroups;
+  if (role === "sales") return salesNavGroups;
   return adminNavGroups;
 }
 

@@ -58,7 +58,10 @@ export function scopeDashboardData(
       (c) =>
         c.ownerId === profile.id ||
         (c.builderId && builderIds.has(c.builderId)) ||
-        c.builderIds?.some((id) => builderIds.has(id)),
+        c.builderIds?.some((id) => builderIds.has(id)) ||
+        (c.pipelineStatus === "pending_builder" &&
+          ((c.builderId && builderIds.has(c.builderId)) ||
+            c.builderIds?.some((id) => builderIds.has(id)))),
     );
     const communityIds = new Set(communities.map((c) => c.id));
     const series = data.series.filter((s) => builderIds.has(s.builderId));
@@ -78,6 +81,25 @@ export function scopeDashboardData(
       top10Communities: data.top10Communities.filter((slot) =>
         communityIds.has(slot.communityId),
       ),
+      homepageSeries: [],
+    };
+  }
+
+  if (role === "sales" && profile) {
+    const communities = data.communities.filter(
+      (c) => c.submittedBy === profile.id || c.ownerId === profile.id,
+    );
+    return {
+      role,
+      catalogCommunities,
+      builders: data.builders,
+      communities,
+      series: [],
+      lenders: [],
+      lenderOffers: [],
+      featured: [],
+      featuredCommunities: [],
+      top10Communities: [],
       homepageSeries: [],
     };
   }

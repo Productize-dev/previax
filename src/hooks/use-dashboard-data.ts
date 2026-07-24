@@ -37,5 +37,6 @@ export function useDashboardData() {
     isAdmin: scoped.role === "admin",
     isBuilder: scoped.role === "builder",
     isLender: scoped.role === "lender",
+    isSales: scoped.role === "sales",
   };
 }

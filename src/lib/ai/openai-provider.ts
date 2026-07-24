@@ -8,6 +8,7 @@ import {
 import type { AiProvider } from "./provider";
 import { SEARCH_FILTERS_SCHEMA } from "./schemas";
 import type { AiSearchContext, AiSearchFilters } from "./types";
+import { aiSearchLanguageRule } from "@/lib/i18n/locale";
 
 export const openAiProvider: AiProvider = {
   name: "openai",
@@ -25,7 +26,12 @@ export const openAiProvider: AiProvider = {
         messages: [
           {
             role: "system",
-            content: `You extract home search filters from natural language (English or Spanish). Known cities in catalog: ${(context?.cities ?? []).join(", ") || "none"}. Buyer saved community count: ${context?.savedIds?.length ?? 0}. Set unused fields to null. semanticQuery should be a short English phrase for semantic search.`,
+            content: [
+              aiSearchLanguageRule(),
+              `Known cities in catalog: ${(context?.cities ?? []).join(", ") || "none"}.`,
+              `Buyer saved community count: ${context?.savedIds?.length ?? 0}.`,
+              "Set unused fields to null.",
+            ].join(" "),
           },
           { role: "user", content: query },
         ],

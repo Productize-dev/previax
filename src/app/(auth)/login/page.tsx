@@ -90,6 +90,12 @@ function LoginForm() {
         <h1 className="font-heading text-2xl">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Welcome back — enter your details below.
+          {searchParams.get("error") === "invite_required" && (
+            <span className="mt-2 block text-destructive">
+              Open the invite link from your email (or the link your admin
+              shared) before signing in — you need to set a password first.
+            </span>
+          )}
         </p>
       </div>
 

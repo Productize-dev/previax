@@ -51,9 +51,10 @@ export function getUniqueCities(communities: Community[]): string[] {
   return [...new Set(communities.map((c) => c.city))].sort();
 }
 
-/** Visible on the public site (not hidden by admin/builder). */
+/** Visible on the public site (live + not hidden). */
 export function isCommunityPublic(community: Community): boolean {
-  return !community.isHidden;
+  const status = community.pipelineStatus ?? "live";
+  return !community.isHidden && status === "live";
 }
 
 export function getPublicCommunities(communities: Community[]): Community[] {

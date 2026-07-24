@@ -5,6 +5,7 @@ import {
   type ExtractedListingDraft,
 } from "@/lib/ai/listing-extract";
 import { openAiStructuredChat, openAiTextChat } from "@/lib/ai/openai-client";
+import { aiConversationLanguageRule } from "@/lib/i18n/locale";
 
 export type AssistantMessage = {
   role: "user" | "assistant";
@@ -186,6 +187,7 @@ export async function runAdminAssistant(
             "Help admins add/edit communities and model homes, search the catalog, and prepare listing drafts.",
             "Be concise and actionable. Never invent prices as facts — mark uncertain fields for review.",
             "If the user wants to add a listing from text/URL, set intent to extract_listing and tell them to paste the full text.",
+            aiConversationLanguageRule(message),
             `Catalog context: ${catalogSummary(req.catalog)}`,
           ].join(" "),
         },
@@ -220,8 +222,7 @@ export async function runAdminAssistant(
       messages: [
         {
           role: "system",
-          content:
-            "You are Previax Admin Assistant. Help manage communities and model homes. Be brief.",
+          content: `You are Previax Admin Assistant. Help manage communities and model homes. Be brief. ${aiConversationLanguageRule(message)}`,
         },
         { role: "user", content: message },
       ],

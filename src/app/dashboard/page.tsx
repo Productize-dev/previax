@@ -17,6 +17,12 @@ import { LenderOverview } from "@/components/dashboard/lender-overview";
 import { LendersWorkspace } from "@/components/dashboard/lenders-workspace";
 import { PendingAccountsCard } from "@/components/dashboard/pending-accounts-card";
 import { HomepageLayoutManager } from "@/components/dashboard/homepage-layout-manager";
+import { PipelineWorkspace } from "@/components/dashboard/pipeline-workspace";
+import {
+  NotificationsBell,
+  SalesTeamManager,
+} from "@/components/dashboard/sales-team-manager";
+import { SalesSubmissionWizard } from "@/components/dashboard/sales-submission-wizard";
 import { Top10CommunitiesManager } from "@/components/dashboard/top-10-communities-manager";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
@@ -33,8 +39,14 @@ import type {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { DashboardTab, FeaturedItem } from "@/lib/types";
 
-const BUILDER_TABS: DashboardTab[] = ["overview", "builders", "communities"];
+const BUILDER_TABS: DashboardTab[] = [
+  "overview",
+  "builders",
+  "communities",
+  "pipeline",
+];
 const LENDER_TABS: DashboardTab[] = ["overview", "lenders"];
+const SALES_TABS: DashboardTab[] = ["overview", "pipeline", "communities"];
 
 export default function DashboardPage() {
   const {
@@ -45,6 +57,7 @@ export default function DashboardPage() {
     isAdmin,
     isBuilder,
     isLender,
+    isSales,
   } = useDashboardData();
   const [tab, setTab] = useState<DashboardTab>("overview");
   const [editingFeatured, setEditingFeatured] = useState<FeaturedItem | null>(
@@ -75,13 +88,23 @@ export default function DashboardPage() {
   }, [isAdmin]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab") as DashboardTab | null;
+    if (tabParam) setTab(tabParam);
+  }, []);
+
+  useEffect(() => {
     if (isBuilder && !BUILDER_TABS.includes(tab)) {
       setTab("overview");
     }
     if (isLender && !LENDER_TABS.includes(tab)) {
       setTab("overview");
     }
-  }, [isBuilder, isLender, tab]);
+    if (isSales && !SALES_TABS.includes(tab)) {
+      setTab("overview");
+    }
+  }, [isBuilder, isLender, isSales, tab]);
 
   function handleAssistantDraft(
     draft: ExtractedListingDraft,
@@ -129,7 +152,9 @@ export default function DashboardPage() {
     ? `${builders.length} builder${builders.length === 1 ? "" : "s"} · ${communities.length} communit${communities.length === 1 ? "y" : "ies"}`
     : isLender
       ? "Lender account"
-      : `${builders.length} builder${builders.length === 1 ? "" : "s"} · ${communities.length} communit${communities.length === 1 ? "y" : "ies"}`;
+      : isSales
+        ? "Sales publishing pipeline"
+        : `${builders.length} builder${builders.length === 1 ? "" : "s"} · ${communities.length} communit${communities.length === 1 ? "y" : "ies"}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -143,6 +168,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {(isAdmin || isBuilder || isSales) && <NotificationsBell />}
             <Link
               href="/"
               className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
@@ -181,6 +207,34 @@ export default function DashboardPage() {
               )}
               {isBuilder && <BuilderOverview onNavigate={setTab} />}
               {isLender && <LenderOverview onNavigate={setTab} />}
+              {isSales && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="font-heading text-2xl">Sales overview</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Submit community info (Step 1), attach YouTube when ready
+                      (Step 2), then wait for admin and builder approval.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                      onClick={() => setTab("communities")}
+                    >
+                      New submission
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                      onClick={() => setTab("pipeline")}
+                    >
+                      Open pipeline
+                    </button>
+                  </div>
+                  <PipelineWorkspace mode="sales" />
+                </div>
+              )}
             </div>
           )}
 
@@ -202,6 +256,15 @@ export default function DashboardPage() {
 
           {(isAdmin || isBuilder) && tab === "builders" && <BuildersWorkspace />}
 
+          {isSales && tab === "communities" && (
+            <div className="space-y-8">
+              <SalesSubmissionWizard
+                onCreated={() => setTab("pipeline")}
+              />
+              <PipelineWorkspace mode="sales" />
+            </div>
+          )}
+
           {(isAdmin || isBuilder) && tab === "communities" && (
             <CommunitiesWorkspace
               communityPrefillKey={communityPrefillKey}
@@ -211,6 +274,14 @@ export default function DashboardPage() {
               onPrefillConsumed={clearPrefills}
             />
           )}
+
+          {tab === "pipeline" && (
+            <PipelineWorkspace
+              mode={isAdmin ? "admin" : isBuilder ? "builder" : "sales"}
+            />
+          )}
+
+          {isAdmin && tab === "sales-team" && <SalesTeamManager />}
 
           {(isAdmin || isLender) && tab === "lenders" && <LendersWorkspace />}
 

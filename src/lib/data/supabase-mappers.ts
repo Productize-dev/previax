@@ -3,6 +3,7 @@ import type {
   BuilderInput,
   Community,
   CommunityInput,
+  CommunityPipelineStatus,
   CommunityReview,
   FeaturedCommunityRow,
   FeaturedItem,
@@ -92,6 +93,16 @@ export type CommunityRow = {
   view_count: number;
   save_count: number;
   is_hidden: boolean;
+  pipeline_status?: string | null;
+  submitted_by?: string | null;
+  step1_completed_at?: string | null;
+  step2_submitted_at?: string | null;
+  admin_approved_at?: string | null;
+  admin_approved_by?: string | null;
+  builder_approved_at?: string | null;
+  builder_deadline_at?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
   created_at: string;
 };
 
@@ -302,6 +313,26 @@ export function rowToCommunity(row: CommunityRow, homes: Home[]): Community {
     viewCount: row.view_count ?? 0,
     saveCount: row.save_count ?? 0,
     isHidden: row.is_hidden ?? false,
+    pipelineStatus: (row.pipeline_status as CommunityPipelineStatus) ?? "live",
+    submittedBy: row.submitted_by ?? undefined,
+    step1CompletedAt: row.step1_completed_at
+      ? toMillis(row.step1_completed_at)
+      : undefined,
+    step2SubmittedAt: row.step2_submitted_at
+      ? toMillis(row.step2_submitted_at)
+      : undefined,
+    adminApprovedAt: row.admin_approved_at
+      ? toMillis(row.admin_approved_at)
+      : undefined,
+    adminApprovedBy: row.admin_approved_by ?? undefined,
+    builderApprovedAt: row.builder_approved_at
+      ? toMillis(row.builder_approved_at)
+      : undefined,
+    builderDeadlineAt: row.builder_deadline_at
+      ? toMillis(row.builder_deadline_at)
+      : undefined,
+    rejectedAt: row.rejected_at ? toMillis(row.rejected_at) : undefined,
+    rejectionReason: row.rejection_reason ?? undefined,
   };
 }
 
@@ -485,6 +516,42 @@ export function communityInputToRow(data: Partial<CommunityInput>): AnyRow {
   setIfDefined(row, "reviews", data.reviews);
   setIfDefined(row, "media_gallery", data.mediaGallery);
   setIfDefined(row, "is_hidden", data.isHidden);
+  setIfDefined(row, "pipeline_status", data.pipelineStatus);
+  if ("submittedBy" in data) row.submitted_by = data.submittedBy ?? null;
+  if ("step1CompletedAt" in data) {
+    row.step1_completed_at = data.step1CompletedAt
+      ? new Date(data.step1CompletedAt).toISOString()
+      : null;
+  }
+  if ("step2SubmittedAt" in data) {
+    row.step2_submitted_at = data.step2SubmittedAt
+      ? new Date(data.step2SubmittedAt).toISOString()
+      : null;
+  }
+  if ("adminApprovedAt" in data) {
+    row.admin_approved_at = data.adminApprovedAt
+      ? new Date(data.adminApprovedAt).toISOString()
+      : null;
+  }
+  if ("adminApprovedBy" in data) {
+    row.admin_approved_by = data.adminApprovedBy ?? null;
+  }
+  if ("builderApprovedAt" in data) {
+    row.builder_approved_at = data.builderApprovedAt
+      ? new Date(data.builderApprovedAt).toISOString()
+      : null;
+  }
+  if ("builderDeadlineAt" in data) {
+    row.builder_deadline_at = data.builderDeadlineAt
+      ? new Date(data.builderDeadlineAt).toISOString()
+      : null;
+  }
+  if ("rejectedAt" in data) {
+    row.rejected_at = data.rejectedAt
+      ? new Date(data.rejectedAt).toISOString()
+      : null;
+  }
+  setIfDefined(row, "rejection_reason", data.rejectionReason);
   return row;
 }
 

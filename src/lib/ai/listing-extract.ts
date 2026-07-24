@@ -1,4 +1,5 @@
 import type { CommunityInput, HomeInput, HomeTag } from "@/lib/types";
+import { aiCatalogLanguageRule } from "@/lib/i18n/locale";
 
 import { getOpenAiApiKey } from "./config";
 import {
@@ -120,8 +121,11 @@ export async function extractListingWithAi(
       messages: [
         {
           role: "system",
-          content:
-            "Extract a new-home community listing from brochure text. Use English field values. Tags should be slug-like (e.g. master-planned, townhomes). Use null for unknown optional fields.",
+          content: [
+            "Extract a new-home community listing from brochure text (any input language).",
+            aiCatalogLanguageRule(),
+            "Tags should be slug-like (e.g. master-planned, townhomes). Use null for unknown optional fields.",
+          ].join(" "),
         },
         { role: "user", content: userContent },
       ],
@@ -173,7 +177,7 @@ export async function generateContentWithAi(
         messages: [
           {
             role: "system",
-            content: `${prompts[type]} Context: ${contextJson}`,
+            content: `${prompts[type]} ${aiCatalogLanguageRule()} Context: ${contextJson}`,
           },
           { role: "user", content: "Generate now." },
         ],
@@ -197,7 +201,7 @@ export async function generateContentWithAi(
       messages: [
         {
           role: "system",
-          content: `${prompts[type]} Context: ${contextJson}`,
+          content: `${prompts[type]} ${aiCatalogLanguageRule()} Context: ${contextJson}`,
         },
         { role: "user", content: "Generate now." },
       ],
