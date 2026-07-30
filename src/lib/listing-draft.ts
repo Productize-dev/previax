@@ -18,7 +18,11 @@ export function draftToCommunityForm(
     c.youtubeUrl && isValidYouTubeUrl(c.youtubeUrl)
       ? c.youtubeUrl
       : DEFAULT_PRESENTATION_YOUTUBE_URL;
-  const thumb = getYouTubeThumbnailUrl(youtubeUrl) ?? "";
+  const thumbFromVideo = getYouTubeThumbnailUrl(youtubeUrl) ?? "";
+  const thumb =
+    typeof c.thumbnailUrl === "string" && c.thumbnailUrl.trim()
+      ? c.thumbnailUrl.trim()
+      : thumbFromVideo;
 
   return {
     ...newCommunityDashboardForm(defaultBuilderId),

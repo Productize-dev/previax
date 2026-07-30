@@ -67,8 +67,9 @@ export function AiPasteModal({
             Paste & autofill
           </DialogTitle>
           <DialogDescription>
-            Paste brochure text or a listing URL. AI extracts a draft you can
-            review in the form before saving.
+            Paste brochure text or a listing URL. AI extracts the listing, then
+            organizes it into the right fields (and cleans amenities) before
+            prefilling the form.
           </DialogDescription>
         </DialogHeader>
 
@@ -132,7 +133,7 @@ export function AiPasteModal({
                 Extracting…
               </>
             ) : (
-              "Extract & prefill"
+              "Extract & organize"
             )}
           </Button>
         </div>

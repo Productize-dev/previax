@@ -69,7 +69,9 @@ export const LISTING_EXTRACT_SCHEMA = {
       properties: {
         name: { type: "string" },
         city: { type: ["string", "null"] },
+        builderName: { type: ["string", "null"] },
         description: { type: ["string", "null"] },
+        tagline: { type: ["string", "null"] },
         mainHighlight: { type: ["string", "null"] },
         amenities: {
           type: ["array", "null"],
@@ -80,6 +82,8 @@ export const LISTING_EXTRACT_SCHEMA = {
           items: { type: "string" },
         },
         schoolDistrict: { type: ["string", "null"] },
+        lifestyleNotes: { type: ["string", "null"] },
+        thumbnailUrl: { type: ["string", "null"] },
         youtubeUrl: { type: ["string", "null"] },
         lenders: {
           type: ["array", "null"],
@@ -89,11 +93,15 @@ export const LISTING_EXTRACT_SCHEMA = {
       required: [
         "name",
         "city",
+        "builderName",
         "description",
+        "tagline",
         "mainHighlight",
         "amenities",
         "tags",
         "schoolDistrict",
+        "lifestyleNotes",
+        "thumbnailUrl",
         "youtubeUrl",
         "lenders",
       ],
@@ -146,6 +154,51 @@ export const LISTING_EXTRACT_SCHEMA = {
     },
   },
   required: ["community", "homes"],
+  additionalProperties: false,
+} as const;
+
+/** Second-pass schema: redistribute community fields and drop junk. */
+export const COMMUNITY_ORGANIZE_SCHEMA = {
+  type: "object",
+  properties: {
+    name: { type: "string" },
+    city: { type: ["string", "null"] },
+    builderName: { type: ["string", "null"] },
+    description: { type: ["string", "null"] },
+    tagline: { type: ["string", "null"] },
+    mainHighlight: { type: ["string", "null"] },
+    amenities: {
+      type: "array",
+      items: { type: "string" },
+    },
+    tags: {
+      type: "array",
+      items: { type: "string" },
+    },
+    schoolDistrict: { type: ["string", "null"] },
+    lifestyleNotes: { type: ["string", "null"] },
+    thumbnailUrl: { type: ["string", "null"] },
+    youtubeUrl: { type: ["string", "null"] },
+    lenders: {
+      type: "array",
+      items: { type: "string" },
+    },
+  },
+  required: [
+    "name",
+    "city",
+    "builderName",
+    "description",
+    "tagline",
+    "mainHighlight",
+    "amenities",
+    "tags",
+    "schoolDistrict",
+    "lifestyleNotes",
+    "thumbnailUrl",
+    "youtubeUrl",
+    "lenders",
+  ],
   additionalProperties: false,
 } as const;
 

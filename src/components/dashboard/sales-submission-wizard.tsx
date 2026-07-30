@@ -59,9 +59,29 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
     setTagline(community?.tagline?.trim() ?? "");
     setLifestyleNotes(community?.lifestyleNotes?.trim() ?? "");
     if (form.youtubeUrl) setYoutubeUrl(form.youtubeUrl);
-    if (form.thumbnailUrl) setThumbnailUrl(form.thumbnailUrl);
-    if (form.builderId) setBuilderId(form.builderId);
-    toastSuccess("Draft loaded — review every field before submitting Step 1");
+    const thumb =
+      community?.thumbnailUrl?.trim() || form.thumbnailUrl.trim() || "";
+    if (thumb) setThumbnailUrl(thumb);
+
+    const builderName = community?.builderName?.trim().toLowerCase();
+    if (builderName) {
+      const matched = builders.find(
+        (b) =>
+          b.name.trim().toLowerCase() === builderName ||
+          b.name.trim().toLowerCase().includes(builderName) ||
+          builderName.includes(b.name.trim().toLowerCase()),
+      );
+      if (matched) setBuilderId(matched.id);
+      else if (form.builderId) setBuilderId(form.builderId);
+    } else if (form.builderId) {
+      setBuilderId(form.builderId);
+    }
+
+    toastSuccess(
+      draft.organized
+        ? "AI organized the listing into the form fields — review before submitting"
+        : "Draft loaded — review every field before submitting Step 1",
+    );
   }
 
   async function saveDraft(completeStep1: boolean) {
