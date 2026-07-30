@@ -197,7 +197,7 @@
   }
 
   .netflix-focus-track {
-    @apply flex items-start gap-3 overflow-x-auto px-[4%] py-3 pb-10 outline-none sm:gap-4 md:pb-12;
+    @apply flex items-start gap-3 overflow-x-auto px-[4%] py-3 pb-10 outline-none sm:gap-5 md:pb-12;
     scroll-behavior: auto;
     scroll-padding-inline: 4%;
     scrollbar-width: none;
@@ -213,8 +213,8 @@
   }
 
   .netflix-focus-tile {
-    /* ~3.5–4.5 tiles on desktop — larger, less cramped */
-    --tile-width: clamp(220px, 23vw, 310px);
+    /* ~2.5–3 tiles on desktop — fills the row with a smaller catalog */
+    --tile-width: clamp(260px, 38vw, 440px);
     width: var(--tile-width);
     flex: 0 0 var(--tile-width);
     transform-origin: center center;
@@ -231,19 +231,37 @@
   }
 
   .netflix-focus-tile--selected {
-    --tile-width: clamp(340px, 48vw, 580px);
+    --tile-width: clamp(300px, 55vw, 680px);
     z-index: 10;
     transform: none;
   }
 
   .netflix-focus-tile--top10 {
-    --tile-width: clamp(240px, 24vw, 320px);
+    --tile-width: clamp(280px, 36vw, 420px);
     margin-left: 1.75rem;
   }
 
   .netflix-focus-tile--top10.netflix-focus-tile--selected {
-    --tile-width: clamp(340px, 48vw, 580px);
+    --tile-width: clamp(300px, 55vw, 680px);
     margin-left: 0.75rem;
+  }
+
+  @media (max-width: 640px) {
+    .netflix-focus-tile {
+      --tile-width: min(85vw, 360px);
+    }
+
+    .netflix-focus-tile--selected {
+      --tile-width: min(90vw, 400px);
+    }
+
+    .netflix-focus-tile--top10 {
+      --tile-width: min(78vw, 340px);
+    }
+
+    .netflix-focus-tile--top10.netflix-focus-tile--selected {
+      --tile-width: min(90vw, 400px);
+    }
   }
 
   .netflix-tile-link {

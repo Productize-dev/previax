@@ -132,7 +132,7 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                     "netflix-tile-media overflow-hidden border-2 bg-[#2f2f2f]",
                     selected
                       ? "netflix-tile-media--landscape border-white"
-                      : "netflix-tile-media--portrait border-transparent",
+                      : "netflix-tile-media--portrait border-transparent ring-1 ring-white/10",
                   )}
                 >
                   {cover || previewUrl ? (
@@ -164,11 +164,11 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                     <NetflixStatusBar label={statusLabel} />
                   )}
                   {!selected && !statusLabel && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/50 to-transparent px-2.5 pb-2.5 pt-10">
-                      <p className="font-sans text-sm font-semibold text-white sm:text-[0.95rem]">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pb-3 pt-12">
+                      <p className="font-sans text-base font-semibold text-white sm:text-lg">
                         ${home.price.toLocaleString()}
                       </p>
-                      <p className="mt-0.5 line-clamp-1 text-xs text-white/80 sm:text-[0.8rem]">
+                      <p className="mt-0.5 line-clamp-1 text-sm text-white/80 sm:text-[0.9rem]">
                         {home.modelName || community.name}
                       </p>
                     </div>
@@ -182,7 +182,7 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <p className="mt-3 font-sans text-base font-semibold text-white sm:text-lg">
+                    <p className="mt-3 font-sans text-lg font-semibold text-white sm:text-xl">
                       {home.modelName || `$${home.price.toLocaleString()}`}
                     </p>
                     <HomeListingCategoryBadges

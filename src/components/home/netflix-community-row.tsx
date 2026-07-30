@@ -159,7 +159,7 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
                     "netflix-tile-media overflow-hidden border-2 bg-[#2f2f2f]",
                     selected
                       ? "netflix-tile-media--landscape border-white"
-                      : "netflix-tile-media--portrait border-transparent",
+                      : "netflix-tile-media--portrait border-transparent ring-1 ring-white/10",
                   )}
                 >
                   <NetflixHoverPreview
@@ -178,8 +178,8 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
                   )}
 
                   {!selected && !statusLabel && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/50 to-transparent px-2.5 pb-2.5 pt-10">
-                      <p className="line-clamp-2 font-sans text-sm font-semibold leading-snug text-white sm:text-[0.95rem]">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pb-3 pt-12">
+                      <p className="line-clamp-2 font-sans text-base font-semibold leading-snug text-white sm:text-lg">
                         {community.name}
                       </p>
                     </div>
@@ -193,7 +193,7 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <p className="mt-3 font-sans text-base font-semibold text-white sm:text-lg">
+                    <p className="mt-3 font-sans text-lg font-semibold text-white sm:text-xl">
                       {community.name}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">

@@ -97,7 +97,7 @@ export function NetflixModelsBrowser({
           <X className="size-6" />
         </button>
 
-        <div className="max-w-5xl pr-10">
+        <div className="max-w-6xl pr-10">
           <div className="md:hidden">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#46d369]">
               {community.name}
@@ -144,7 +144,7 @@ export function NetflixModelsBrowser({
                       isSelected ? "opacity-100" : "opacity-90",
                     )}
                   >
-                    <div className="relative w-[38vw] max-w-[280px] shrink-0 overflow-hidden rounded-md bg-[#2f2f2f] shadow-lg md:w-[320px]">
+                    <div className="relative w-[42vw] max-w-[360px] shrink-0 overflow-hidden rounded-md bg-[#2f2f2f] shadow-lg ring-1 ring-white/10 md:w-[400px] md:max-w-none">
                       <YouTubePosterImage
                         videoUrl={poster.videoUrl}
                         fallbackUrl={poster.fallbackUrl}

@@ -58,7 +58,7 @@ export function NetflixRankMark({ rank, className }: NetflixRankMarkProps) {
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute bottom-0 left-0 z-[5] select-none font-sans text-[5.5rem] font-black leading-none tracking-tighter sm:text-[6.5rem] md:text-[7.5rem]",
+        "pointer-events-none absolute bottom-0 left-0 z-[5] select-none font-sans text-[6.5rem] font-black leading-none tracking-tighter sm:text-[7.5rem] md:text-[9rem]",
         className,
       )}
       style={{
