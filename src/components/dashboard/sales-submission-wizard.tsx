@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 
+import { AiContentButtons } from "@/components/dashboard/ai-content-buttons";
 import { AiPasteModal } from "@/components/dashboard/ai-paste-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,20 +19,33 @@ import {
 import { useProfile } from "@/context/auth-context";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { ExtractedListingDraft } from "@/lib/ai/listing-extract";
+import { DEFAULT_NEW_COMMUNITY_TAGS } from "@/lib/dashboard-defaults";
+import { draftToCommunityForm } from "@/lib/listing-draft";
 import {
-  draftToCommunityForm,
-} from "@/lib/listing-draft";
+  getAllCommunityTagOptions,
+  getCommunityTagLabel,
+} from "@/lib/tag-labels";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { isValidYouTubeUrl } from "@/lib/youtube";
+import type { CommunityTag } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type SalesSubmissionWizardProps = {
-  onCreated?: (communityId: string) => void;
+  onStep1Complete?: (communityId: string) => void;
 };
 
-export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps) {
+/** Step 1 only: community info + tags. Video is handled later in My pipeline. */
+export function SalesSubmissionWizard({
+  onStep1Complete,
+}: SalesSubmissionWizardProps) {
   const profile = useProfile();
-  const { builders, addCommunity, updateCommunity, refresh } =
-    useDashboardData();
+  const {
+    builders,
+    communities,
+    customCommunityTagLabels,
+    addCommunity,
+    updateCommunity,
+    refresh,
+  } = useDashboardData();
   const [pasteOpen, setPasteOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [builderId, setBuilderId] = useState("");
@@ -43,9 +57,37 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
   const [schoolDistrict, setSchoolDistrict] = useState("");
   const [tagline, setTagline] = useState("");
   const [lifestyleNotes, setLifestyleNotes] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [tags, setTags] = useState<CommunityTag[]>([
+    ...DEFAULT_NEW_COMMUNITY_TAGS,
+  ]);
   const [communityId, setCommunityId] = useState<string | null>(null);
+
+  const tagOptions = getAllCommunityTagOptions(
+    communities,
+    customCommunityTagLabels,
+  );
+
+  function toggleTag(tag: CommunityTag) {
+    setTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }
+
+  function resetForm() {
+    setBuilderId("");
+    setName("");
+    setCity("");
+    setDescription("");
+    setAmenities("");
+    setMainHighlight("");
+    setSchoolDistrict("");
+    setTagline("");
+    setLifestyleNotes("");
+    setThumbnailUrl("");
+    setTags([...DEFAULT_NEW_COMMUNITY_TAGS]);
+    setCommunityId(null);
+  }
 
   function applyDraft(draft: ExtractedListingDraft) {
     const form = draftToCommunityForm(draft, builderId || builders[0]?.id || "");
@@ -58,10 +100,12 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
     setSchoolDistrict(community?.schoolDistrict?.trim() ?? "");
     setTagline(community?.tagline?.trim() ?? "");
     setLifestyleNotes(community?.lifestyleNotes?.trim() ?? "");
-    if (form.youtubeUrl) setYoutubeUrl(form.youtubeUrl);
     const thumb =
       community?.thumbnailUrl?.trim() || form.thumbnailUrl.trim() || "";
     if (thumb) setThumbnailUrl(thumb);
+    if (form.tags.length > 0) {
+      setTags([...new Set(form.tags)]);
+    }
 
     const builderName = community?.builderName?.trim().toLowerCase();
     if (builderName) {
@@ -79,8 +123,8 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
 
     toastSuccess(
       draft.organized
-        ? "AI organized the listing into the form fields — review before submitting"
-        : "Draft loaded — review every field before submitting Step 1",
+        ? "AI organized the listing into Step 1 fields — review before submitting"
+        : "Draft loaded — review every field before completing Step 1",
     );
   }
 
@@ -94,16 +138,19 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
       toastError("Name, city, and description are required");
       return;
     }
+    if (tags.length === 0) {
+      toastError("Select at least one community tag");
+      return;
+    }
 
     const builder = builders.find((b) => b.id === builderId);
     setBusy(true);
     try {
-      const payload = {
+      const basePayload = {
         name: name.trim(),
         city: city.trim(),
         description: description.trim(),
         thumbnailUrl: thumbnailUrl.trim(),
-        youtubeUrl: youtubeUrl.trim(),
         builderName: builder?.name ?? "",
         builderId,
         builderIds: [builderId],
@@ -121,18 +168,21 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
         schoolDistrict: schoolDistrict.trim(),
         tagline: tagline.trim(),
         lifestyleNotes: lifestyleNotes.trim(),
-        tags: [],
+        tags,
         isHidden: true,
-        pipelineStatus: "draft" as const,
         submittedBy: profile.id,
         ownerId: profile.id,
       };
 
       let id = communityId;
       if (id) {
-        await updateCommunity(id, payload);
+        await updateCommunity(id, basePayload);
       } else {
-        const created = await addCommunity(payload);
+        const created = await addCommunity({
+          ...basePayload,
+          youtubeUrl: "",
+          pipelineStatus: "draft",
+        });
         id = created.id;
         setCommunityId(created.id);
       }
@@ -148,57 +198,17 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) throw new Error(data.error ?? "Step 1 failed");
-        toastSuccess("Step 1 complete — admin notified");
-      } else {
-        toastSuccess("Draft saved");
+        toastSuccess("Step 1 complete — continue in My pipeline when video is ready");
+        await refresh();
+        resetForm();
+        onStep1Complete?.(id);
+        return;
       }
 
+      toastSuccess("Draft saved");
       await refresh();
-      if (id) onCreated?.(id);
     } catch (err) {
       toastError(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function saveStep2() {
-    if (!communityId) {
-      toastError("Save Step 1 first");
-      return;
-    }
-    if (!isValidYouTubeUrl(youtubeUrl)) {
-      toastError("Enter a valid YouTube URL");
-      return;
-    }
-    setBusy(true);
-    try {
-      await updateCommunity(communityId, {
-        youtubeUrl: youtubeUrl.trim(),
-        thumbnailUrl: thumbnailUrl.trim() || undefined,
-      });
-      await fetch("/api/pipeline/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          communityId,
-          action: "start_step2",
-        }),
-      });
-      const res = await fetch("/api/pipeline/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          communityId,
-          action: "submit_step2",
-        }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Step 2 failed");
-      toastSuccess("Step 2 submitted for admin review");
-      await refresh();
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : "Step 2 failed");
     } finally {
       setBusy(false);
     }
@@ -208,10 +218,13 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
     <div className="space-y-6 rounded-xl border border-border bg-card/40 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-heading text-xl">New community submission</h3>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+            Step 1 of 2
+          </p>
+          <h3 className="font-heading mt-1 text-xl">Community information</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Step 1: paste a listing URL or text, fill the fields, submit without
-            video. Step 2: attach YouTube when production delivers it.
+            Paste a listing, fill the fields, and complete Step 1. YouTube video
+            is added later in My pipeline (Step 2) — completely separate.
           </p>
         </div>
         <Button
@@ -300,13 +313,41 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
             onChange={(e) => setLifestyleNotes(e.target.value)}
           />
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label>YouTube URL (Step 2)</Label>
-          <Input
-            value={youtubeUrl}
-            onChange={(e) => setYoutubeUrl(e.target.value)}
-            placeholder="Add when video production delivers the cut"
-          />
+        <div className="space-y-2 sm:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label>Tags</Label>
+            <AiContentButtons
+              type="community-tags"
+              context={{ name, description }}
+              onApply={(result) => {
+                const next = (Array.isArray(result) ? result : [result]) as string[];
+                setTags((prev) => [...new Set([...prev, ...next])]);
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Used to group communities on the homepage (e.g. Luxury, Gated).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {tagOptions.map((tag) => {
+              const selected = tags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-sm transition-colors",
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/50",
+                  )}
+                >
+                  {getCommunityTagLabel(tag, customCommunityTagLabels)}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -326,14 +367,6 @@ export function SalesSubmissionWizard({ onCreated }: SalesSubmissionWizardProps)
           onClick={() => void saveDraft(true)}
         >
           Complete Step 1
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={busy || !communityId}
-          onClick={() => void saveStep2()}
-        >
-          Submit Step 2 (with video)
         </Button>
       </div>
 

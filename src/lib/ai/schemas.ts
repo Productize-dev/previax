@@ -1,5 +1,7 @@
 /** JSON Schemas for OpenAI Structured Outputs (strict). */
 
+import { ALL_HOME_TAGS } from "@/lib/tag-labels";
+
 export const SEARCH_FILTERS_SCHEMA = {
   type: "object",
   properties: {
@@ -16,14 +18,7 @@ export const SEARCH_FILTERS_SCHEMA = {
       type: ["array", "null"],
       items: {
         type: "string",
-        enum: [
-          "move-in-ready",
-          "under-construction",
-          "custom-build",
-          "patio-home",
-          "single-story",
-          "basement",
-        ],
+        enum: [...ALL_HOME_TAGS],
       },
     },
     listingCategories: {
@@ -122,14 +117,7 @@ export const LISTING_EXTRACT_SCHEMA = {
             type: ["array", "null"],
             items: {
               type: "string",
-              enum: [
-                "move-in-ready",
-                "under-construction",
-                "custom-build",
-                "patio-home",
-                "single-story",
-                "basement",
-              ],
+              enum: [...ALL_HOME_TAGS],
             },
           },
           highlights: {

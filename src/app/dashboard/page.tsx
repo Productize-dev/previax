@@ -212,8 +212,9 @@ export default function DashboardPage() {
                   <div>
                     <h2 className="font-heading text-2xl">Sales overview</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Submit community info (Step 1), attach YouTube when ready
-                      (Step 2), then wait for admin and builder approval.
+                      Step 1: submit community info &amp; tags. Step 2: attach
+                      YouTube in My pipeline. Then admin and builder approve to
+                      go live.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -222,14 +223,14 @@ export default function DashboardPage() {
                       className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
                       onClick={() => setTab("communities")}
                     >
-                      New submission
+                      Start Step 1
                     </button>
                     <button
                       type="button"
                       className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
                       onClick={() => setTab("pipeline")}
                     >
-                      Open pipeline
+                      Open pipeline (Step 2+)
                     </button>
                   </div>
                   <PipelineWorkspace mode="sales" />
@@ -259,9 +260,8 @@ export default function DashboardPage() {
           {isSales && tab === "communities" && (
             <div className="space-y-8">
               <SalesSubmissionWizard
-                onCreated={() => setTab("pipeline")}
+                onStep1Complete={() => setTab("pipeline")}
               />
-              <PipelineWorkspace mode="sales" />
             </div>
           )}
 

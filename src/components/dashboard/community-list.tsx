@@ -83,6 +83,7 @@ export function CommunityList({
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [cityFilter, setCityFilter] = useState<string>("all");
+  const [builderFilter, setBuilderFilter] = useState<string>("all");
   const [onlyWithModels, setOnlyWithModels] = useState(false);
   const [onlyWithVideo, setOnlyWithVideo] = useState(false);
   const [visibilityFilter, setVisibilityFilter] = useState<
@@ -101,6 +102,11 @@ export function CommunityList({
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [baseItems]);
 
+  const sortedBuilders = useMemo(
+    () => [...builders].sort((a, b) => a.name.localeCompare(b.name)),
+    [builders],
+  );
+
   const hiddenCount = useMemo(
     () => baseItems.filter((c) => c.isHidden).length,
     [baseItems],
@@ -116,6 +122,11 @@ export function CommunityList({
 
     if (cityFilter !== "all") {
       filtered = filtered.filter((c) => c.city === cityFilter);
+    }
+    if (!filterBuilderId && builderFilter !== "all") {
+      filtered = filtered.filter((c) =>
+        communityHasBuilder(c, builderFilter),
+      );
     }
     if (onlyWithModels) {
       filtered = filtered.filter((c) => c.homes.length > 0);
@@ -139,6 +150,8 @@ export function CommunityList({
     search,
     sortDir,
     cityFilter,
+    builderFilter,
+    filterBuilderId,
     onlyWithModels,
     onlyWithVideo,
     visibilityFilter,
@@ -267,6 +280,21 @@ export function CommunityList({
               </option>
             ))}
           </select>
+          {!filterBuilderId && (
+            <select
+              value={builderFilter}
+              onChange={(e) => setBuilderFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              aria-label="Filter by builder"
+            >
+              <option value="all">All builders</option>
+              {sortedBuilders.map((builder) => (
+                <option key={builder.id} value={builder.id}>
+                  {builder.name}
+                </option>
+              ))}
+            </select>
+          )}
           <FilterChip
             active={onlyWithModels}
             onClick={() => setOnlyWithModels((v) => !v)}

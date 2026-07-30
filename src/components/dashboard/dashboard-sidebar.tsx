@@ -93,7 +93,7 @@ const salesNavGroups: NavGroup[] = [
     label: "Sales",
     items: [
       { id: "pipeline", label: "My pipeline", icon: Workflow },
-      { id: "communities", label: "Submit community", icon: Building2 },
+      { id: "communities", label: "Step 1 — Info", icon: Building2 },
     ],
   },
 ];

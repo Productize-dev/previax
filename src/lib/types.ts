@@ -8,7 +8,20 @@ export type HomeTag =
   | "custom-build"
   | "patio-home"
   | "single-story"
-  | "basement";
+  | "two-story"
+  | "basement"
+  | "townhome"
+  | "cottage"
+  | "ranch"
+  | "villa"
+  | "master-on-main"
+  | "loft"
+  | "bonus-room"
+  | "three-car-garage"
+  | "energy-efficient"
+  | "smart-home"
+  | "golf-course-lot"
+  | "waterfront";
 
 /** Promotional badges shown on homepage home rows (Netflix-style). */
 export type HomeListingCategory =

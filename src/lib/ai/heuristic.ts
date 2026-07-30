@@ -7,7 +7,20 @@ const HOME_TAG_PATTERNS: Array<{ pattern: RegExp; tag: HomeTag[] }> = [
   { pattern: /\b(custom[\s-]?build|a medida)\b/i, tag: ["custom-build"] },
   { pattern: /\b(patio|backyard|jardín|patio-home)\b/i, tag: ["patio-home"] },
   { pattern: /\b(single[\s-]?stor(y|ies)|una planta|un nivel|one[\s-]?level)\b/i, tag: ["single-story"] },
+  { pattern: /\b(two[\s-]?stor(y|ies)|dos plantas|two[\s-]?level)\b/i, tag: ["two-story"] },
   { pattern: /\b(basement|sótano|sotano)\b/i, tag: ["basement"] },
+  { pattern: /\b(town\s?homes?|townhouses?)\b/i, tag: ["townhome"] },
+  { pattern: /\b(cottage)\b/i, tag: ["cottage"] },
+  { pattern: /\b(ranch)\b/i, tag: ["ranch"] },
+  { pattern: /\b(villa)\b/i, tag: ["villa"] },
+  { pattern: /\b(master on main|primary on main|principal en (planta )?baja)\b/i, tag: ["master-on-main"] },
+  { pattern: /\b(loft)\b/i, tag: ["loft"] },
+  { pattern: /\b(bonus room|flex room|media room)\b/i, tag: ["bonus-room"] },
+  { pattern: /\b(3[\s-]?car garage|three[\s-]?car garage)\b/i, tag: ["three-car-garage"] },
+  { pattern: /\b(energy[\s-]?efficient|eficiente energ[eé]ticamente)\b/i, tag: ["energy-efficient"] },
+  { pattern: /\b(smart[\s-]?home|casa inteligente)\b/i, tag: ["smart-home"] },
+  { pattern: /\b(golf[\s-]?course)\b/i, tag: ["golf-course-lot"] },
+  { pattern: /\b(waterfront|lakefront|lake[\s-]?view|frente al (lago|agua))\b/i, tag: ["waterfront"] },
 ];
 
 const LISTING_PATTERNS: Array<{

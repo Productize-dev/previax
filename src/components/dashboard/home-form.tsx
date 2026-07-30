@@ -39,6 +39,8 @@ import {
   isYouTubeThumbnailUrl,
 } from "@/lib/youtube";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { ALL_HOME_TAGS, getHomeTagLabel } from "@/lib/tag-labels";
+import { cn } from "@/lib/utils";
 
 type HomeFormProps = {
   editingHome: Home | null;
@@ -129,6 +131,15 @@ export function HomeForm({
       return next;
     });
     if (field === "youtubeUrl") setYoutubeError("");
+  }
+
+  function toggleTag(tag: HomeTag) {
+    setForm((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter((t) => t !== tag)
+        : [...prev.tags, tag],
+    }));
   }
 
   function useYouTubeThumbnailAsCover() {
@@ -356,15 +367,28 @@ export function HomeForm({
                 }}
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Used to group model homes on the homepage (e.g. Single Story, Patio Home).
+            </p>
             <div className="flex flex-wrap gap-2">
-              {form.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-primary bg-primary/10 px-3 py-1 text-xs"
-                >
-                  {tag}
-                </span>
-              ))}
+              {ALL_HOME_TAGS.map((tag) => {
+                const selected = form.tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-sm transition-colors",
+                      selected
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:border-primary/50",
+                    )}
+                  >
+                    {getHomeTagLabel(tag)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

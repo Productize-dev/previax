@@ -50,6 +50,7 @@ function hasMasterOnMainThreeBeds(home: Home): boolean {
 
   return (
     home.tags?.includes("single-story") ||
+    home.tags?.includes("master-on-main") ||
     (text.includes("primary") && text.includes("main")) ||
     text.includes("main level") ||
     text.includes("main-level")

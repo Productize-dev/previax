@@ -1,5 +1,6 @@
 import type { CommunityInput, HomeInput, HomeTag } from "@/lib/types";
 import { aiCatalogLanguageRule } from "@/lib/i18n/locale";
+import { ALL_HOME_TAGS } from "@/lib/tag-labels";
 
 import { getOpenAiApiKey } from "./config";
 import {
@@ -296,7 +297,7 @@ export async function generateContentWithAi(
         "community-tags":
           "Suggest 3-6 community tags as slug strings for this community.",
         "home-tags":
-          "Suggest home tags from: move-in-ready, under-construction, custom-build, patio-home, single-story, basement.",
+          `Suggest home tags from: ${ALL_HOME_TAGS.join(", ")}.`,
         "home-highlights": "Suggest 4 bullet highlights for this home model.",
       };
 
