@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Loader2, UserPlus } from "lucide-react";
+import {
+  Bell,
+  Link2,
+  Loader2,
+  Pencil,
+  ShieldOff,
+  Trash2,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  Ban,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,17 +24,49 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useProfile } from "@/context/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toastError, toastSuccess } from "@/lib/toast";
 import type { Profile } from "@/lib/types";
 import { mapProfileRow, PROFILE_COLUMNS, type ProfileRow } from "@/lib/auth/profile";
+import { cn } from "@/lib/utils";
+
+type ManageAction =
+  | "delete"
+  | "suspend"
+  | "activate"
+  | "remove_sales"
+  | "update"
+  | "resend";
+
+async function manageSales(
+  userId: string,
+  action: ManageAction,
+  fullName?: string,
+) {
+  const res = await fetch("/api/admin/manage-sales", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, action, fullName }),
+  });
+  const data = (await res.json()) as {
+    error?: string;
+    actionLink?: string;
+  };
+  if (!res.ok) throw new Error(data.error ?? "Action failed");
+  return data;
+}
 
 export function SalesTeamManager() {
+  const me = useProfile();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const [salesPeople, setSalesPeople] = useState<Profile[]>([]);
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const load = useCallback(async () => {
     const { data, error } = await getSupabaseBrowserClient()
@@ -57,6 +100,7 @@ export function SalesTeamManager() {
       const data = (await res.json()) as {
         error?: string;
         emailSent?: boolean;
+        emailSkipped?: boolean;
         actionLink?: string;
         mode?: "invite" | "existing";
       };
@@ -66,14 +110,18 @@ export function SalesTeamManager() {
 
       if (data.emailSent) {
         toastSuccess(
-          `Invite email sent to ${email}. They must open that link (not Sign in) and set a password.`,
+          `Invite emailed to ${email}. They must open that link to set a password.`,
+        );
+      } else if (data.emailSkipped) {
+        toastSuccess(
+          `Sales access ready for ${email}. Copy the invite link below and send it to them (email provider not configured).`,
         );
       } else if (data.mode === "existing") {
         toastSuccess(
-          `${email} already had an account — upgraded to sales. Share the invite link below so they can set a password.`,
+          `${email} already had an account — upgraded to sales. Share the invite link below.`,
         );
       } else {
-        toastSuccess(`Sales access ready for ${email}`);
+        toastSuccess(`Sales access ready for ${email}. Share the invite link below.`);
       }
       setEmail("");
       setFullName("");
@@ -95,6 +143,47 @@ export function SalesTeamManager() {
     }
   }
 
+  async function runRowAction(
+    person: Profile,
+    action: ManageAction,
+    confirmMessage?: string,
+  ) {
+    if (person.id === me?.id) {
+      toastError("You cannot change your own account here");
+      return;
+    }
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
+
+    setRowBusyId(person.id);
+    try {
+      const data = await manageSales(
+        person.id,
+        action,
+        action === "update" ? editName : undefined,
+      );
+      if (action === "resend" && data.actionLink) {
+        setLastInviteLink(data.actionLink);
+        toastSuccess("Invite link ready — copy it below");
+      } else if (action === "delete") {
+        toastSuccess("Account deleted");
+      } else if (action === "remove_sales") {
+        toastSuccess("Removed from sales team");
+      } else if (action === "suspend") {
+        toastSuccess("Access suspended");
+      } else if (action === "activate") {
+        toastSuccess("Access restored");
+      } else if (action === "update") {
+        toastSuccess("Name updated");
+        setEditingId(null);
+      }
+      await load();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -109,9 +198,10 @@ export function SalesTeamManager() {
         <CardHeader>
           <CardTitle className="text-base">Invite sales</CardTitle>
           <CardDescription>
-            Do not ask them to sign up first. You invite → they open the email
-            link → they set a password → then they can Sign in. Going to Sign in
-            before that fails because they have no password yet.
+            After inviting, copy the one-click link and send it to them (or
+            configure Resend so we email it). That link opens{" "}
+            <strong>Set your password</strong> — not Sign in. They should not
+            register or sign in until they finish that step.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -152,11 +242,17 @@ export function SalesTeamManager() {
             <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-3">
               <p className="text-sm font-medium">One-click invite link</p>
               <p className="text-xs text-muted-foreground">
-                Use this if the email is slow or landed in spam. Share it only
-                with that person.
+                Send this exact link to the sales person. It opens Set your
+                password — ignore any older Supabase invite emails that land on
+                Sign in.
               </p>
               <p className="break-all font-mono text-xs">{lastInviteLink}</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void copyInviteLink()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void copyInviteLink()}
+              >
                 Copy link
               </Button>
             </div>
@@ -170,26 +266,175 @@ export function SalesTeamManager() {
           <p className="text-sm text-muted-foreground">No sales users yet.</p>
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border">
-            {salesPeople.map((person) => (
-              <li
-                key={person.id}
-                className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
-              >
-                <span>
-                  <span className="font-medium">
-                    {person.fullName || "Unnamed"}
-                  </span>
-                  <span className="ml-2 text-muted-foreground">
-                    {person.email}
-                  </span>
-                </span>
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {person.status}
-                </span>
-              </li>
-            ))}
+            {salesPeople.map((person) => {
+              const isSelf = person.id === me?.id;
+              const busyRow = rowBusyId === person.id;
+              const suspended = person.status === "rejected";
+
+              return (
+                <li key={person.id} className="space-y-3 px-3 py-3 text-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      {editingId === person.id ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="h-8 max-w-xs"
+                            disabled={busyRow}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={busyRow || !editName.trim()}
+                            onClick={() =>
+                              void runRowAction(person, "update")
+                            }
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={busyRow}
+                            onClick={() => setEditingId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="font-medium">
+                            {person.fullName || "Unnamed"}
+                            {isSelf && (
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                (you)
+                              </span>
+                            )}
+                          </p>
+                          <p className="truncate text-muted-foreground">
+                            {person.email}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs uppercase tracking-wide",
+                        suspended
+                          ? "bg-destructive/15 text-destructive"
+                          : person.status === "active"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {suspended ? "suspended" : person.status}
+                    </span>
+                  </div>
+
+                  {!isSelf && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busyRow}
+                        onClick={() => {
+                          setEditingId(person.id);
+                          setEditName(person.fullName ?? "");
+                        }}
+                      >
+                        <Pencil className="mr-1 size-3.5" />
+                        Rename
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busyRow}
+                        onClick={() => void runRowAction(person, "resend")}
+                      >
+                        <Link2 className="mr-1 size-3.5" />
+                        Invite link
+                      </Button>
+                      {suspended ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busyRow}
+                          onClick={() => void runRowAction(person, "activate")}
+                        >
+                          <UserCheck className="mr-1 size-3.5" />
+                          Activate
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busyRow}
+                          onClick={() =>
+                            void runRowAction(
+                              person,
+                              "suspend",
+                              `Suspend ${person.email}? They will lose dashboard access until you activate them again.`,
+                            )
+                          }
+                        >
+                          <Ban className="mr-1 size-3.5" />
+                          Suspend
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busyRow}
+                        onClick={() =>
+                          void runRowAction(
+                            person,
+                            "remove_sales",
+                            `Remove sales access from ${person.email}? The account stays as a buyer.`,
+                          )
+                        }
+                      >
+                        <UserMinus className="mr-1 size-3.5" />
+                        Remove sales
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        disabled={busyRow}
+                        onClick={() =>
+                          void runRowAction(
+                            person,
+                            "delete",
+                            `Permanently delete ${person.email}? This removes their login. Communities they submitted stay, but are unlinked from them.`,
+                          )
+                        }
+                      >
+                        {busyRow ? (
+                          <Loader2 className="mr-1 size-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-1 size-3.5" />
+                        )}
+                        Delete
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
+        <p className="text-xs text-muted-foreground">
+          <ShieldOff className="mr-1 inline size-3.5 align-text-bottom" />
+          Suspend blocks access. Remove sales keeps the account as buyer. Delete
+          removes the auth user permanently.
+        </p>
       </div>
     </div>
   );

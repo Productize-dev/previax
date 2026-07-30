@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentProfile } from "@/lib/auth/server";
+import {
+  buildTokenHashConfirmUrl,
+  siteOrigin,
+} from "@/lib/auth/site-url";
+import { sendTransactionalEmail } from "@/lib/email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -10,21 +15,11 @@ type InviteBody = {
   fullName?: string;
 };
 
-function siteOrigin(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL.replace(/^https?:\/\//, "")}`
-      : "http://localhost:3000");
-  return raw.replace(/\/$/, "");
-}
-
 /**
  * Admin-only: invite a sales user by email.
  *
- * Best flow: admin invites → agent clicks the email link → sets a password.
- * They should NOT sign up first, and should NOT use Sign in until they finish
- * the invite link (they have no password yet).
+ * Uses generateLink + token_hash (not inviteUserByEmail's PKCE ?code= link),
+ * so the invitee can open the link on any device and land on set-password.
  */
 export async function POST(request: Request) {
   const profile = await getCurrentProfile();
@@ -46,61 +41,86 @@ export async function POST(request: Request) {
     );
   }
 
-  const redirectTo = `${siteOrigin()}/auth/confirm?next=${encodeURIComponent("/set-password")}`;
+  const { data: existingProfile } = await admin
+    .from("profiles")
+    .select("id, role")
+    .eq("email", email)
+    .maybeSingle();
+  if (existingProfile?.role === "admin") {
+    return NextResponse.json(
+      {
+        error:
+          "That email belongs to an admin. Use a different email for sales.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const redirectTo = `${siteOrigin()}/set-password`;
   const meta = {
     full_name: body.fullName?.trim() || undefined,
-    role: "buyer" as const, // signup trigger blocks self-serve sales/admin
+    role: "buyer" as const,
   };
 
-  let userId: string | undefined;
-  let emailSent = false;
-  let actionLink: string | undefined;
   let mode: "invite" | "existing" = "invite";
-
-  const invite = await admin.auth.admin.inviteUserByEmail(email, {
-    data: meta,
-    redirectTo,
+  let link = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { data: meta, redirectTo },
   });
 
-  if (!invite.error && invite.data.user?.id) {
-    userId = invite.data.user.id;
-    emailSent = true;
-  } else {
-    // Already registered (or invite pending) — upgrade role + recovery link
+  if (link.error || !link.data.user?.id) {
     mode = "existing";
-    const recovery = await admin.auth.admin.generateLink({
+    link = await admin.auth.admin.generateLink({
       type: "recovery",
       email,
       options: { redirectTo },
     });
-
-    if (recovery.error || !recovery.data.user?.id) {
-      return NextResponse.json(
-        {
-          error:
-            invite.error?.message ??
-            recovery.error?.message ??
-            "Could not invite or recover this email",
-        },
-        { status: 400 },
-      );
-    }
-
-    userId = recovery.data.user.id;
-    actionLink = recovery.data.properties.action_link;
   }
 
-  // Always provide a one-click link for the admin (email can be delayed / spam).
-  if (!actionLink) {
-    const magic = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo },
-    });
-    if (!magic.error) {
-      actionLink = magic.data.properties.action_link;
-    }
+  if (link.error || !link.data.user?.id) {
+    return NextResponse.json(
+      {
+        error:
+          link.error?.message ?? "Could not create an invite for this email",
+      },
+      { status: 400 },
+    );
   }
+
+  const userId = link.data.user.id;
+  const hashedToken = link.data.properties.hashed_token;
+  const verificationType =
+    link.data.properties.verification_type ||
+    (mode === "invite" ? "invite" : "recovery");
+
+  if (!hashedToken) {
+    return NextResponse.json(
+      { error: "Invite created without a token" },
+      { status: 500 },
+    );
+  }
+
+  const { data: targetProfile } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (targetProfile?.role === "admin") {
+    return NextResponse.json(
+      {
+        error:
+          "That email belongs to an admin. Use a different email for sales.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const actionLink = buildTokenHashConfirmUrl({
+    tokenHash: hashedToken,
+    type: verificationType,
+    next: "/set-password",
+  });
 
   const { error: profileError } = await admin
     .from("profiles")
@@ -119,11 +139,32 @@ export async function POST(request: Request) {
     );
   }
 
+  const emailResult = await sendTransactionalEmail({
+    to: email,
+    subject: "You're invited to Previax Sales",
+    text: [
+      "You've been invited to the Previax sales team.",
+      "",
+      "Open this link to activate your account and choose a password:",
+      actionLink,
+      "",
+      "Do not use the normal Sign in page until you finish this step — you do not have a password yet.",
+      "",
+      `Link expires after a short time. Ask your admin to resend if needed.`,
+    ].join("\n"),
+    html: `
+      <p>You've been invited to the <strong>Previax sales team</strong>.</p>
+      <p><a href="${actionLink}">Activate your account &amp; set a password</a></p>
+      <p style="color:#666;font-size:14px">Do not use Sign in until you finish this step — you do not have a password yet.</p>
+    `,
+  });
+
   return NextResponse.json({
     ok: true,
     userId,
     email,
-    emailSent,
+    emailSent: !emailResult.skipped && emailResult.ok,
+    emailSkipped: Boolean(emailResult.skipped),
     mode,
     actionLink,
   });

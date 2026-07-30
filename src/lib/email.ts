@@ -12,7 +12,7 @@ type SendEmailInput = {
  * Always returns ok:true for the in-app path when email is skipped,
  * so workflow continues without blocking.
  */
-export async function sendAdminEmail(
+export async function sendTransactionalEmail(
   input: SendEmailInput,
 ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
   const to = input.to ?? ADMIN_NOTIFY_EMAIL;
@@ -53,4 +53,9 @@ export async function sendAdminEmail(
     console.error("[email:error]", message);
     return { ok: false, error: message };
   }
+}
+
+/** @deprecated Prefer sendTransactionalEmail */
+export async function sendAdminEmail(input: SendEmailInput) {
+  return sendTransactionalEmail(input);
 }

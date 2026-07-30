@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,8 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
- * After an invite / recovery / magic link, the agent lands here to choose a
- * password so future Sign in works with email + password.
+ * After an invite / recovery link, the agent lands here to choose a password.
+ * Also recovers sessions from hash fragments (legacy Supabase redirects).
  */
 export default function SetPasswordPage() {
   const router = useRouter();
@@ -27,19 +28,82 @@ export default function SetPasswordPage() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
-    void getSupabaseBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (!data.user) {
-          router.replace("/login?error=invite_required");
-          return;
+    let cancelled = false;
+
+    async function establishSession() {
+      const supabase = getSupabaseBrowserClient();
+      const params = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(
+        window.location.hash.replace(/^#/, ""),
+      );
+
+      const tokenHash =
+        params.get("token_hash") ?? hash.get("token_hash");
+      const type = (params.get("type") ?? hash.get("type")) as EmailOtpType | null;
+      const code = params.get("code");
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+
+      if (tokenHash && type) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          type,
+          token_hash: tokenHash,
+        });
+        if (otpError) {
+          if (!cancelled) {
+            setBootError(otpError.message);
+          }
         }
-        setEmail(data.user.email ?? null);
+      } else if (code) {
+        const { error: codeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (codeError && !cancelled) {
+          setBootError(codeError.message);
+        }
+      } else if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError && !cancelled) {
+          setBootError(sessionError.message);
+        }
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (cancelled) return;
+
+      if (!user) {
+        setBootError(
+          (prev) =>
+            prev ??
+            "Invite session missing. Open the one-click invite link from your admin (not the Sign in page).",
+        );
         setReady(true);
-      });
-  }, [router]);
+        return;
+      }
+
+      setEmail(user.email ?? null);
+      setBootError(null);
+      setReady(true);
+
+      // Clean tokens from the URL after session is established.
+      if (window.location.hash || params.has("token_hash") || params.has("code")) {
+        window.history.replaceState({}, "", "/set-password");
+      }
+    }
+
+    void establishSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,6 +146,25 @@ export default function SetPasswordPage() {
   if (!ready) {
     return (
       <p className="text-sm text-muted-foreground">Checking your invite…</p>
+    );
+  }
+
+  if (bootError && !email) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="font-heading text-2xl">Invite link needed</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{bootError}</p>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          render={<Link href="/login" />}
+          nativeButton={false}
+        >
+          Go to Sign in
+        </Button>
+      </div>
     );
   }
 
