@@ -240,48 +240,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        let data = await repository.getAppData();
-
-        try {
-          const [communitiesRes, homesRes] = await Promise.all([
-            fetch("/import/communities.csv"),
-            fetch("/import/model_homes.csv"),
-          ]);
-
-          if (communitiesRes.ok) {
-            const result = await repository.importCsvCatalog(
-              await communitiesRes.text(),
-              homesRes.ok ? await homesRes.text() : "",
-            );
-            if (result.communitiesAdded > 0) {
-              data = result.data;
-            }
-          }
-        } catch {
-          // Optional bundled import — ignore fetch failures.
-        }
-
-        if (!cancelled) {
-          setAll(data);
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load data");
-        }
-      } finally {
-        if (!cancelled) setIsLoaded(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [setAll]);
+    void refresh();
+  }, [refresh]);
 
   const addCommunity = useCallback(async (data: CommunityInput) => {
     const community = await repository.create(data);
