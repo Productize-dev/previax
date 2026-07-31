@@ -2,6 +2,7 @@ import {
   resolveHomepageSectionTitle,
   resolveHomepageSections,
 } from "@/lib/homepage-layout";
+import { appHash } from "@/lib/routes";
 import type { HomepageSection, HomepageSectionKey } from "@/lib/types";
 
 export type HomepageNavLink = {
@@ -60,7 +61,7 @@ export function buildHomepageNavLinks(
     links.push({
       id: NAV_COMMUNITIES_ID,
       label: "Communities",
-      href: `/#${NAV_COMMUNITIES_ID}`,
+      href: appHash(NAV_COMMUNITIES_ID),
     });
   }
 
@@ -68,7 +69,7 @@ export function buildHomepageNavLinks(
     links.push({
       id: NAV_HOMES_ID,
       label: "Homes",
-      href: `/#${NAV_HOMES_ID}`,
+      href: appHash(NAV_HOMES_ID),
     });
   }
 
@@ -80,7 +81,7 @@ export function buildHomepageNavLinks(
     links.push({
       id,
       label: resolveHomepageSectionTitle(section),
-      href: `/#${id}`,
+      href: appHash(id),
     });
   }
 

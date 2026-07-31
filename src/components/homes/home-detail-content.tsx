@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useData } from "@/context/data-context";
+import { APP_HOME } from "@/lib/routes";
 import { FORMSPREE_URL } from "@/lib/config";
 import { buildVisitMailto, submitForm } from "@/lib/forms";
 
@@ -99,7 +100,7 @@ export default function HomeDetailContent() {
         <NetflixNavbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <h1 className="font-heading text-2xl">Home Not Found</h1>
-          <Link href="/" className="text-[#46d369] hover:underline">
+          <Link href={APP_HOME} className="text-[#46d369] hover:underline">
             ← Back to communities
           </Link>
         </div>
@@ -112,7 +113,7 @@ export default function HomeDetailContent() {
       <NetflixNavbar />
 
       <nav className="mx-auto max-w-6xl px-[4%] pt-24 text-sm text-[#b3b3b3]">
-        <Link href="/" className="hover:text-white">
+        <Link href={APP_HOME} className="hover:text-white">
           Home
         </Link>
         <span className="mx-2">/</span>

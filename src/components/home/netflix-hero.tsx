@@ -12,6 +12,7 @@ import {
   hasActiveOffers,
 } from "@/lib/community-utils";
 import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
+import { appHash } from "@/lib/routes";
 import type { Community } from "@/lib/types";
 import { YouTubeEmbed } from "@/components/video/youtube-embed";
 import { cn } from "@/lib/utils";
@@ -151,7 +152,7 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href={`/#${NAV_COMMUNITIES_ID}`}
+              href={appHash(NAV_COMMUNITIES_ID)}
               className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-white px-6 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-12 sm:text-lg"
             >
               <Play className="size-4 fill-black sm:size-6" />
@@ -303,7 +304,7 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
               </>
             ) : (
               <Link
-                href={`/#${NAV_COMMUNITIES_ID}`}
+                href={appHash(NAV_COMMUNITIES_ID)}
                 className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-white px-5 text-sm font-bold text-black transition-colors hover:bg-white/80 sm:h-12 sm:px-7 sm:text-lg"
               >
                 <Play className="size-5 fill-black sm:size-6" />

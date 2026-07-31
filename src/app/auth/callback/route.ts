@@ -1,13 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { APP_HOME } from "@/lib/routes";
+
 /**
  * OAuth callback. Copies session cookies onto the redirect response.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? APP_HOME;
   const successRedirect = NextResponse.redirect(new URL(next, origin));
 
   if (code) {

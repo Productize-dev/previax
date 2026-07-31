@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { APP_HOME } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/types";
 
@@ -88,7 +89,7 @@ export default function SignupPage() {
 
     if (data.session) {
       // Confirmación de email desactivada: sesión inmediata.
-      router.push(role === "buyer" ? "/" : "/pending-approval");
+      router.push(role === "buyer" ? APP_HOME : "/pending-approval");
       router.refresh();
       return;
     }

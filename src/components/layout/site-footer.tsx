@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
+import { PARTNER_PATH, appHash } from "@/lib/routes";
 
 export function SiteFooter() {
   return (
@@ -15,7 +16,7 @@ export function SiteFooter() {
             </p>
           </div>
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-            <Link href={`/#${NAV_COMMUNITIES_ID}`} className="hover:text-foreground">
+            <Link href={appHash(NAV_COMMUNITIES_ID)} className="hover:text-foreground">
               Communities
             </Link>
             <Link href="/saved" className="hover:text-foreground">
@@ -23,6 +24,9 @@ export function SiteFooter() {
             </Link>
             <Link href="/guidance" className="hover:text-foreground">
               Get Guidance
+            </Link>
+            <Link href={PARTNER_PATH} className="hover:text-foreground">
+              For Builders
             </Link>
             <Link href="/dashboard" className="hover:text-foreground">
               Dashboard

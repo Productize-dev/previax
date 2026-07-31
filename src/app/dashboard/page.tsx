@@ -28,6 +28,7 @@ import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import type { ExtractedListingDraft } from "@/lib/ai/listing-extract";
 import { PROFILE_COLUMNS } from "@/lib/auth/profile";
+import { APP_HOME } from "@/lib/routes";
 import {
   draftToCommunityForm,
   draftToHomeForm,
@@ -170,7 +171,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             {(isAdmin || isBuilder || isSales) && <NotificationsBell />}
             <Link
-              href="/"
+              href={APP_HOME}
               className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
             >
               ← View site

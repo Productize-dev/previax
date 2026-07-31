@@ -27,6 +27,24 @@ export function buildGuidanceMailto(data: GuidanceFormData): string {
   return `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
 }
 
+export type BuilderPartnerFormData = {
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  markets: string;
+  projectCount: string;
+  notes?: string;
+};
+
+export function buildBuilderPartnerMailto(data: BuilderPartnerFormData): string {
+  const subject = encodeURIComponent("Builder partnership request");
+  const body = encodeURIComponent(
+    `Builder Partnership Request\n\nCompany: ${data.companyName}\nContact: ${data.contactName}\nEmail: ${data.email}\nPhone: ${data.phone}\nMarkets: ${data.markets}\nActive projects / communities: ${data.projectCount}\n${data.notes ? `\nNotes: ${data.notes}` : ""}`,
+  );
+  return `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+}
+
 export async function submitForm(
   endpoint: string | undefined,
   data: Record<string, string>,

@@ -26,6 +26,7 @@ import {
 } from "@/lib/buyer-storage";
 import { getUniqueCities } from "@/lib/community-utils";
 import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
+import { APP_HOME, appHash } from "@/lib/routes";
 
 const SUGGESTED_PROMPTS = [
   "3 bed under $400K near good schools",
@@ -109,8 +110,8 @@ export function NetflixSearchOverlay({
       addRecentSearch(trimmed);
       onOpenChange(false);
 
-      if (pathname !== "/") {
-        router.push(`/?q=${encodeURIComponent(trimmed)}`);
+      if (pathname !== APP_HOME) {
+        router.push(`${APP_HOME}?q=${encodeURIComponent(trimmed)}`);
         return;
       }
 
@@ -136,8 +137,8 @@ export function NetflixSearchOverlay({
 
   function handleBrowseMap() {
     onOpenChange(false);
-    if (pathname !== "/") {
-      router.push(`/#${NAV_COMMUNITIES_ID}`);
+    if (pathname !== APP_HOME) {
+      router.push(appHash(NAV_COMMUNITIES_ID));
       return;
     }
     window.location.hash = "cities";

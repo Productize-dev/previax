@@ -13,6 +13,7 @@ import { useBuyer } from "@/context/buyer-context";
 import { useData } from "@/context/data-context";
 import { canAccessDashboard } from "@/lib/auth/profile";
 import { buildHomepageNavLinks } from "@/lib/homepage-nav";
+import { APP_HOME } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 export function NetflixNavbar() {
@@ -34,7 +35,7 @@ export function NetflixNavbar() {
   );
 
   const hashLinks = useMemo(
-    () => navLinks.filter((link) => link.href.startsWith("/#")),
+    () => navLinks.filter((link) => link.href.startsWith(`${APP_HOME}#`)),
     [navLinks],
   );
 
@@ -52,7 +53,7 @@ export function NetflixNavbar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname !== "/") {
+    if (pathname !== APP_HOME) {
       setActiveId("");
       return;
     }
@@ -98,7 +99,7 @@ export function NetflixNavbar() {
 
   function isActive(linkId: string, href: string): boolean {
     if (href === "/saved") return pathname.startsWith("/saved");
-    return pathname === "/" && activeId === linkId;
+    return pathname === APP_HOME && activeId === linkId;
   }
 
   return (
@@ -112,7 +113,7 @@ export function NetflixNavbar() {
         )}
       >
         <div className="mx-auto flex h-16 items-center gap-3 px-[4%] lg:h-[68px] lg:gap-6">
-          <Link href="/" className="shrink-0" aria-label="Previax home">
+          <Link href={APP_HOME} className="shrink-0" aria-label="Previax home">
             <PreviaxLogo
               height={56}
               className="brightness-110"

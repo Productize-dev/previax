@@ -9,6 +9,7 @@ import { FadeInSection } from "@/components/ui/fade-in-section";
 import { Button } from "@/components/ui/button";
 import { CONTACT_EMAIL } from "@/lib/config";
 import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
+import { PARTNER_PATH, appHash } from "@/lib/routes";
 
 const cards = [
   {
@@ -17,7 +18,7 @@ const cards = [
     description:
       "Explore new construction communities across North Carolina, compare builders, watch video tours, and connect with a dedicated realtor — all in one place.",
     cta: "Explore Communities",
-    href: `/#${NAV_COMMUNITIES_ID}`,
+    href: appHash(NAV_COMMUNITIES_ID),
     external: false,
   },
   {
@@ -34,9 +35,9 @@ const cards = [
     title: "Showcase Your Community",
     description:
       "List your community on Previax and reach serious buyers actively exploring new construction in the Triad. Video-first, cinematic, and built to convert.",
-    cta: "List Your Community",
-    href: `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("List my community on Previax")}&body=${encodeURIComponent("Hi,\n\nI'm interested in listing my community on Previax.\n\n")}`,
-    external: true,
+    cta: "Partner With Us",
+    href: PARTNER_PATH,
+    external: false,
   },
 ] as const;
 

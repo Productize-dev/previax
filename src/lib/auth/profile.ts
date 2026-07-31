@@ -1,4 +1,5 @@
 import type { Profile, UserRole, UserStatus } from "../types";
+import { APP_HOME } from "../routes";
 
 export const PROFILE_COLUMNS =
   "id, role, status, full_name, company_name, email, avatar_url";
@@ -43,7 +44,7 @@ export function getPostAuthPath(
   next?: string | null,
 ): string {
   if (next) return next;
-  if (!profile || profile.role === "buyer") return "/";
+  if (!profile || profile.role === "buyer") return APP_HOME;
   if (profile.status !== "active") return "/pending-approval";
   return "/dashboard";
 }

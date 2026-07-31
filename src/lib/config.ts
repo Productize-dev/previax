@@ -9,9 +9,13 @@ export const ADMIN_NOTIFY_EMAIL =
 export const FORMSPREE_URL =
   process.env.NEXT_PUBLIC_FORMSPREE_URL ?? "";
 
-/** Optional Calendly scheduling link */
+/** Optional Calendly scheduling link (buyer tours) */
 export const CALENDLY_URL =
   process.env.NEXT_PUBLIC_CALENDLY_URL ?? "";
+
+/** Optional Calendly link for builder partnership meetings */
+export const BUILDER_CALENDLY_URL =
+  process.env.NEXT_PUBLIC_BUILDER_CALENDLY_URL || CALENDLY_URL;
 
 /** Days a builder has to approve before auto-publish. */
 export const BUILDER_APPROVAL_DAYS = 5;

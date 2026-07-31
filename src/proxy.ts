@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import type { UserRole, UserStatus } from "@/lib/types";
+import { APP_HOME } from "@/lib/routes";
 
 // Proxy (middleware en Next <16): refresca la sesión de Supabase en cada
 // request y protege /dashboard por rol. La autorización de datos real
@@ -58,7 +59,7 @@ export async function proxy(request: NextRequest) {
     const profile = data as { role: UserRole; status: UserStatus } | null;
 
     if (!profile || profile.role === "buyer") {
-      return redirectTo("/");
+      return redirectTo(APP_HOME);
     }
     if (profile.status !== "active") {
       return redirectTo("/pending-approval");

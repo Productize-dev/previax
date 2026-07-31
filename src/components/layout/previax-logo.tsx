@@ -12,12 +12,15 @@ type PreviaxLogoProps = {
   /** Display height in CSS pixels; width follows the wordmark aspect ratio. */
   height?: number;
   asLink?: boolean;
+  /** Destination when `asLink` is true. Defaults to marketing home `/`. */
+  href?: string;
 };
 
 export function PreviaxLogo({
   className,
   height = 36,
   asLink = true,
+  href = "/",
 }: PreviaxLogoProps) {
   const width = Math.round((height * LOGO_WIDTH) / LOGO_HEIGHT);
 
@@ -34,7 +37,7 @@ export function PreviaxLogo({
 
   if (asLink) {
     return (
-      <Link href="/" className="inline-flex shrink-0" aria-label="Previax home">
+      <Link href={href} className="inline-flex shrink-0" aria-label="Previax home">
         {logo}
       </Link>
     );

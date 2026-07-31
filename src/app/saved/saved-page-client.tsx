@@ -12,6 +12,7 @@ import { useBuyer } from "@/context/buyer-context";
 import { useData } from "@/context/data-context";
 import { parseHomeRef } from "@/lib/buyer-home-ref";
 import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
+import { appHash } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 type TabId = "list" | "homes" | "likes";
@@ -137,7 +138,7 @@ export default function SavedPageClient() {
           <div className="mt-16 text-center">
             <p className="text-[#b3b3b3]">{emptyMessage}</p>
             <Link
-              href={`/#${NAV_COMMUNITIES_ID}`}
+              href={appHash(NAV_COMMUNITIES_ID)}
               className="mt-4 inline-block text-[#46d369] hover:underline"
             >
               Browse communities

@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+import { APP_HOME } from "@/lib/routes";
+
 /**
  * Email / invite landing. Prefer token_hash + type (no PKCE verifier needed).
  * Invite links from the admin API must use token_hash — a bare ?code= from a
@@ -21,7 +23,7 @@ export async function GET(request: NextRequest) {
     "signup",
   ]);
   const defaultNext =
-    type && passwordTypes.has(type) ? "/set-password" : "/";
+    type && passwordTypes.has(type) ? "/set-password" : APP_HOME;
   const next = searchParams.get("next") ?? defaultNext;
   const nextUrl = new URL(next, origin);
 

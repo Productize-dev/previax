@@ -27,6 +27,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { FadeInSection } from "@/components/ui/fade-in-section";
 import { useData } from "@/context/data-context";
 import { trackViewedCity } from "@/lib/buyer-storage";
+import { APP_HOME } from "@/lib/routes";
 import { trackCommunityView } from "@/lib/analytics";
 import { getAvailableModels } from "@/lib/community-media";
 import { getRelatedCommunities } from "@/lib/community-utils";
@@ -141,7 +142,7 @@ export default function CommunityDetailContent() {
         <NetflixNavbar />
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <h1 className="font-heading text-2xl">Community Not Found</h1>
-          <Link href="/" className="text-[#46d369] hover:underline">
+          <Link href={APP_HOME} className="text-[#46d369] hover:underline">
             ← Back to communities
           </Link>
         </div>
