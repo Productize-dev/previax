@@ -46,6 +46,10 @@ export type Builder = {
   name: string;
   logoUrl?: string;
   description?: string;
+  /** Marketing / landing YouTube video for this builder. */
+  youtubeUrl?: string;
+  /** When false, omit from marketing landing (logo strip + Meet the Builders). */
+  showOnMarketing: boolean;
   createdAt: number;
   /** Dashboard scope — quién gestiona este builder en Supabase. */
   ownerId?: string;

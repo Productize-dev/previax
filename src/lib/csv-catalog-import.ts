@@ -103,6 +103,7 @@ function findOrCreateBuilder(
   const builder: Builder = {
     id: `import-builder-${slugify(name)}`,
     name: name.trim(),
+    showOnMarketing: true,
     createdAt: Date.now(),
   };
 

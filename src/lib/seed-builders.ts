@@ -5,6 +5,7 @@ export const seedBuilders: Builder[] = [
     id: "seed-builder-lennar",
     name: "Lennar",
     description: "Everything's Included® new homes across the Charlotte metro.",
+    showOnMarketing: true,
     createdAt: Date.now() - 86400000 * 30,
   },
 ];

@@ -42,6 +42,8 @@ export type BuilderRow = {
   name: string;
   logo_url: string | null;
   description: string | null;
+  youtube_url: string | null;
+  show_on_marketing: boolean | null;
   created_at: string;
 };
 
@@ -230,6 +232,8 @@ export function rowToBuilder(row: BuilderRow): Builder {
     name: row.name,
     logoUrl: row.logo_url ?? undefined,
     description: row.description ?? undefined,
+    youtubeUrl: row.youtube_url ?? undefined,
+    showOnMarketing: row.show_on_marketing !== false,
     createdAt: toMillis(row.created_at),
     ownerId: row.owner_id ?? undefined,
   };
@@ -468,6 +472,10 @@ export function builderInputToRow(data: Partial<BuilderInput>): AnyRow {
   setIfDefined(row, "name", data.name);
   if ("logoUrl" in data) row.logo_url = data.logoUrl ?? null;
   if ("description" in data) row.description = data.description ?? null;
+  if ("youtubeUrl" in data) row.youtube_url = data.youtubeUrl ?? null;
+  if ("showOnMarketing" in data) {
+    row.show_on_marketing = Boolean(data.showOnMarketing);
+  }
   return row;
 }
 
@@ -622,6 +630,8 @@ export function builderToRow(builder: Builder): AnyRow {
     name: builder.name,
     logo_url: builder.logoUrl ?? null,
     description: builder.description ?? null,
+    youtube_url: builder.youtubeUrl ?? null,
+    show_on_marketing: builder.showOnMarketing,
     created_at: new Date(builder.createdAt).toISOString(),
   };
 }

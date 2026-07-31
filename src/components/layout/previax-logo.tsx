@@ -3,9 +3,9 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-/** Intrinsic size of `/previax-logo.png` (icon + PREVIAX wordmark). */
-const LOGO_WIDTH = 1024;
-const LOGO_HEIGHT = 576;
+/** Intrinsic size of `/previax-logo-white.png` (icon + PREVIAX wordmark). */
+const LOGO_WIDTH = 1730;
+const LOGO_HEIGHT = 666;
 
 type PreviaxLogoProps = {
   className?: string;
@@ -26,11 +26,11 @@ export function PreviaxLogo({
 
   const logo = (
     <Image
-      src="/previax-logo.png"
+      src="/previax-logo-white.png"
       alt="Previax"
       width={width}
       height={height}
-      className={cn("shrink-0 object-contain object-left", className)}
+      className={cn("shrink-0 bg-transparent object-contain object-left", className)}
       priority
     />
   );

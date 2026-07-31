@@ -3,6 +3,17 @@ import type { Builder, Community } from "./types";
 export const NO_BUILDER_ASSIGNED_LABEL = "No builder assigned";
 export const MULTI_BUILDER_PENDING_LABEL = "Multi-builder community";
 
+/** Builders visible on the public marketing landing (logo strip + Meet the Builders). */
+export function isBuilderShownOnMarketing(builder: Builder): boolean {
+  return builder.showOnMarketing !== false;
+}
+
+export function getMarketingBuilders(builders: Builder[]): Builder[] {
+  return builders
+    .filter(isBuilderShownOnMarketing)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function getCommunityBuilderIds(community: Community): string[] {
   if (community.builderIds?.length) return community.builderIds;
   return community.builderId ? [community.builderId] : [];

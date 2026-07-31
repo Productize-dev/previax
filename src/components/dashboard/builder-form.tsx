@@ -22,6 +22,7 @@ import {
   type BuilderDashboardForm,
 } from "@/lib/dashboard-defaults";
 import type { Builder } from "@/lib/types";
+import { isValidYouTubeUrl } from "@/lib/youtube";
 
 type BuilderFormProps = {
   editingBuilder: Builder | null;
@@ -39,6 +40,7 @@ export function BuilderForm({
       : emptyBuilderDashboardForm,
   );
   const [submitting, setSubmitting] = useState(false);
+  const [youtubeError, setYoutubeError] = useState("");
 
   const isEditing = editingBuilder !== null;
 
@@ -47,11 +49,18 @@ export function BuilderForm({
     value: BuilderDashboardForm[K],
   ) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (field === "youtubeUrl") setYoutubeError("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return;
+
+    const youtube = form.youtubeUrl.trim();
+    if (youtube && !isValidYouTubeUrl(youtube)) {
+      setYoutubeError("Please enter a valid YouTube URL");
+      return;
+    }
 
     const payload = toBuilderInput(form);
 
@@ -64,6 +73,7 @@ export function BuilderForm({
         await addBuilder(payload);
       }
       setForm(emptyBuilderDashboardForm);
+      setYoutubeError("");
     } finally {
       setSubmitting(false);
     }
@@ -76,8 +86,8 @@ export function BuilderForm({
           {isEditing ? "Edit Builder" : "Add Builder"}
         </CardTitle>
         <CardDescription>
-          Builder profiles group communities and home models. This is a preview
-          of how the full catalog will be organized.
+          Builder profiles group communities and home models. Add a marketing
+          video to feature this builder on the landing page.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,6 +119,50 @@ export function BuilderForm({
             value={form.logoUrl}
             onChange={(value) => updateField("logoUrl", value)}
           />
+
+          <div className="space-y-2">
+            <Label htmlFor="builder-youtube">Marketing video (YouTube)</Label>
+            <Input
+              id="builder-youtube"
+              type="url"
+              value={form.youtubeUrl}
+              onChange={(e) => updateField("youtubeUrl", e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+              aria-invalid={Boolean(youtubeError)}
+            />
+            {youtubeError ? (
+              <p className="text-sm text-destructive">{youtubeError}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Shown on the marketing landing “Meet the Builders” row.
+                Optional.
+              </p>
+            )}
+          </div>
+
+          <label
+            htmlFor="builder-show-marketing"
+            className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-muted/30 px-3 py-3"
+          >
+            <input
+              id="builder-show-marketing"
+              type="checkbox"
+              checked={form.showOnMarketing}
+              onChange={(e) =>
+                updateField("showOnMarketing", e.target.checked)
+              }
+              className="mt-1 size-4 rounded border-border accent-primary"
+            />
+            <span>
+              <span className="block text-sm font-medium">
+                Show on marketing site
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Controls both “Trusted builders” and “Meet the Builders” on the
+                public landing.
+              </span>
+            </span>
+          </label>
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" disabled={submitting}>

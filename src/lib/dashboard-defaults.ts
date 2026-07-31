@@ -198,23 +198,31 @@ export type BuilderDashboardForm = {
   name: string;
   description: string;
   logoUrl: string;
+  youtubeUrl: string;
+  showOnMarketing: boolean;
 };
 
 export const emptyBuilderDashboardForm: BuilderDashboardForm = {
   name: "",
   description: "",
   logoUrl: "",
+  youtubeUrl: "",
+  showOnMarketing: true,
 };
 
 export function builderToDashboardForm(builder: {
   name: string;
   description?: string;
   logoUrl?: string;
+  youtubeUrl?: string;
+  showOnMarketing?: boolean;
 }): BuilderDashboardForm {
   return {
     name: builder.name,
     description: builder.description ?? "",
     logoUrl: builder.logoUrl ?? "",
+    youtubeUrl: builder.youtubeUrl ?? "",
+    showOnMarketing: builder.showOnMarketing !== false,
   };
 }
 
@@ -223,6 +231,8 @@ export function toBuilderInput(form: BuilderDashboardForm): BuilderInput {
     name: form.name.trim(),
     description: form.description.trim() || undefined,
     logoUrl: form.logoUrl.trim() || undefined,
+    youtubeUrl: form.youtubeUrl.trim() || undefined,
+    showOnMarketing: form.showOnMarketing,
   };
 }
 

@@ -1,15 +1,10 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +14,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
-import { communityHasBuilder } from "@/lib/community-builders";
+import {
+  communityHasBuilder,
+  isBuilderShownOnMarketing,
+} from "@/lib/community-builders";
 import type { Builder } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +32,8 @@ export function BuilderList({
   onSelect,
   onEdit,
 }: BuilderListProps) {
-  const { builders, communities, deleteBuilder } = useDashboardData();
+  const { builders, communities, deleteBuilder, updateBuilder } =
+    useDashboardData();
   const [deleteTarget, setDeleteTarget] = useState<Builder | null>(null);
 
   async function confirmDelete() {
@@ -44,6 +43,12 @@ export function BuilderList({
       onSelect("");
     }
     setDeleteTarget(null);
+  }
+
+  async function toggleMarketing(builder: Builder) {
+    await updateBuilder(builder.id, {
+      showOnMarketing: !isBuilderShownOnMarketing(builder),
+    });
   }
 
   if (builders.length === 0) {
@@ -63,6 +68,7 @@ export function BuilderList({
             communityHasBuilder(community, builder.id),
           ).length;
           const selected = selectedBuilderId === builder.id;
+          const onMarketing = isBuilderShownOnMarketing(builder);
 
           return (
             <Card
@@ -77,6 +83,7 @@ export function BuilderList({
                 <div className="flex min-w-0 gap-3">
                   <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold text-muted-foreground">
                     {builder.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={builder.logoUrl}
                         alt=""
@@ -91,6 +98,11 @@ export function BuilderList({
                     <p className="text-sm text-muted-foreground">
                       {communityCount} communit
                       {communityCount === 1 ? "y" : "ies"}
+                      {!onMarketing && (
+                        <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          Hidden on marketing
+                        </span>
+                      )}
                     </p>
                     {builder.description && (
                       <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
@@ -103,6 +115,27 @@ export function BuilderList({
                   className="flex shrink-0 gap-1"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={
+                      onMarketing
+                        ? "Hide on marketing site"
+                        : "Show on marketing site"
+                    }
+                    title={
+                      onMarketing
+                        ? "Hide on marketing site"
+                        : "Show on marketing site"
+                    }
+                    onClick={() => toggleMarketing(builder)}
+                  >
+                    {onMarketing ? (
+                      <Eye className="size-4" />
+                    ) : (
+                      <EyeOff className="size-4 text-muted-foreground" />
+                    )}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"

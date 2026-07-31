@@ -1,51 +1,75 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo } from "react";
 
-import { FadeInSection } from "@/components/ui/fade-in-section";
 import { useData } from "@/context/data-context";
+import { getMarketingBuilders } from "@/lib/community-builders";
+
+function BuilderLogoMark({
+  name,
+  logoUrl,
+}: {
+  name: string;
+  logoUrl?: string;
+}) {
+  return (
+    <div className="flex h-20 w-[200px] shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.35)] ring-1 ring-white/10 sm:h-24 sm:w-[240px] sm:px-8 md:h-28 md:w-[280px]">
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoUrl}
+          alt={name}
+          className="max-h-12 w-auto max-w-full object-contain sm:max-h-14 md:max-h-16"
+        />
+      ) : (
+        <span className="text-center text-sm font-bold uppercase tracking-[0.16em] text-neutral-800 sm:text-base">
+          {name}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function LandingBuildersStrip() {
   const { builders } = useData();
 
   const list = useMemo(
-    () => [...builders].sort((a, b) => a.name.localeCompare(b.name)),
+    () => getMarketingBuilders(builders),
     [builders],
   );
+
+  // Duplicate enough times so the -50% marquee loop stays seamless.
+  const loop = useMemo(() => {
+    if (list.length === 0) return [];
+    const copies = Math.max(2, Math.ceil(6 / Math.max(list.length, 1))) * 2;
+    return Array.from({ length: copies }, () => list).flat();
+  }, [list]);
 
   if (list.length === 0) return null;
 
   return (
-    <FadeInSection>
-      <section
-        aria-label="Partner builders"
-        className="border-t border-white/10 bg-black px-6 py-8 md:py-10"
-      >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-6">
-          {list.map((builder) => (
-            <div
-              key={builder.id}
-              className="flex h-10 max-w-[160px] items-center justify-center opacity-80 transition hover:opacity-100"
-            >
-              {builder.logoUrl ? (
-                <Image
-                  src={builder.logoUrl}
-                  alt={builder.name}
-                  width={140}
-                  height={40}
-                  className="max-h-10 w-auto object-contain brightness-0 invert"
-                  unoptimized={builder.logoUrl.startsWith("http")}
-                />
-              ) : (
-                <span className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">
-                  {builder.name}
-                </span>
-              )}
-            </div>
+    <section
+      aria-label="Partner builders"
+      className="relative overflow-hidden border-t border-white/10 bg-gradient-to-b from-black via-[#0c0c0c] to-black py-12 md:py-16"
+    >
+      <p className="mb-8 px-[4%] text-center text-xs font-semibold uppercase tracking-[0.28em] text-primary/90">
+        Trusted builders
+      </p>
+
+      <div className="landing-logo-marquee relative">
+        <div className="landing-logo-marquee-fade pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-black to-transparent sm:w-24 md:w-32" />
+        <div className="landing-logo-marquee-fade pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-black to-transparent sm:w-24 md:w-32" />
+
+        <div className="landing-logo-marquee-track flex w-max gap-5 sm:gap-6 md:gap-8">
+          {loop.map((builder, i) => (
+            <BuilderLogoMark
+              key={`${builder.id}-${i}`}
+              name={builder.name}
+              logoUrl={builder.logoUrl}
+            />
           ))}
         </div>
-      </section>
-    </FadeInSection>
+      </div>
+    </section>
   );
 }

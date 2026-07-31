@@ -431,11 +431,42 @@
     }
   }
 
+  .landing-logo-marquee {
+    @apply overflow-hidden;
+  }
+
+  .landing-logo-marquee-track {
+    animation: landing-logo-marquee 42s linear infinite;
+  }
+
+  .landing-logo-marquee:hover .landing-logo-marquee-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes landing-logo-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .landing-poster-tile {
       animation: none !important;
       opacity: 0.55 !important;
       transform: none !important;
+    }
+
+    .landing-logo-marquee-track {
+      animation: none !important;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100% !important;
+      max-width: 72rem;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
     }
   }
 }
