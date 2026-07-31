@@ -114,7 +114,7 @@ export function NetflixNavbar() {
         <div className="mx-auto flex h-16 items-center gap-3 px-[4%] lg:h-[68px] lg:gap-6">
           <Link href="/" className="shrink-0" aria-label="Previax home">
             <PreviaxLogo
-              height={32}
+              height={56}
               className="brightness-110"
               asLink={false}
             />

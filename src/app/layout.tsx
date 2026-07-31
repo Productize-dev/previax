@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   description:
     "A cinematic real estate platform for exploring premium residential communities across North Carolina.",
   icons: {
-    icon: "/previax-logo.png",
-    apple: "/previax-logo.png",
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 

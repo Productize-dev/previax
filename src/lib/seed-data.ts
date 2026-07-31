@@ -23,7 +23,7 @@ export const seedCommunities: Community[] = [
     realtorName: "Previax Team",
     realtorPhone: "",
     realtorEmail: "inquiries@previax.com",
-    realtorPhotoUrl: "/previax-logo.png",
+    realtorPhotoUrl: "/previax-mark.png",
     amenities: [
       "Two-car garages",
       "Walking distance to downtown Waxhaw",

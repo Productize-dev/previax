@@ -30,7 +30,7 @@ export const DEFAULT_COMMUNITY_FIELDS: Omit<
   realtorName: "Previax Team",
   realtorPhone: "",
   realtorEmail: CONTACT_EMAIL,
-  realtorPhotoUrl: "/previax-logo.png",
+  realtorPhotoUrl: "/previax-mark.png",
   amenities: [],
   lenders: [],
   mainHighlight: "",
