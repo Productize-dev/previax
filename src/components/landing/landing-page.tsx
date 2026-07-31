@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 
+import { LandingBuildersStrip } from "@/components/landing/landing-builders-strip";
 import { LandingCtaBand } from "@/components/landing/landing-cta-band";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import {
   LandingHero,
   type LandingAudience,
 } from "@/components/landing/landing-hero";
-import { LandingHowItWorks } from "@/components/landing/landing-how-it-works";
+import { LandingMeetBuilders } from "@/components/landing/landing-meet-builders";
 import { LandingNav } from "@/components/landing/landing-nav";
-import { LandingProof } from "@/components/landing/landing-proof";
+import { LandingNetwork } from "@/components/landing/landing-network";
+import { LandingTopNcRow } from "@/components/landing/landing-top-nc-row";
+import { LandingTrendingCommunities } from "@/components/landing/landing-trending-communities";
 
 export function LandingPage() {
   const [audience, setAudience] = useState<LandingAudience>("buyer");
@@ -19,9 +22,12 @@ export function LandingPage() {
     <div className="flex min-h-screen flex-col bg-black text-white">
       <LandingNav />
       <LandingHero audience={audience} onAudienceChange={setAudience} />
-      <LandingProof audience={audience} />
-      <LandingHowItWorks audience={audience} />
-      <LandingCtaBand />
+      <LandingBuildersStrip />
+      <LandingTrendingCommunities />
+      <LandingTopNcRow />
+      <LandingMeetBuilders />
+      <LandingNetwork />
+      <LandingCtaBand audience={audience} />
       <LandingFooter />
     </div>
   );
