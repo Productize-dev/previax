@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import {
   extractYouTubeId,
   getEmbedUrl,
@@ -27,7 +29,28 @@ type YouTubeEmbedProps = {
   fillContainer?: boolean;
   /** Crop iframe to cover container (hero backgrounds). */
   cover?: boolean;
+  /** Expose the iframe for postMessage commands (mute/unmute). */
+  iframeRef?: React.RefObject<HTMLIFrameElement | null>;
 };
+
+function postYouTubeCommand(
+  iframe: HTMLIFrameElement | null,
+  func: string,
+) {
+  iframe?.contentWindow?.postMessage(
+    JSON.stringify({ event: "command", func, args: [] }),
+    "*",
+  );
+}
+
+export function youtubeMute(iframe: HTMLIFrameElement | null) {
+  postYouTubeCommand(iframe, "mute");
+}
+
+export function youtubeUnmute(iframe: HTMLIFrameElement | null) {
+  postYouTubeCommand(iframe, "unMute");
+  postYouTubeCommand(iframe, "playVideo");
+}
 
 export function YouTubeEmbed({
   youtubeUrl,
@@ -44,8 +67,11 @@ export function YouTubeEmbed({
   loading = "lazy",
   fillContainer = false,
   cover = false,
+  iframeRef,
 }: YouTubeEmbedProps) {
   const videoId = extractYouTubeId(youtubeUrl);
+  const localRef = useRef<HTMLIFrameElement>(null);
+  const ref = iframeRef ?? localRef;
 
   if (!videoId) {
     return (
@@ -84,6 +110,7 @@ export function YouTubeEmbed({
       )}
     >
       <iframe
+        ref={ref}
         src={embedUrl}
         title={title}
         allow={allow}

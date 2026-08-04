@@ -1,8 +1,14 @@
 "use client";
 
-import { LayoutGrid, Play } from "lucide-react";
+import { useRef, useState } from "react";
+import { LayoutGrid, Play, Volume2, VolumeX } from "lucide-react";
 
 import { YouTubePosterImage } from "@/components/communities/youtube-poster-image";
+import {
+  YouTubeEmbed,
+  youtubeMute,
+  youtubeUnmute,
+} from "@/components/video/youtube-embed";
 import { useData } from "@/context/data-context";
 import {
   buildCommunityCast,
@@ -57,6 +63,9 @@ export function NetflixCommunityDetailHero({
   hasModels,
 }: NetflixCommunityDetailHeroProps) {
   const { top10Communities, customCommunityTagLabels } = useData();
+  /** Browsers block unmuted autoplay — start muted, unmute on user click. */
+  const [muted, setMuted] = useState(true);
+  const videoIframeRef = useRef<HTMLIFrameElement>(null);
 
   const year = getCommunityYear(community);
   const highlight = community.mainHighlight
@@ -76,19 +85,69 @@ export function NetflixCommunityDetailHero({
     ? `Play ${getCommunityBuilderNames(community)[0] ?? "builders"}`
     : "Play community tour";
 
+  function toggleMute() {
+    const next = !muted;
+    setMuted(next);
+    if (next) {
+      youtubeMute(videoIframeRef.current);
+    } else {
+      youtubeUnmute(videoIframeRef.current);
+    }
+  }
+
   return (
     <section className="relative min-h-[88vh] overflow-hidden bg-[#141414] text-white md:min-h-screen">
       <div className="absolute inset-0">
-        <YouTubePosterImage
-          videoUrl={heroVideoUrl}
-          fallbackUrl={heroPosterFallback}
-          className="size-full"
-          imgClassName="object-cover object-[center_20%] md:object-top scale-[1.02]"
-        />
+        {heroVideoUrl ? (
+          <>
+            <YouTubePosterImage
+              videoUrl={heroVideoUrl}
+              fallbackUrl={heroPosterFallback}
+              className="size-full"
+              imgClassName="object-cover object-[center_20%] md:object-top scale-[1.02]"
+            />
+            <YouTubeEmbed
+              youtubeUrl={heroVideoUrl}
+              title={community.name}
+              preset="background"
+              autoplay
+              mute
+              loop
+              loading="eager"
+              fillContainer
+              cover
+              iframeRef={videoIframeRef}
+              className="absolute inset-0 size-full"
+            />
+          </>
+        ) : (
+          <YouTubePosterImage
+            videoUrl={heroVideoUrl}
+            fallbackUrl={heroPosterFallback}
+            className="size-full"
+            imgClassName="object-cover object-[center_20%] md:object-top scale-[1.02]"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/55 to-[#141414]/10" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-[#141414]/45 to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(20,20,20,0.15),rgba(20,20,20,0.85)_68%)]" />
       </div>
+
+      {heroVideoUrl && (
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="absolute bottom-[18%] right-[4%] z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/40 bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 md:bottom-24"
+          aria-label={muted ? "Unmute community video" : "Mute community video"}
+          title={muted ? "Unmute" : "Mute"}
+        >
+          {muted ? (
+            <VolumeX className="size-5" />
+          ) : (
+            <Volume2 className="size-5" />
+          )}
+        </button>
+      )}
 
       <div className="relative z-10 flex min-h-[88vh] flex-col justify-end px-[4%] pb-10 pt-28 md:min-h-screen md:pb-16">
         <div className="max-w-3xl space-y-4">
