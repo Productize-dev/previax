@@ -9,6 +9,7 @@ export type BuyerGuidancePrefs = {
 
 const SAVED_KEY = "previax-saved";
 const SAVED_HOMES_KEY = "previax-saved-homes";
+const SAVED_APARTMENTS_KEY = "previax-saved-apartments";
 const LIKED_COMMUNITIES_KEY = "previax-liked-communities";
 const LIKED_HOMES_KEY = "previax-liked-homes";
 const BUYER_KEY = "previax-buyer";
@@ -22,6 +23,7 @@ const listeners = new Set<() => void>();
 
 let savedSnapshot: string[] = EMPTY_IDS;
 let savedHomesSnapshot: string[] = EMPTY_IDS;
+let savedApartmentsSnapshot: string[] = EMPTY_IDS;
 let likedCommunitiesSnapshot: string[] = EMPTY_IDS;
 let likedHomesSnapshot: string[] = EMPTY_IDS;
 let buyerSnapshot: BuyerProfile | null = null;
@@ -64,6 +66,9 @@ function hydrateFromStorage(): void {
   if (typeof window === "undefined") return;
   savedSnapshot = normalizeIds(readJson<string[]>(SAVED_KEY, EMPTY_IDS));
   savedHomesSnapshot = normalizeIds(readJson<string[]>(SAVED_HOMES_KEY, EMPTY_IDS));
+  savedApartmentsSnapshot = normalizeIds(
+    readJson<string[]>(SAVED_APARTMENTS_KEY, EMPTY_IDS),
+  );
   likedCommunitiesSnapshot = normalizeIds(
     readJson<string[]>(LIKED_COMMUNITIES_KEY, EMPTY_IDS),
   );
@@ -86,6 +91,7 @@ function ensureHydrated(): void {
 const STORAGE_KEYS = [
   SAVED_KEY,
   SAVED_HOMES_KEY,
+  SAVED_APARTMENTS_KEY,
   LIKED_COMMUNITIES_KEY,
   LIKED_HOMES_KEY,
   BUYER_KEY,
@@ -147,6 +153,23 @@ export function toggleSavedHome(communityId: string, homeId: string): string[] {
 
 export function isHomeSaved(communityId: string, homeId: string): boolean {
   return getSavedHomeRefs().includes(homeRef(communityId, homeId));
+}
+
+export function getSavedApartmentIds(): string[] {
+  ensureHydrated();
+  return savedApartmentsSnapshot;
+}
+
+export function toggleSavedApartment(id: string): string[] {
+  ensureHydrated();
+  savedApartmentsSnapshot = normalizeIds(toggleId(savedApartmentsSnapshot, id));
+  persistIds(SAVED_APARTMENTS_KEY, savedApartmentsSnapshot);
+  notifyStorageChange();
+  return savedApartmentsSnapshot;
+}
+
+export function isApartmentSaved(id: string): boolean {
+  return getSavedApartmentIds().includes(id);
 }
 
 export function getLikedCommunityIds(): string[] {

@@ -12,6 +12,10 @@ import { repository } from "@/lib/data";
 import type { CsvImportResult } from "@/lib/csv-catalog-import";
 import { communityHasBuilder, syncCommunityBuilderFields } from "@/lib/community-builders";
 import type {
+  ApartmentCommunity,
+  ApartmentCommunityInput,
+  ApartmentFloorPlan,
+  ApartmentFloorPlanInput,
   Builder,
   BuilderInput,
   Community,
@@ -39,6 +43,7 @@ import type {
 
 type DataContextValue = {
   communities: Community[];
+  apartmentCommunities: ApartmentCommunity[];
   featured: FeaturedItem[];
   lenders: Lender[];
   lenderOffers: LenderOffer[];
@@ -65,6 +70,27 @@ type DataContextValue = {
     data: Partial<HomeInput>,
   ) => Promise<Home>;
   deleteHome: (communityId: string, homeId: string) => Promise<void>;
+  addApartmentCommunity: (
+    data: ApartmentCommunityInput,
+  ) => Promise<ApartmentCommunity>;
+  updateApartmentCommunity: (
+    id: string,
+    data: Partial<ApartmentCommunityInput>,
+  ) => Promise<ApartmentCommunity>;
+  deleteApartmentCommunity: (id: string) => Promise<void>;
+  addFloorPlan: (
+    apartmentCommunityId: string,
+    plan: ApartmentFloorPlanInput,
+  ) => Promise<ApartmentFloorPlan>;
+  updateFloorPlan: (
+    apartmentCommunityId: string,
+    planId: string,
+    data: Partial<ApartmentFloorPlanInput>,
+  ) => Promise<ApartmentFloorPlan>;
+  deleteFloorPlan: (
+    apartmentCommunityId: string,
+    planId: string,
+  ) => Promise<void>;
   addFeatured: (data: FeaturedItemInput) => Promise<FeaturedItem>;
   updateFeatured: (
     id: string,
@@ -148,6 +174,7 @@ function applyAppData(
   data: Awaited<ReturnType<typeof repository.getAppData>>,
   setters: {
     setCommunities: (value: Community[]) => void;
+    setApartmentCommunities: (value: ApartmentCommunity[]) => void;
     setFeatured: (value: FeaturedItem[]) => void;
     setLenders: (value: Lender[]) => void;
     setLenderOffers: (value: LenderOffer[]) => void;
@@ -162,6 +189,7 @@ function applyAppData(
   },
 ) {
   setters.setCommunities(data.communities);
+  setters.setApartmentCommunities(data.apartmentCommunities ?? []);
   setters.setFeatured(data.featured);
   setters.setLenders(data.lenders);
   setters.setLenderOffers(data.lenderOffers ?? []);
@@ -177,6 +205,9 @@ function applyAppData(
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [apartmentCommunities, setApartmentCommunities] = useState<
+    ApartmentCommunity[]
+  >([]);
   const [featured, setFeatured] = useState<FeaturedItem[]>([]);
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [lenderOffers, setLenderOffers] = useState<LenderOffer[]>([]);
@@ -203,6 +234,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     (data: Awaited<ReturnType<typeof repository.getAppData>>) => {
       applyAppData(data, {
         setCommunities,
+        setApartmentCommunities,
         setFeatured,
         setLenders,
         setLenderOffers,
@@ -319,6 +351,94 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         prev.map((c) =>
           c.id === communityId
             ? { ...c, homes: c.homes.filter((h) => h.id !== homeId) }
+            : c,
+        ),
+      );
+    },
+    [],
+  );
+
+  const addApartmentCommunity = useCallback(
+    async (data: ApartmentCommunityInput) => {
+      const community = await repository.createApartmentCommunity(data);
+      setApartmentCommunities((prev) => [...prev, community]);
+      return community;
+    },
+    [],
+  );
+
+  const updateApartmentCommunity = useCallback(
+    async (id: string, data: Partial<ApartmentCommunityInput>) => {
+      const updated = await repository.updateApartmentCommunity(id, data);
+      setApartmentCommunities((prev) =>
+        prev.map((c) => (c.id === id ? updated : c)),
+      );
+      return updated;
+    },
+    [],
+  );
+
+  const deleteApartmentCommunity = useCallback(async (id: string) => {
+    await repository.deleteApartmentCommunity(id);
+    setApartmentCommunities((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  const addFloorPlan = useCallback(
+    async (apartmentCommunityId: string, plan: ApartmentFloorPlanInput) => {
+      const created = await repository.addFloorPlan(
+        apartmentCommunityId,
+        plan,
+      );
+      setApartmentCommunities((prev) =>
+        prev.map((c) =>
+          c.id === apartmentCommunityId
+            ? { ...c, floorPlans: [...c.floorPlans, created] }
+            : c,
+        ),
+      );
+      return created;
+    },
+    [],
+  );
+
+  const updateFloorPlan = useCallback(
+    async (
+      apartmentCommunityId: string,
+      planId: string,
+      data: Partial<ApartmentFloorPlanInput>,
+    ) => {
+      const updated = await repository.updateFloorPlan(
+        apartmentCommunityId,
+        planId,
+        data,
+      );
+      setApartmentCommunities((prev) =>
+        prev.map((c) =>
+          c.id === apartmentCommunityId
+            ? {
+                ...c,
+                floorPlans: c.floorPlans.map((p) =>
+                  p.id === planId ? updated : p,
+                ),
+              }
+            : c,
+        ),
+      );
+      return updated;
+    },
+    [],
+  );
+
+  const deleteFloorPlan = useCallback(
+    async (apartmentCommunityId: string, planId: string) => {
+      await repository.deleteFloorPlan(apartmentCommunityId, planId);
+      setApartmentCommunities((prev) =>
+        prev.map((c) =>
+          c.id === apartmentCommunityId
+            ? {
+                ...c,
+                floorPlans: c.floorPlans.filter((p) => p.id !== planId),
+              }
             : c,
         ),
       );
@@ -640,6 +760,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     <DataContext.Provider
       value={{
         communities,
+        apartmentCommunities,
         featured,
         lenders,
         lenderOffers,
@@ -659,6 +780,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addHome,
         updateHome,
         deleteHome,
+        addApartmentCommunity,
+        updateApartmentCommunity,
+        deleteApartmentCommunity,
+        addFloorPlan,
+        updateFloorPlan,
+        deleteFloorPlan,
         addFeatured,
         updateFeatured,
         deleteFeatured,

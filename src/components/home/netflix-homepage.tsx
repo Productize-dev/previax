@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { NetflixApartmentRow } from "@/components/home/netflix-apartment-row";
 import { NetflixCommunityRow } from "@/components/home/netflix-community-row";
 import { NetflixHero } from "@/components/home/netflix-hero";
 import { NetflixHomeRow } from "@/components/home/netflix-home-row";
@@ -13,6 +14,7 @@ import { useBuyer } from "@/context/buyer-context";
 import { useData } from "@/context/data-context";
 import { useAiSearch } from "@/hooks/use-ai-search";
 import { applyAiFilters } from "@/lib/ai";
+import { getPublicApartmentCommunities } from "@/lib/apartment-utils";
 import { filterCommunities, getPublicCommunities } from "@/lib/community-utils";
 import { resolveFeaturedCommunities } from "@/lib/homepage-featured-communities";
 import {
@@ -24,8 +26,10 @@ import {
   customVideoNavId,
   isCommunityNavSection,
   isHomeNavSection,
+  isRentNavSection,
   NAV_COMMUNITIES_ID,
   NAV_HOMES_ID,
+  NAV_RENT_ID,
 } from "@/lib/homepage-nav";
 import {
   buildCitySections,
@@ -96,6 +100,7 @@ function isSectionVisible(
 export function NetflixHomepage() {
   const {
     communities: allCommunities,
+    apartmentCommunities: allApartmentCommunities,
     featuredCommunities,
     top10Communities,
     homepageSections,
@@ -105,6 +110,10 @@ export function NetflixHomepage() {
   const communities = useMemo(
     () => getPublicCommunities(allCommunities),
     [allCommunities],
+  );
+  const apartmentCommunities = useMemo(
+    () => getPublicApartmentCommunities(allApartmentCommunities),
+    [allApartmentCommunities],
   );
   const {
     searchQuery,
@@ -414,6 +423,15 @@ export function NetflixHomepage() {
           />
         );
 
+      case "rent-apartments":
+        if (apartmentCommunities.length === 0) return null;
+        return (
+          <NetflixApartmentRow
+            title={title}
+            communities={apartmentCommunities}
+          />
+        );
+
       case "custom-videos": {
         const videos = section.videos ?? [];
         if (videos.length === 0) return null;
@@ -433,6 +451,7 @@ export function NetflixHomepage() {
 
   let communitiesAnchorAssigned = false;
   let homesAnchorAssigned = false;
+  let rentAnchorAssigned = false;
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
@@ -527,6 +546,12 @@ export function NetflixHomepage() {
                 ) {
                   homesAnchorAssigned = true;
                   anchorId = NAV_HOMES_ID;
+                } else if (
+                  isRentNavSection(section.sectionKey) &&
+                  !rentAnchorAssigned
+                ) {
+                  rentAnchorAssigned = true;
+                  anchorId = NAV_RENT_ID;
                 } else if (section.sectionKey === "custom-videos") {
                   anchorId = customVideoNavId(section.id);
                 }

@@ -1,5 +1,6 @@
 import type { AppData, FeaturedItem, HomepageHomesRow, HomepageSeriesRow } from "./types";
 import { buildDefaultHomepageSections } from "./homepage-layout";
+import { seedApartmentCommunities } from "./seed-apartments";
 import { seedBuilders, seedHomepageSeries, seedSeries } from "./seed-builders";
 import { seedCommunities } from "./seed-data";
 import { seedLenders } from "./seed-lenders";
@@ -27,6 +28,7 @@ export const seedHomepageSeriesRows: HomepageSeriesRow[] = [...seedHomepageSerie
 export function buildSeedAppData(): AppData {
   return {
     communities: seedCommunities,
+    apartmentCommunities: seedApartmentCommunities,
     featured: seedFeatured,
     lenders: seedLenders,
     lenderOffers: [],

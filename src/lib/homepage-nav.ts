@@ -34,6 +34,7 @@ const HOME_NAV_KEYS: HomepageSectionKey[] = [
 
 export const NAV_COMMUNITIES_ID = "nav-communities";
 export const NAV_HOMES_ID = "nav-homes";
+export const NAV_RENT_ID = "nav-rent";
 
 export function isCommunityNavSection(key: HomepageSectionKey): boolean {
   return COMMUNITY_NAV_KEYS.includes(key);
@@ -41,6 +42,10 @@ export function isCommunityNavSection(key: HomepageSectionKey): boolean {
 
 export function isHomeNavSection(key: HomepageSectionKey): boolean {
   return HOME_NAV_KEYS.includes(key);
+}
+
+export function isRentNavSection(key: HomepageSectionKey): boolean {
+  return key === "rent-apartments";
 }
 
 export function customVideoNavId(sectionId: string): string {
@@ -70,6 +75,14 @@ export function buildHomepageNavLinks(
       id: NAV_HOMES_ID,
       label: "Homes",
       href: appHash(NAV_HOMES_ID),
+    });
+  }
+
+  if (visible.some((section) => isRentNavSection(section.sectionKey))) {
+    links.push({
+      id: NAV_RENT_ID,
+      label: "Rent",
+      href: appHash(NAV_RENT_ID),
     });
   }
 

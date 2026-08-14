@@ -6,6 +6,8 @@ import { sortTop10Slots } from "../top-10-communities";
 import type {
   AppData,
   ActivityEvent,
+  ApartmentCommunity,
+  ApartmentFloorPlan,
   Builder,
   Community,
   FeaturedCommunityRow,
@@ -23,6 +25,8 @@ import type {
 import { logLifecycleEvent } from "../analytics";
 import type { SiteRepository } from "./repository";
 import {
+  apartmentCommunityInputToRow,
+  apartmentFloorPlanInputToRow,
   builderInputToRow,
   builderToRow,
   communityInputToRow,
@@ -33,6 +37,8 @@ import {
   lenderInputToRow,
   lenderOfferInputToRow,
   homepageSectionToRow,
+  rowToApartmentCommunity,
+  rowToApartmentFloorPlan,
   rowToBuilder,
   rowToCommunity,
   rowToFeatured,
@@ -49,6 +55,8 @@ import {
   seriesInputToRow,
   seriesToRow,
   tagLabelsToRows,
+  type ApartmentCommunityRow,
+  type ApartmentFloorPlanRow,
   type BuilderRow,
   type CommunityRow,
   type FeaturedCommunityRowRow,
@@ -96,6 +104,45 @@ async function fetchCommunitiesWithHomes(): Promise<Community[]> {
 
   return ((communitiesRes.data ?? []) as CommunityRow[]).map((row) =>
     rowToCommunity(row, homesByCommunity.get(row.id) ?? []),
+  );
+}
+
+async function fetchApartmentCommunitiesWithFloorPlans(): Promise<
+  ApartmentCommunity[]
+> {
+  const [communitiesRes, plansRes] = await Promise.all([
+    db()
+      .from("apartment_communities")
+      .select("*")
+      .order("created_at", { ascending: true }),
+    db()
+      .from("apartment_floor_plans")
+      .select("*")
+      .order("created_at", { ascending: true }),
+  ]);
+  // Tables may not exist until migration is applied — fail soft with empty catalog.
+  if (communitiesRes.error) {
+    if (/does not exist|schema cache/i.test(communitiesRes.error.message)) {
+      return [];
+    }
+    fail("Load apartment communities", communitiesRes.error.message);
+  }
+  if (plansRes.error) {
+    if (/does not exist|schema cache/i.test(plansRes.error.message)) {
+      return [];
+    }
+    fail("Load apartment floor plans", plansRes.error.message);
+  }
+
+  const plansByCommunity = new Map<string, ApartmentFloorPlan[]>();
+  for (const row of (plansRes.data ?? []) as ApartmentFloorPlanRow[]) {
+    const list = plansByCommunity.get(row.apartment_community_id) ?? [];
+    list.push(rowToApartmentFloorPlan(row));
+    plansByCommunity.set(row.apartment_community_id, list);
+  }
+
+  return ((communitiesRes.data ?? []) as ApartmentCommunityRow[]).map((row) =>
+    rowToApartmentCommunity(row, plansByCommunity.get(row.id) ?? []),
   );
 }
 
@@ -229,6 +276,7 @@ function rowToActivityEvent(row: ActivityEventRow): ActivityEvent {
 async function fetchAppData(): Promise<AppData> {
   const [
     communities,
+    apartmentCommunities,
     featured,
     lenders,
     lenderOffers,
@@ -241,6 +289,7 @@ async function fetchAppData(): Promise<AppData> {
     homepageSections,
   ] = await Promise.all([
     fetchCommunitiesWithHomes(),
+    fetchApartmentCommunitiesWithFloorPlans(),
     fetchFeatured(),
     fetchLenders(),
     fetchLenderOffers(),
@@ -255,6 +304,7 @@ async function fetchAppData(): Promise<AppData> {
 
   return {
     communities,
+    apartmentCommunities,
     featured,
     lenders,
     lenderOffers,
@@ -404,6 +454,97 @@ export const supabaseRepository: SiteRepository = {
       .select("id");
     if (error) fail("Delete home", error.message);
     if (!data?.length) throw new Error("Home not found");
+  },
+
+  async createApartmentCommunity(data) {
+    const { data: row, error } = await db()
+      .from("apartment_communities")
+      .insert({
+        ...apartmentCommunityInputToRow(data),
+        amenities: data.amenities ?? [],
+        media_gallery: data.mediaGallery ?? [],
+      })
+      .select()
+      .single();
+    if (error) fail("Create apartment community", error.message);
+    return rowToApartmentCommunity(row as ApartmentCommunityRow, []);
+  },
+
+  async updateApartmentCommunity(id, data) {
+    const { data: row, error } = await db()
+      .from("apartment_communities")
+      .update(apartmentCommunityInputToRow(data))
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+    if (error) fail("Update apartment community", error.message);
+    if (!row) throw new Error("Apartment community not found");
+
+    const plansRes = await db()
+      .from("apartment_floor_plans")
+      .select("*")
+      .eq("apartment_community_id", id)
+      .order("created_at", { ascending: true });
+    if (plansRes.error) fail("Load floor plans", plansRes.error.message);
+
+    return rowToApartmentCommunity(
+      row as ApartmentCommunityRow,
+      ((plansRes.data ?? []) as ApartmentFloorPlanRow[]).map(
+        rowToApartmentFloorPlan,
+      ),
+    );
+  },
+
+  async deleteApartmentCommunity(id) {
+    const { data, error } = await db()
+      .from("apartment_communities")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error) fail("Delete apartment community", error.message);
+    if (!data?.length) throw new Error("Apartment community not found");
+  },
+
+  async addFloorPlan(apartmentCommunityId, plan) {
+    const { data: row, error } = await db()
+      .from("apartment_floor_plans")
+      .insert({
+        ...apartmentFloorPlanInputToRow({
+          ...plan,
+          amenities: plan.amenities ?? [],
+          highlights: plan.highlights ?? [],
+          imageUrls: plan.imageUrls ?? [],
+        }),
+        apartment_community_id: apartmentCommunityId,
+      })
+      .select()
+      .single();
+    if (error) fail("Add floor plan", error.message);
+    return rowToApartmentFloorPlan(row as ApartmentFloorPlanRow);
+  },
+
+  async updateFloorPlan(apartmentCommunityId, planId, data) {
+    const { data: row, error } = await db()
+      .from("apartment_floor_plans")
+      .update(apartmentFloorPlanInputToRow(data))
+      .eq("id", planId)
+      .eq("apartment_community_id", apartmentCommunityId)
+      .select()
+      .maybeSingle();
+    if (error) fail("Update floor plan", error.message);
+    if (!row) throw new Error("Floor plan not found");
+    return rowToApartmentFloorPlan(row as ApartmentFloorPlanRow);
+  },
+
+  async deleteFloorPlan(apartmentCommunityId, planId) {
+    const { data, error } = await db()
+      .from("apartment_floor_plans")
+      .delete()
+      .eq("id", planId)
+      .eq("apartment_community_id", apartmentCommunityId)
+      .select("id");
+    if (error) fail("Delete floor plan", error.message);
+    if (!data?.length) throw new Error("Floor plan not found");
   },
 
   async getFeatured() {

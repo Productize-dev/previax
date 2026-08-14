@@ -14,6 +14,8 @@ import { createClient } from "@supabase/supabase-js";
 
 import { buildSeedAppData } from "../src/lib/seed-featured";
 import {
+  apartmentCommunityToRow,
+  apartmentFloorPlanToRow,
   builderToRow,
   communityToRow,
   featuredCommunityToRow,
@@ -68,6 +70,18 @@ async function main() {
     "homes",
     data.communities.flatMap((community) =>
       community.homes.map((home) => homeToRow(home, community.id)),
+    ),
+  );
+  await upsert(
+    "apartment_communities",
+    data.apartmentCommunities.map(apartmentCommunityToRow),
+  );
+  await upsert(
+    "apartment_floor_plans",
+    data.apartmentCommunities.flatMap((community) =>
+      community.floorPlans.map((plan) =>
+        apartmentFloorPlanToRow(plan, community.id),
+      ),
     ),
   );
   await upsert("lenders", data.lenders.map(lenderToRow));

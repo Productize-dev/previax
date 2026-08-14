@@ -119,6 +119,13 @@ export const HOMEPAGE_SECTION_CATALOG: HomepageSectionCatalogEntry[] = [
     builtin: true,
   },
   {
+    key: "rent-apartments",
+    defaultTitle: "Rent while you relocate",
+    description:
+      "Apartment rentals for relocators — bridge housing before buying.",
+    builtin: true,
+  },
+  {
     key: "custom-videos",
     defaultTitle: "Custom video row",
     description:

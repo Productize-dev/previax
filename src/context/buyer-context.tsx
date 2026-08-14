@@ -15,12 +15,14 @@ import {
   getGuidancePrefs,
   getLikedCommunityIds,
   getLikedHomeRefs,
+  getSavedApartmentIds,
   getSavedCommunityIds,
   getSavedHomeRefs,
   getViewedCities,
   subscribeBuyerStorage,
   toggleLikedCommunity,
   toggleLikedHome,
+  toggleSavedApartment,
   toggleSavedCommunity,
   toggleSavedHome,
   type BuyerGuidancePrefs,
@@ -37,6 +39,7 @@ type BuyerContextValue = {
   setOffersOnly: (v: boolean) => void;
   savedIds: string[];
   savedHomeRefs: string[];
+  savedApartmentIds: string[];
   likedCommunityIds: string[];
   likedHomeRefs: string[];
   guidancePrefs: BuyerGuidancePrefs | null;
@@ -44,10 +47,12 @@ type BuyerContextValue = {
   buyer: BuyerProfile | null;
   toggleSaved: (id: string) => void;
   toggleSavedHome: (communityId: string, homeId: string) => void;
+  toggleSavedApartment: (id: string) => void;
   toggleLikedCommunity: (id: string) => void;
   toggleLikedHome: (communityId: string, homeId: string) => void;
   isSaved: (id: string) => boolean;
   isHomeSaved: (communityId: string, homeId: string) => boolean;
+  isApartmentSaved: (id: string) => boolean;
   isLiked: (id: string) => boolean;
   isHomeLiked: (communityId: string, homeId: string) => boolean;
   signOut: () => Promise<void>;
@@ -107,6 +112,12 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
   const savedHomeRefs = useSyncExternalStore(
     subscribeBuyerStorage,
     getSavedHomeRefs,
+    getServerEmpty,
+  );
+
+  const savedApartmentIds = useSyncExternalStore(
+    subscribeBuyerStorage,
+    getSavedApartmentIds,
     getServerEmpty,
   );
 
@@ -192,6 +203,11 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
     [savedHomeRefs],
   );
 
+  const isApartmentSavedFn = useCallback(
+    (id: string) => savedApartmentIds.includes(id),
+    [savedApartmentIds],
+  );
+
   const isLikedFn = useCallback(
     (id: string) => likedCommunityIds.includes(id),
     [likedCommunityIds],
@@ -214,6 +230,10 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
 
   const toggleSavedHomeFn = useCallback((communityId: string, homeId: string) => {
     toggleSavedHome(communityId, homeId);
+  }, []);
+
+  const toggleSavedApartmentFn = useCallback((id: string) => {
+    toggleSavedApartment(id);
   }, []);
 
   const toggleLikedCommunityFn = useCallback((id: string) => {
@@ -239,6 +259,7 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
         setOffersOnly,
         savedIds,
         savedHomeRefs,
+        savedApartmentIds,
         likedCommunityIds,
         likedHomeRefs,
         guidancePrefs,
@@ -246,10 +267,12 @@ export function BuyerProvider({ children }: { children: React.ReactNode }) {
         buyer,
         toggleSaved,
         toggleSavedHome: toggleSavedHomeFn,
+        toggleSavedApartment: toggleSavedApartmentFn,
         toggleLikedCommunity: toggleLikedCommunityFn,
         toggleLikedHome: toggleLikedHomeFn,
         isSaved: isSavedFn,
         isHomeSaved: isHomeSavedFn,
+        isApartmentSaved: isApartmentSavedFn,
         isLiked: isLikedFn,
         isHomeLiked: isHomeLikedFn,
         signOut,

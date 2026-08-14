@@ -1,4 +1,9 @@
 import type {
+  ApartmentCommunity,
+  ApartmentCommunityInput,
+  ApartmentFloorPlan,
+  ApartmentFloorPlanInput,
+  ApartmentFloorPlanStatus,
   Builder,
   BuilderInput,
   Community,
@@ -130,6 +135,43 @@ export type HomeRow = {
   rooms: HomeRoom[];
   media_gallery: MediaItem[];
   reviews: HomeReview[];
+  created_at: string;
+};
+
+export type ApartmentCommunityRow = {
+  id: string;
+  owner_id: string | null;
+  name: string;
+  city: string;
+  description: string;
+  thumbnail_url: string;
+  youtube_url: string;
+  leasing_name: string;
+  leasing_phone: string;
+  leasing_email: string;
+  leasing_photo_url: string;
+  tagline: string | null;
+  amenities: string[];
+  latitude: number | null;
+  longitude: number | null;
+  media_gallery: MediaItem[];
+  is_hidden: boolean;
+  created_at: string;
+};
+
+export type ApartmentFloorPlanRow = {
+  id: string;
+  apartment_community_id: string;
+  name: string;
+  rent: number;
+  bedrooms: number;
+  bathrooms: number;
+  sqft: number;
+  image_urls: string[];
+  description: string;
+  status: ApartmentFloorPlanStatus | null;
+  amenities: string[];
+  highlights: string[];
   created_at: string;
 };
 
@@ -273,6 +315,51 @@ export function rowToHome(row: HomeRow): Home {
     rooms: row.rooms ?? [],
     mediaGallery: row.media_gallery ?? [],
     reviews: row.reviews ?? [],
+  };
+}
+
+export function rowToApartmentFloorPlan(
+  row: ApartmentFloorPlanRow,
+): ApartmentFloorPlan {
+  return {
+    id: row.id,
+    name: row.name ?? "",
+    rent: Number(row.rent),
+    bedrooms: row.bedrooms,
+    bathrooms: Number(row.bathrooms),
+    sqft: row.sqft,
+    imageUrls: row.image_urls ?? [],
+    description: row.description ?? "",
+    status: row.status ?? "available",
+    amenities: row.amenities ?? [],
+    highlights: row.highlights ?? [],
+  };
+}
+
+export function rowToApartmentCommunity(
+  row: ApartmentCommunityRow,
+  floorPlans: ApartmentFloorPlan[],
+): ApartmentCommunity {
+  return {
+    id: row.id,
+    name: row.name,
+    city: row.city,
+    description: row.description,
+    thumbnailUrl: row.thumbnail_url,
+    youtubeUrl: row.youtube_url,
+    leasingName: row.leasing_name,
+    leasingPhone: row.leasing_phone,
+    leasingEmail: row.leasing_email,
+    leasingPhotoUrl: row.leasing_photo_url,
+    tagline: row.tagline ?? "",
+    amenities: row.amenities ?? [],
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    mediaGallery: row.media_gallery ?? [],
+    isHidden: row.is_hidden ?? false,
+    ownerId: row.owner_id ?? undefined,
+    floorPlans,
+    createdAt: toMillis(row.created_at),
   };
 }
 
@@ -587,6 +674,46 @@ export function homeInputToRow(data: Partial<HomeInput>): AnyRow {
   return row;
 }
 
+export function apartmentCommunityInputToRow(
+  data: Partial<ApartmentCommunityInput>,
+): AnyRow {
+  const row: AnyRow = {};
+  setIfDefined(row, "name", data.name);
+  setIfDefined(row, "city", data.city);
+  setIfDefined(row, "description", data.description);
+  setIfDefined(row, "thumbnail_url", data.thumbnailUrl);
+  setIfDefined(row, "youtube_url", data.youtubeUrl);
+  setIfDefined(row, "leasing_name", data.leasingName);
+  setIfDefined(row, "leasing_phone", data.leasingPhone);
+  setIfDefined(row, "leasing_email", data.leasingEmail);
+  setIfDefined(row, "leasing_photo_url", data.leasingPhotoUrl);
+  setIfDefined(row, "tagline", data.tagline);
+  setIfDefined(row, "amenities", data.amenities);
+  if ("latitude" in data) row.latitude = data.latitude ?? null;
+  if ("longitude" in data) row.longitude = data.longitude ?? null;
+  setIfDefined(row, "media_gallery", data.mediaGallery);
+  if ("isHidden" in data) row.is_hidden = data.isHidden ?? false;
+  if ("ownerId" in data) row.owner_id = data.ownerId ?? null;
+  return row;
+}
+
+export function apartmentFloorPlanInputToRow(
+  data: Partial<ApartmentFloorPlanInput>,
+): AnyRow {
+  const row: AnyRow = {};
+  setIfDefined(row, "name", data.name);
+  setIfDefined(row, "rent", data.rent);
+  setIfDefined(row, "bedrooms", data.bedrooms);
+  setIfDefined(row, "bathrooms", data.bathrooms);
+  setIfDefined(row, "sqft", data.sqft);
+  setIfDefined(row, "image_urls", data.imageUrls);
+  setIfDefined(row, "description", data.description);
+  if ("status" in data) row.status = data.status ?? "available";
+  setIfDefined(row, "amenities", data.amenities);
+  setIfDefined(row, "highlights", data.highlights);
+  return row;
+}
+
 export function lenderInputToRow(data: Partial<LenderInput>): AnyRow {
   const row: AnyRow = {};
   setIfDefined(row, "name", data.name);
@@ -661,6 +788,27 @@ export function homeToRow(home: Home, communityId: string): AnyRow {
     ...homeInputToRow(home),
     id: home.id,
     community_id: communityId,
+  };
+}
+
+export function apartmentCommunityToRow(
+  community: ApartmentCommunity,
+): AnyRow {
+  return {
+    ...apartmentCommunityInputToRow(community),
+    id: community.id,
+    created_at: new Date(community.createdAt).toISOString(),
+  };
+}
+
+export function apartmentFloorPlanToRow(
+  plan: ApartmentFloorPlan,
+  apartmentCommunityId: string,
+): AnyRow {
+  return {
+    ...apartmentFloorPlanInputToRow(plan),
+    id: plan.id,
+    apartment_community_id: apartmentCommunityId,
   };
 }
 

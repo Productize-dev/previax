@@ -5,6 +5,7 @@ import {
   Bot,
   Compass,
   Hammer,
+  Home,
   Landmark,
   LayoutDashboard,
   LayoutList,
@@ -46,6 +47,10 @@ const adminNavGroups: NavGroup[] = [
       { id: "builders", label: "Builders", icon: Hammer },
       { id: "communities", label: "All Communities", icon: Building2 },
     ],
+  },
+  {
+    label: "Rentals",
+    items: [{ id: "apartments", label: "Apartments", icon: Home }],
   },
   {
     label: "Sales pipeline",

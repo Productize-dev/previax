@@ -1,5 +1,9 @@
 import type {
   AppData,
+  ApartmentCommunity,
+  ApartmentCommunityInput,
+  ApartmentFloorPlan,
+  ApartmentFloorPlanInput,
   Builder,
   BuilderInput,
   Community,
@@ -10,9 +14,7 @@ import type {
   HomeInput,
   HomepageHomesRow,
   HomepageSection,
-  HomepageSectionKey,
   HomepageSectionConfig,
-  HomepageSectionVideo,
   HomepageSectionVideoInput,
   HomepageSeriesRow,
   FeaturedCommunityRow,
@@ -41,6 +43,27 @@ export interface SiteRepository {
     data: Partial<HomeInput>,
   ): Promise<Home>;
   deleteHome(communityId: string, homeId: string): Promise<void>;
+  createApartmentCommunity(
+    data: ApartmentCommunityInput,
+  ): Promise<ApartmentCommunity>;
+  updateApartmentCommunity(
+    id: string,
+    data: Partial<ApartmentCommunityInput>,
+  ): Promise<ApartmentCommunity>;
+  deleteApartmentCommunity(id: string): Promise<void>;
+  addFloorPlan(
+    apartmentCommunityId: string,
+    plan: ApartmentFloorPlanInput,
+  ): Promise<ApartmentFloorPlan>;
+  updateFloorPlan(
+    apartmentCommunityId: string,
+    planId: string,
+    data: Partial<ApartmentFloorPlanInput>,
+  ): Promise<ApartmentFloorPlan>;
+  deleteFloorPlan(
+    apartmentCommunityId: string,
+    planId: string,
+  ): Promise<void>;
   getFeatured(): Promise<FeaturedItem[]>;
   addFeatured(data: FeaturedItemInput): Promise<FeaturedItem>;
   updateFeatured(

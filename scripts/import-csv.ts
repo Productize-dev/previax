@@ -96,6 +96,7 @@ async function loadCurrentAppData(): Promise<AppData> {
 
   return {
     communities,
+    apartmentCommunities: [],
     builders: ((buildersRes.data ?? []) as BuilderRow[]).map(rowToBuilder),
     series: ((seriesRes.data ?? []) as SeriesRow[]).map(rowToSeries),
     featured: [],

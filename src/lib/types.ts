@@ -1,5 +1,7 @@
 export type HomeStatus = "available" | "coming-soon" | "sold";
 
+export type ApartmentFloorPlanStatus = "available" | "waitlist" | "leased";
+
 export type CommunityTag = string;
 
 export type HomeTag =
@@ -217,6 +219,49 @@ export type CommunityInput = Omit<Community, "id" | "createdAt" | "homes">;
 
 export type HomeInput = Omit<Home, "id">;
 
+export type ApartmentFloorPlan = {
+  id: string;
+  name: string;
+  rent: number;
+  bedrooms: number;
+  bathrooms: number;
+  sqft: number;
+  imageUrls: string[];
+  description: string;
+  status?: ApartmentFloorPlanStatus;
+  amenities?: string[];
+  highlights?: string[];
+};
+
+export type ApartmentCommunity = {
+  id: string;
+  name: string;
+  city: string;
+  description: string;
+  thumbnailUrl: string;
+  youtubeUrl: string;
+  leasingName: string;
+  leasingPhone: string;
+  leasingEmail: string;
+  leasingPhotoUrl: string;
+  tagline?: string;
+  amenities?: string[];
+  latitude?: number;
+  longitude?: number;
+  mediaGallery?: MediaItem[];
+  isHidden?: boolean;
+  ownerId?: string;
+  floorPlans: ApartmentFloorPlan[];
+  createdAt: number;
+};
+
+export type ApartmentCommunityInput = Omit<
+  ApartmentCommunity,
+  "id" | "createdAt" | "floorPlans"
+>;
+
+export type ApartmentFloorPlanInput = Omit<ApartmentFloorPlan, "id">;
+
 export type FeaturedItemInput = Omit<FeaturedItem, "id" | "order">;
 
 export type Lender = {
@@ -312,6 +357,7 @@ export type HomepageSectionKey =
   | "lenders"
   | "cities"
   | "all-communities"
+  | "rent-apartments"
   | "custom-videos";
 
 /** Video tile inside a custom homepage video row (e.g. By Previax). */
@@ -356,6 +402,7 @@ export type SeriesInput = Omit<Series, "id" | "createdAt">;
 
 export type AppData = {
   communities: Community[];
+  apartmentCommunities: ApartmentCommunity[];
   featured: FeaturedItem[];
   lenders: Lender[];
   lenderOffers: LenderOffer[];
@@ -376,6 +423,7 @@ export type DashboardTab =
   | "assistant"
   | "builders"
   | "communities"
+  | "apartments"
   | "pipeline"
   | "sales-team"
   | "lenders"

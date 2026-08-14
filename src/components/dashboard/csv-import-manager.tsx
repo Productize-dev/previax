@@ -151,6 +151,7 @@ export function CsvImportManager() {
   const appData = useMemo(
     () => ({
       communities,
+      apartmentCommunities: [],
       builders,
       series,
       featured: [],

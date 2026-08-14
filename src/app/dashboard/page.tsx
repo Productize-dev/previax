@@ -9,6 +9,7 @@ import { DashboardOverviewSkeleton } from "@/components/dashboard/dashboard-skel
 import { BuilderOverview } from "@/components/dashboard/builder-overview";
 import { BuildersWorkspace } from "@/components/dashboard/builders-workspace";
 import { CommunitiesWorkspace } from "@/components/dashboard/communities-workspace";
+import { ApartmentsWorkspace } from "@/components/dashboard/apartments-workspace";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { FeaturedForm } from "@/components/dashboard/featured-form";
 import { FeaturedList } from "@/components/dashboard/featured-list";
@@ -275,6 +276,8 @@ export default function DashboardPage() {
               onPrefillConsumed={clearPrefills}
             />
           )}
+
+          {isAdmin && tab === "apartments" && <ApartmentsWorkspace />}
 
           {tab === "pipeline" && (
             <PipelineWorkspace
