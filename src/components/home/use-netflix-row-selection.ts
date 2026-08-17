@@ -73,6 +73,8 @@ type UseNetflixRowSelectionOptions<T> = {
   defaultIndex?: number;
   onSelect?: (item: T) => void;
   onDeselect?: () => void;
+  /** When false, hover does not expand the tile (touch devices). */
+  enableHoverSelect?: boolean;
 };
 
 export function useNetflixRowSelection<T>({
@@ -80,6 +82,7 @@ export function useNetflixRowSelection<T>({
   defaultIndex = -1,
   onSelect,
   onDeselect,
+  enableHoverSelect = true,
 }: UseNetflixRowSelectionOptions<T>) {
   const [selectedIndex, setSelectedIndex] = useState(defaultIndex);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -126,6 +129,7 @@ export function useNetflixRowSelection<T>({
 
   const selectOnHover = useCallback(
     (index: number) => {
+      if (!enableHoverSelect) return;
       if (index === selectedIndex) return;
       cancelHover();
       hoverTimerRef.current = setTimeout(
@@ -133,7 +137,7 @@ export function useNetflixRowSelection<T>({
         HOVER_DELAY_MS,
       );
     },
-    [cancelHover, selectIndex, selectedIndex],
+    [cancelHover, enableHoverSelect, selectIndex, selectedIndex],
   );
 
   const handleTrackMouseLeave = useCallback(
@@ -155,6 +159,21 @@ export function useNetflixRowSelection<T>({
     },
     [cancelHover],
   );
+
+  useEffect(() => {
+    function onHidden() {
+      if (document.visibilityState === "hidden") clearSelection();
+    }
+    function onBlur() {
+      clearSelection();
+    }
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [clearSelection]);
 
   useEffect(() => {
     return () => {

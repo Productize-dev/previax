@@ -10,6 +10,7 @@ import {
   youtubeUnmute,
 } from "@/components/video/youtube-embed";
 import { useData } from "@/context/data-context";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
   buildCommunityCast,
   buildCommunityShortDescription,
@@ -32,6 +33,8 @@ type NetflixCommunityDetailHeroProps = {
   onPlayBuilders: () => void;
   onOpenModels: () => void;
   hasModels: boolean;
+  /** Unmount the background iframe so the overlay is the only player. */
+  suspendVideo?: boolean;
 };
 
 function CastLine({ names }: { names: string[] }) {
@@ -61,8 +64,10 @@ export function NetflixCommunityDetailHero({
   onPlayBuilders,
   onOpenModels,
   hasModels,
+  suspendVideo = false,
 }: NetflixCommunityDetailHeroProps) {
   const { top10Communities, customCommunityTagLabels } = useData();
+  const reduceMotion = usePrefersReducedMotion();
   /** Browsers block unmuted autoplay — start muted, unmute on user click. */
   const [muted, setMuted] = useState(true);
   const videoIframeRef = useRef<HTMLIFrameElement>(null);
@@ -95,8 +100,11 @@ export function NetflixCommunityDetailHero({
     }
   }
 
+  const showBackgroundVideo =
+    Boolean(heroVideoUrl) && !suspendVideo && !reduceMotion;
+
   return (
-    <section className="relative min-h-[88vh] overflow-hidden bg-[#141414] text-white md:min-h-screen">
+    <section className="relative min-h-[88svh] overflow-hidden bg-[#141414] text-white md:min-h-[100dvh]">
       <div className="absolute inset-0">
         {heroVideoUrl ? (
           <>
@@ -105,20 +113,24 @@ export function NetflixCommunityDetailHero({
               fallbackUrl={heroPosterFallback}
               className="size-full"
               imgClassName="object-cover object-[center_20%] md:object-top scale-[1.02]"
-            />
-            <YouTubeEmbed
-              youtubeUrl={heroVideoUrl}
-              title={community.name}
-              preset="background"
-              autoplay
-              mute
-              loop
               loading="eager"
-              fillContainer
-              cover
-              iframeRef={videoIframeRef}
-              className="absolute inset-0 size-full"
+              fetchPriority="high"
             />
+            {showBackgroundVideo && (
+              <YouTubeEmbed
+                youtubeUrl={heroVideoUrl}
+                title={community.name}
+                preset="background"
+                autoplay
+                mute
+                loop
+                loading="eager"
+                fillContainer
+                cover
+                iframeRef={videoIframeRef}
+                className="absolute inset-0 size-full"
+              />
+            )}
           </>
         ) : (
           <YouTubePosterImage
@@ -126,6 +138,8 @@ export function NetflixCommunityDetailHero({
             fallbackUrl={heroPosterFallback}
             className="size-full"
             imgClassName="object-cover object-[center_20%] md:object-top scale-[1.02]"
+            loading="eager"
+            fetchPriority="high"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/55 to-[#141414]/10" />
@@ -133,11 +147,11 @@ export function NetflixCommunityDetailHero({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(20,20,20,0.15),rgba(20,20,20,0.85)_68%)]" />
       </div>
 
-      {heroVideoUrl && (
+      {showBackgroundVideo && (
         <button
           type="button"
           onClick={toggleMute}
-          className="absolute bottom-[18%] right-[4%] z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/40 bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 md:bottom-24"
+          className="absolute right-[4%] z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/40 bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 bottom-[max(18%,calc(env(safe-area-inset-bottom)+5rem))] md:bottom-24"
           aria-label={muted ? "Unmute community video" : "Mute community video"}
           title={muted ? "Unmute" : "Mute"}
         >
@@ -149,7 +163,7 @@ export function NetflixCommunityDetailHero({
         </button>
       )}
 
-      <div className="relative z-10 flex min-h-[88vh] flex-col justify-end px-[4%] pb-10 pt-28 md:min-h-screen md:pb-16">
+      <div className="relative z-10 flex min-h-[88svh] flex-col justify-end px-[4%] pb-10 pt-28 md:min-h-[100dvh] md:pb-16">
         <div className="max-w-3xl space-y-4">
           <h1 className="font-heading text-4xl font-bold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.55)] md:text-6xl lg:text-7xl">
             {community.name}

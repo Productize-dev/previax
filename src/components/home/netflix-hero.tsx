@@ -15,6 +15,8 @@ import { NAV_COMMUNITIES_ID } from "@/lib/homepage-nav";
 import { appHash } from "@/lib/routes";
 import type { Community } from "@/lib/types";
 import { YouTubeEmbed } from "@/components/video/youtube-embed";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 const SLIDE_DURATION_MS = 10_000;
@@ -27,6 +29,8 @@ type NetflixHeroProps = {
 
 export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   const { featured, communities: allCommunities, isLoaded } = useData();
+  const coarse = usePrefersCoarsePointer();
+  const reduceMotion = usePrefersReducedMotion();
   const communities = useMemo(
     () => getPublicCommunities(allCommunities),
     [allCommunities],
@@ -84,14 +88,14 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
   }, [count, goNext, activeIndex, paused, isFocused]);
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused || coarse || reduceMotion) {
       setHeroVideoReady(false);
       return;
     }
     setHeroVideoReady(false);
     const timer = setTimeout(() => setHeroVideoReady(true), 900);
     return () => clearTimeout(timer);
-  }, [isFocused, activeIndex]);
+  }, [isFocused, activeIndex, coarse, reduceMotion]);
 
   useEffect(() => {
     const nextImage = heroCommunity?.thumbnailUrl ?? null;
@@ -185,7 +189,20 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
     ? focusCommunity!.id
     : (active?.communityId ?? communityForMedia?.id);
   // Row hover preview uses tile video; hero stays on poster when syncing to a row.
-  const showVideo = Boolean(videoUrl && !isFocused && heroVideoReady);
+  const saveData =
+    typeof navigator !== "undefined" &&
+    Boolean(
+      (navigator as Navigator & { connection?: { saveData?: boolean } })
+        .connection?.saveData,
+    );
+  const showVideo = Boolean(
+    videoUrl &&
+      !isFocused &&
+      heroVideoReady &&
+      !coarse &&
+      !reduceMotion &&
+      !saveData,
+  );
 
   return (
     <section
@@ -219,6 +236,8 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
               <img
                 src={heroImage}
                 alt=""
+                fetchPriority="high"
+                decoding="async"
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
@@ -226,6 +245,7 @@ export function NetflixHero({ focusCommunity = null }: NetflixHeroProps) {
               <img
                 src={incomingImage}
                 alt=""
+                decoding="async"
                 className={cn(
                   "absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out",
                   incomingVisible ? "opacity-100" : "opacity-0",

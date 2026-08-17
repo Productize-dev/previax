@@ -16,6 +16,7 @@ import {
 import type { Community, Home } from "@/lib/types";
 import { YouTubePosterImage } from "@/components/communities/youtube-poster-image";
 import { cn } from "@/lib/utils";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
 
 type NetflixModelsBrowserProps = {
   open: boolean;
@@ -34,6 +35,7 @@ export function NetflixModelsBrowser({
   onClose,
   onSelectModel,
 }: NetflixModelsBrowserProps) {
+  const coarse = usePrefersCoarsePointer();
   const year = getCommunityYear(community);
   const modelCount = getCommunityModelCount(community);
   const highlight = community.mainHighlight
@@ -154,7 +156,14 @@ export function NetflixModelsBrowser({
                         M{index + 1}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
-                        <span className="flex size-12 items-center justify-center rounded-full bg-white/90 text-[#141414] opacity-0 transition-opacity group-hover:opacity-100">
+                        <span
+                          className={cn(
+                            "flex size-12 items-center justify-center rounded-full bg-white/90 text-[#141414] transition-opacity",
+                            coarse
+                              ? "opacity-100"
+                              : "opacity-0 group-hover:opacity-100",
+                          )}
+                        >
                           <Play className="size-5 fill-current pl-0.5" />
                         </span>
                       </span>

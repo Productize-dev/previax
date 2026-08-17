@@ -7,6 +7,7 @@ import {
   getAvailableFloorPlanCount,
   getRentRange,
 } from "@/lib/apartment-utils";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
 import type { ApartmentCommunity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function ApartmentCard({
   className,
   variant = "grid",
 }: ApartmentCardProps) {
+  const coarse = usePrefersCoarsePointer();
   const rentRange = getRentRange(community);
   const planCount = getAvailableFloorPlanCount(community);
   const href = `/rent/${community.id}`;
@@ -39,13 +41,20 @@ export function ApartmentCard({
               <img
                 src={community.thumbnailUrl}
                 alt={community.name}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
               />
             ) : (
               <div className="h-full w-full bg-muted" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+            <div
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-opacity",
+                coarse ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+              )}
+            >
               <div className="flex size-12 items-center justify-center rounded-full bg-foreground text-background">
                 <Play className="size-5 fill-current" />
               </div>
@@ -80,12 +89,19 @@ export function ApartmentCard({
             <img
               src={community.thumbnailUrl}
               alt={community.name}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="h-full w-full bg-muted" />
           )}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity",
+              coarse ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            )}
+          >
             <div className="flex size-12 items-center justify-center rounded-full bg-foreground text-background">
               <Play className="size-5 fill-current" />
             </div>

@@ -1,13 +1,25 @@
 "use client";
 
+import { Heart, Play, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useRef, useState } from "react";
+
 import { ApartmentCard } from "@/components/apartments/apartment-card";
 import { CommunityCard } from "@/components/communities/community-card";
+import { YouTubePosterImage } from "@/components/communities/youtube-poster-image";
 import { NetflixNavbar } from "@/components/home/netflix-navbar";
-import { YouTubeEmbed } from "@/components/video/youtube-embed";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  YouTubeEmbed,
+  youtubeMute,
+  youtubeUnmute,
+} from "@/components/video/youtube-embed";
 import { useBuyer } from "@/context/buyer-context";
 import { useData } from "@/context/data-context";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
   formatRent,
   getPublicApartmentCommunities,
@@ -15,23 +27,28 @@ import {
 } from "@/lib/apartment-utils";
 import { getPublicCommunities } from "@/lib/community-utils";
 import { APP_HOME } from "@/lib/routes";
-import { Heart } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function ApartmentDetailContent() {
   const params = useParams<{ id: string }>();
   const { apartmentCommunities, communities, isLoaded } = useData();
   const { isApartmentSaved, toggleSavedApartment } = useBuyer();
+  const coarse = usePrefersCoarsePointer();
+  const reduceMotion = usePrefersReducedMotion();
+  const [muted, setMuted] = useState(true);
+  const [playbackStarted, setPlaybackStarted] = useState(false);
+  const videoIframeRef = useRef<HTMLIFrameElement>(null);
   const community = getPublicApartmentCommunities(apartmentCommunities).find(
     (c) => c.id === params.id,
   );
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-[#141414] text-white">
-        <p className="text-[#b3b3b3]">Loading...</p>
+      <div className="min-h-screen bg-[#141414] text-white">
+        <NetflixNavbar />
+        <div className="flex min-h-[60svh] items-center justify-center pt-24">
+          <p className="text-[#b3b3b3]">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -60,33 +77,89 @@ export default function ApartmentDetailContent() {
   const otherRentals = getPublicApartmentCommunities(apartmentCommunities)
     .filter((c) => c.id !== community.id)
     .slice(0, 6);
+  const heroVideoUrl = community.youtubeUrl?.trim() || "";
+  const showBackgroundVideo =
+    Boolean(heroVideoUrl) && !coarse && !reduceMotion;
+  const showPosterUntilPlay =
+    Boolean(heroVideoUrl) && (coarse || reduceMotion) && !playbackStarted;
+
+  function toggleMute() {
+    const next = !muted;
+    setMuted(next);
+    if (next) youtubeMute(videoIframeRef.current);
+    else youtubeUnmute(videoIframeRef.current);
+  }
 
   return (
     <div className="min-h-screen bg-[#141414] text-white">
       <NetflixNavbar />
 
-      <div className="relative mt-4 min-h-[45vh] overflow-hidden md:min-h-[60vh]">
-        {community.youtubeUrl ? (
-          <YouTubeEmbed
-            youtubeUrl={community.youtubeUrl}
-            title={community.name}
-            preset="interactive"
-            autoplay
-            mute={false}
-            loading="eager"
-            fillContainer
-            className="absolute inset-0 size-full [&_iframe]:scale-105"
-          />
+      <div className="relative min-h-[45svh] overflow-hidden pt-16 md:min-h-[60svh]">
+        {heroVideoUrl ? (
+          <>
+            <YouTubePosterImage
+              videoUrl={heroVideoUrl}
+              fallbackUrl={community.thumbnailUrl}
+              className="absolute inset-0 size-full"
+              imgClassName="object-cover"
+              loading="eager"
+              fetchPriority="high"
+            />
+            {(showBackgroundVideo || playbackStarted) && (
+              <YouTubeEmbed
+                youtubeUrl={heroVideoUrl}
+                title={community.name}
+                preset={playbackStarted && coarse ? "interactive" : "background"}
+                autoplay
+                mute
+                loop={!playbackStarted}
+                loading="eager"
+                fillContainer
+                cover={!playbackStarted || !coarse}
+                iframeRef={videoIframeRef}
+                className="absolute inset-0 size-full"
+              />
+            )}
+          </>
         ) : community.thumbnailUrl ? (
           <img
             src={community.thumbnailUrl}
             alt=""
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 size-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 bg-[#2a2a2a]" />
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 to-black/50" />
+
+        {showPosterUntilPlay && (
+          <button
+            type="button"
+            onClick={() => {
+              setPlaybackStarted(true);
+              setMuted(true);
+            }}
+            className="absolute left-1/2 top-[42%] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full bg-white px-6 py-3 text-base font-bold text-[#141414] shadow-lg"
+            aria-label="Play video"
+          >
+            <Play className="size-5 fill-current" />
+            Play
+          </button>
+        )}
+
+        {heroVideoUrl && (showBackgroundVideo || playbackStarted) && (
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="absolute right-[4%] z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/40 bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70 bottom-[max(5rem,env(safe-area-inset-bottom))]"
+            aria-label={muted ? "Unmute video" : "Mute video"}
+          >
+            {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
+          </button>
+        )}
+
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-6 pb-10 pt-32">
           <p className="text-sm uppercase tracking-[0.25em] text-primary">
             Rent · {community.city}, North Carolina
@@ -159,6 +232,8 @@ export default function ApartmentDetailContent() {
                     <img
                       src={plan.imageUrls[0]}
                       alt={plan.name}
+                      loading="lazy"
+                      decoding="async"
                       className="aspect-video w-full object-cover"
                     />
                   )}
@@ -199,6 +274,8 @@ export default function ApartmentDetailContent() {
                 <img
                   src={community.leasingPhotoUrl}
                   alt={community.leasingName || "Leasing"}
+                  loading="lazy"
+                  decoding="async"
                   className="size-20 rounded-full border-2 border-primary/30 object-cover"
                 />
               ) : (

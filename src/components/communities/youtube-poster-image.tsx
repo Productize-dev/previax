@@ -11,6 +11,8 @@ type YouTubePosterImageProps = {
   alt?: string;
   className?: string;
   imgClassName?: string;
+  loading?: "lazy" | "eager";
+  fetchPriority?: "high" | "low" | "auto";
 };
 
 export function YouTubePosterImage({
@@ -19,6 +21,8 @@ export function YouTubePosterImage({
   alt = "",
   className,
   imgClassName,
+  loading = "lazy",
+  fetchPriority,
 }: YouTubePosterImageProps) {
   const candidates = useMemo(() => {
     if (videoUrl) {
@@ -44,8 +48,9 @@ export function YouTubePosterImage({
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={loading}
         decoding="async"
+        fetchPriority={fetchPriority}
         className={cn("size-full object-cover", imgClassName)}
         onError={() => {
           if (index < candidates.length - 1) {

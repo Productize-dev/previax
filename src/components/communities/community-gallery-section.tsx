@@ -26,7 +26,7 @@ export function CommunityGallerySection({
         </h2>
 
         {images.length > 0 && (
-          <div className="mt-8 -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:-mx-[calc((100vw-72rem)/2+1.5rem)] md:px-[calc((100vw-72rem)/2+1.5rem)]">
+          <div className="mt-8 flex max-w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
             {images.map((item) => (
               <figure
                 key={item.id}
@@ -36,6 +36,8 @@ export function CommunityGallerySection({
                   <img
                     src={item.url}
                     alt={item.caption ?? "Community photo"}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                   />
                 </div>

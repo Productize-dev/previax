@@ -29,7 +29,7 @@ export default function RentBrowseContent() {
   return (
     <div className="min-h-screen bg-[#141414] text-white">
       <NetflixNavbar />
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-6 pb-10 pt-24">
         <p className="text-sm uppercase tracking-[0.25em] text-primary">
           Relocating
         </p>

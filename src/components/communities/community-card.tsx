@@ -39,6 +39,8 @@ export function CommunityCard({
             <img
               src={community.thumbnailUrl}
               alt={community.name}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
@@ -81,6 +83,8 @@ export function CommunityCard({
           <img
             src={community.thumbnailUrl}
             alt={community.name}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">

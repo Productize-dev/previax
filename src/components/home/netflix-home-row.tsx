@@ -18,7 +18,9 @@ import { pricePerSqft } from "@/lib/community-utils";
 import { getHomePosterUrl } from "@/lib/community-media";
 import { getHomeListingCategories, HOME_LISTING_CATEGORY_LABELS } from "@/lib/home-listing-categories";
 import { getHomeTileBadges } from "@/lib/netflix-tile-badges";
+import { communityPlayHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
 
 import { useNetflixRowSelection } from "./use-netflix-row-selection";
 
@@ -44,12 +46,11 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
   className,
 }: NetflixHomeRowProps) {
   const router = useRouter();
+  const coarse = usePrefersCoarsePointer();
 
-  const openModelPage = useCallback(
+  const openModelPlayer = useCallback(
     (communityId: string, homeId: string) => {
-      router.push(
-        `/communities/${communityId}?models=1&model=${encodeURIComponent(homeId)}`,
-      );
+      router.push(communityPlayHref(communityId, homeId));
     },
     [router],
   );
@@ -67,6 +68,7 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
     defaultIndex,
     onSelect,
     onDeselect,
+    enableHoverSelect: !coarse,
   });
 
   if (items.length === 0) return null;
@@ -114,12 +116,14 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
               )}
               onMouseEnter={() => selectOnHover(index)}
               onMouseLeave={handleTileMouseLeave}
-              onFocus={() => selectIndex(index, { immediate: true })}
+              onFocus={() => {
+                if (!coarse) selectIndex(index, { immediate: true });
+              }}
             >
               <Link
                 href={`/communities/${community.id}/homes/${home.id}`}
                 onClick={(e) => {
-                  if (!selected) {
+                  if (!coarse && !selected) {
                     e.preventDefault();
                     selectIndex(index, { immediate: true });
                   }
@@ -213,29 +217,38 @@ export const NetflixHomeRow = memo(function NetflixHomeRow({
                 </div>
               </Link>
 
-              {selected && (
+              {(selected || (coarse && previewUrl)) && (
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-20 aspect-video">
-                  <div className="pointer-events-auto absolute left-2 top-2">
-                    <TileActionBar
-                      homeId={home.id}
-                      homeCommunityId={community.id}
-                    />
-                  </div>
+                  {selected && (
+                    <div className="pointer-events-auto absolute left-2 top-2">
+                      <TileActionBar
+                        homeId={home.id}
+                        homeCommunityId={community.id}
+                      />
+                    </div>
+                  )}
                   {previewUrl && (
                     <>
-                      <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
-                        <VideoQuickActions
-                          youtubeUrl={previewUrl}
-                          title={home.modelName || community.name}
-                          onOpenPlayer={() =>
-                            openModelPage(community.id, home.id)
-                          }
-                        />
-                      </div>
+                      {selected && (
+                        <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
+                          <VideoQuickActions
+                            youtubeUrl={previewUrl}
+                            title={home.modelName || community.name}
+                            onOpenPlayer={() =>
+                              openModelPlayer(community.id, home.id)
+                            }
+                          />
+                        </div>
+                      )}
                       <Link
-                        href={`/communities/${community.id}?models=1&model=${encodeURIComponent(home.id)}`}
-                        className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
-                        aria-label={`Open ${home.modelName || community.name} on community page`}
+                        href={communityPlayHref(community.id, home.id)}
+                        className={cn(
+                          "pointer-events-auto flex items-center justify-center transition-opacity duration-300",
+                          coarse
+                            ? "absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 opacity-100"
+                            : "absolute inset-0 opacity-0 hover:opacity-100 focus-visible:opacity-100",
+                        )}
+                        aria-label={`Play ${home.modelName || community.name} video`}
                       >
                         <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-black shadow-lg">
                           <Play className="size-4 fill-black" />

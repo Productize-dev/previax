@@ -14,6 +14,7 @@ import {
 } from "@/components/home/netflix-tile-badges";
 import { VideoQuickActions } from "@/components/video/video-quick-actions";
 import { useData } from "@/context/data-context";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
 import {
   getAvailableHomeCount,
   getPriceRange,
@@ -23,6 +24,7 @@ import { getCommunityHeroPosterUrl } from "@/lib/community-media";
 import { getCommunityTileBadges } from "@/lib/netflix-tile-badges";
 import { getTop10Rank } from "@/lib/top-10-communities";
 import type { Community } from "@/lib/types";
+import { communityPlayHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 import { useNetflixRowSelection } from "./use-netflix-row-selection";
@@ -50,12 +52,13 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
   variant = "default",
 }: NetflixCommunityRowProps) {
   const router = useRouter();
+  const coarse = usePrefersCoarsePointer();
   const { top10Communities, customCommunityTagLabels } = useData();
   const isTop10 = variant === "top10";
 
-  const openCommunity = useCallback(
+  const openCommunityPlayer = useCallback(
     (community: Community) => {
-      router.push(`/communities/${community.id}`);
+      router.push(communityPlayHref(community.id));
     },
     [router],
   );
@@ -73,6 +76,7 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
     defaultIndex,
     onSelect,
     onDeselect,
+    enableHoverSelect: !coarse,
   });
 
   if (communities.length === 0) return null;
@@ -134,7 +138,9 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
               )}
               onMouseEnter={() => selectOnHover(index)}
               onMouseLeave={handleTileMouseLeave}
-              onFocus={() => selectIndex(index, { immediate: true })}
+              onFocus={() => {
+                if (!coarse) selectIndex(index, { immediate: true });
+              }}
             >
               {isTop10 && !selected && rank != null && (
                 <NetflixRankMark rank={rank} />
@@ -143,7 +149,7 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
               <Link
                 href={`/communities/${community.id}`}
                 onClick={(e) => {
-                  if (!selected) {
+                  if (!coarse && !selected) {
                     e.preventDefault();
                     selectIndex(index, { immediate: true });
                   }
@@ -237,30 +243,41 @@ export const NetflixCommunityRow = memo(function NetflixCommunityRow({
                 </div>
               </Link>
 
-              {selected && (
+              {(selected || (coarse && community.youtubeUrl)) && (
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-20 aspect-video">
-                  <div className="pointer-events-auto absolute left-2 top-2">
-                    <TileActionBar communityId={community.id} />
-                  </div>
-                  <div className="pointer-events-none absolute left-2 right-2 top-12 z-10">
-                    <NetflixTileBadges
-                      badges={badges}
-                      className="static inset-auto p-0"
-                    />
-                  </div>
-                  {community.youtubeUrl && (
+                  {selected && (
                     <>
-                      <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
-                        <VideoQuickActions
-                          youtubeUrl={community.youtubeUrl}
-                          title={community.name}
-                          onOpenPlayer={() => openCommunity(community)}
+                      <div className="pointer-events-auto absolute left-2 top-2">
+                        <TileActionBar communityId={community.id} />
+                      </div>
+                      <div className="pointer-events-none absolute left-2 right-2 top-12 z-10">
+                        <NetflixTileBadges
+                          badges={badges}
+                          className="static inset-auto p-0"
                         />
                       </div>
+                    </>
+                  )}
+                  {community.youtubeUrl && (
+                    <>
+                      {selected && (
+                        <div className="pointer-events-auto absolute bottom-2 left-2 right-2">
+                          <VideoQuickActions
+                            youtubeUrl={community.youtubeUrl}
+                            title={community.name}
+                            onOpenPlayer={() => openCommunityPlayer(community)}
+                          />
+                        </div>
+                      )}
                       <Link
-                        href={`/communities/${community.id}`}
-                        className="pointer-events-auto absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100"
-                        aria-label={`Open ${community.name} community page`}
+                        href={communityPlayHref(community.id)}
+                        className={cn(
+                          "pointer-events-auto flex items-center justify-center transition-opacity duration-300",
+                          coarse
+                            ? "absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 opacity-100"
+                            : "absolute inset-0 opacity-0 hover:opacity-100 focus-visible:opacity-100",
+                        )}
+                        aria-label={`Play ${community.name} video`}
                       >
                         <span className="flex size-12 items-center justify-center rounded-full bg-white text-black shadow-lg">
                           <Play className="size-5 fill-black" />

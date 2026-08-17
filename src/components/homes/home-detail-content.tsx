@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Copy, ExternalLink } from "lucide-react";
 
 import { BuilderOffers } from "@/components/communities/builder-offers";
@@ -10,6 +10,7 @@ import { RealtorCard } from "@/components/communities/realtor-card";
 import { CalendlyEmbed } from "@/components/buyer/calendly-embed";
 import { BuyerActionButtons } from "@/components/buyer/buyer-action-buttons";
 import { NetflixNavbar } from "@/components/home/netflix-navbar";
+import { NetflixVideoOverlay } from "@/components/communities/netflix-video-overlay";
 import { HomeGallerySection } from "@/components/homes/home-gallery-section";
 import { HomeHero } from "@/components/homes/home-hero";
 import { HomeHighlightsSection } from "@/components/homes/home-highlights-section";
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useData } from "@/context/data-context";
+import { getAvailableModels } from "@/lib/community-media";
 import { APP_HOME } from "@/lib/routes";
 import { FORMSPREE_URL } from "@/lib/config";
 import { buildVisitMailto, submitForm } from "@/lib/forms";
@@ -33,9 +35,16 @@ export default function HomeDetailContent() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [overlayIndex, setOverlayIndex] = useState(0);
 
   const community = communities.find((c) => c.id === params.id);
   const home = community?.homes.find((h) => h.id === params.homeId);
+  const models = useMemo(
+    () => (community ? getAvailableModels(community) : []),
+    [community],
+  );
+  const homeIndex = home ? models.findIndex((item) => item.id === home.id) : 0;
 
   const shareUrl =
     typeof window !== "undefined" && community && home
@@ -124,7 +133,14 @@ export default function HomeDetailContent() {
         <span className="text-white">${home.price.toLocaleString()}</span>
       </nav>
 
-      <HomeHero home={home} community={community} />
+      <HomeHero
+        home={home}
+        community={community}
+        onPlay={() => {
+          setOverlayIndex(Math.max(homeIndex, 0));
+          setPlayerOpen(true);
+        }}
+      />
 
       <main className="mx-auto max-w-6xl px-[4%] py-10 pb-24 md:pb-12">
         <FadeInSection>
@@ -231,6 +247,16 @@ export default function HomeDetailContent() {
           </FadeInSection>
         </div>
       </main>
+
+      <NetflixVideoOverlay
+        open={playerOpen}
+        community={community}
+        home={models[overlayIndex] ?? home}
+        homeIndex={overlayIndex}
+        models={models}
+        onClose={() => setPlayerOpen(false)}
+        onChangeHome={setOverlayIndex}
+      />
 
       <SiteFooter />
     </div>

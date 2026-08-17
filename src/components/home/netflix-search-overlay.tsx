@@ -154,7 +154,7 @@ export function NetflixSearchOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh] sm:pt-[14vh]"
+      className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[max(4.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"
       aria-label="Smart search"
@@ -166,7 +166,7 @@ export function NetflixSearchOverlay({
         onClick={() => onOpenChange(false)}
       />
 
-      <div className="search-overlay-panel relative z-10 w-full max-w-2xl animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+      <div className="search-overlay-panel relative z-10 flex max-h-[min(88dvh,calc(100dvh-env(safe-area-inset-bottom)-5rem))] w-full max-w-2xl flex-col overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
         <form
           onSubmit={handleSubmit}
           className="flex items-center gap-2 rounded-full border border-white/10 bg-[#f5f5f5] px-4 py-2.5 shadow-2xl sm:px-5 sm:py-3"
@@ -202,7 +202,7 @@ export function NetflixSearchOverlay({
           </button>
         </form>
 
-        <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-white shadow-2xl">
           <div className="divide-y divide-[#ebebeb]">
             <button
               type="button"

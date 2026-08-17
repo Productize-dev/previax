@@ -300,16 +300,16 @@
 
   .netflix-billboard {
     @apply relative w-full overflow-hidden bg-black;
-    min-height: min(78vh, 760px);
-    max-height: 85vh;
+    min-height: min(78svh, 760px);
+    max-height: 85svh;
     aspect-ratio: 16 / 9;
   }
 
   @media (max-width: 640px) {
     .netflix-billboard {
-      min-height: 58vh;
+      min-height: 58svh;
       aspect-ratio: auto;
-      height: 62vh;
+      height: 62svh;
     }
   }
 

@@ -46,6 +46,7 @@ export default function CommunityDetailContent() {
   const isHiddenFromPublic = Boolean(community?.isHidden);
   const modelsParam = searchParams.get("models");
   const modelParam = searchParams.get("model") ?? searchParams.get("home");
+  const playParam = searchParams.get("play");
 
   const models = useMemo(
     () => (community ? getAvailableModels(community) : []),
@@ -108,6 +109,26 @@ export default function CommunityDetailContent() {
   useEffect(() => {
     if (!community) return;
 
+    if (playParam) {
+      if (playParam === "1" || playParam === "true") {
+        if (models.length > 0) {
+          openModelAt(0);
+        } else {
+          setActiveModelIndex(0);
+          setPlayerOpen(true);
+        }
+        return;
+      }
+
+      const playIndex = models.findIndex((model) => model.id === playParam);
+      if (playIndex >= 0) {
+        openModelAt(playIndex);
+      } else {
+        setPlayerOpen(true);
+      }
+      return;
+    }
+
     const shouldOpenModels =
       modelsParam === "1" ||
       modelsParam === "true" ||
@@ -123,7 +144,7 @@ export default function CommunityDetailContent() {
     if (index >= 0) {
       setActiveModelIndex(index);
     }
-  }, [community, modelParam, models, modelsParam]);
+  }, [community, modelParam, models, modelsParam, openModelAt, playParam]);
 
   if (!isLoaded) {
     return (
@@ -161,6 +182,7 @@ export default function CommunityDetailContent() {
         hasModels={models.length > 0}
         onPlayBuilders={handlePlayBuilders}
         onOpenModels={handleOpenModels}
+        suspendVideo={playerOpen}
       />
 
       <NetflixModelsBrowser

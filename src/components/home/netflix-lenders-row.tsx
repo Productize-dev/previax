@@ -84,6 +84,8 @@ export function NetflixLendersRow() {
                     <img
                       src={lender.imageUrl}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="size-full object-cover"
                       draggable={false}
                     />

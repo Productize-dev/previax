@@ -122,21 +122,15 @@ export function getEmbedUrl(
     if (opts.captions !== false) {
       params.set("cc_load_policy", "1");
     }
-    if (typeof window !== "undefined" && !opts.origin) {
-      params.set("origin", window.location.origin);
-    } else if (opts.origin) {
-      params.set("origin", opts.origin);
-    }
   }
 
   // postMessage mute/unmute for cinematic background heroes
   if (preset === "background") {
     params.set("enablejsapi", "1");
-    if (typeof window !== "undefined" && !opts.origin) {
-      params.set("origin", window.location.origin);
-    } else if (opts.origin) {
-      params.set("origin", opts.origin);
-    }
+  }
+
+  if (opts.origin) {
+    params.set("origin", opts.origin);
   }
 
   const query = params.toString();

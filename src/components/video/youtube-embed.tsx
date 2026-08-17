@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   extractYouTubeId,
@@ -72,6 +72,11 @@ export function YouTubeEmbed({
   const videoId = extractYouTubeId(youtubeUrl);
   const localRef = useRef<HTMLIFrameElement>(null);
   const ref = iframeRef ?? localRef;
+  const [origin, setOrigin] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   if (!videoId) {
     return (
@@ -87,6 +92,9 @@ export function YouTubeEmbed({
     );
   }
 
+  const needsOrigin = preset === "interactive" || preset === "background";
+  const playerReady = !needsOrigin || Boolean(origin);
+
   const embedUrl = getEmbedUrl(videoId, {
     preset,
     autoplay,
@@ -94,6 +102,7 @@ export function YouTubeEmbed({
     loop,
     controls,
     captions,
+    origin,
   });
 
   const allow =
@@ -109,23 +118,25 @@ export function YouTubeEmbed({
         className,
       )}
     >
-      <iframe
-        ref={ref}
-        src={embedUrl}
-        title={title}
-        allow={allow}
-        allowFullScreen={preset === "interactive"}
-        referrerPolicy="strict-origin-when-cross-origin"
-        loading={loading}
-        className={cn(
-          "absolute border-0",
-          cover
-            ? "pointer-events-none top-1/2 left-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2 scale-105"
-            : "inset-0 size-full",
-          pointerEvents === "none" && !cover && "pointer-events-none",
-          iframeClassName,
-        )}
-      />
+      {playerReady ? (
+        <iframe
+          ref={ref}
+          src={embedUrl}
+          title={title}
+          allow={allow}
+          allowFullScreen={preset === "interactive"}
+          referrerPolicy="strict-origin-when-cross-origin"
+          loading={loading}
+          className={cn(
+            "absolute border-0",
+            cover
+              ? "pointer-events-none top-1/2 left-1/2 h-[56.25vw] min-h-full w-[177.78vh] min-w-full -translate-x-1/2 -translate-y-1/2 scale-105"
+              : "inset-0 size-full",
+            pointerEvents === "none" && !cover && "pointer-events-none",
+            iframeClassName,
+          )}
+        />
+      ) : null}
     </div>
   );
 }

@@ -36,6 +36,8 @@ export function HomeRoomsSection({ home }: HomeRoomsSectionProps) {
                     <img
                       src={room.imageUrl}
                       alt={room.name}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     />
                   </div>

@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { YouTubePosterImage } from "@/components/communities/youtube-poster-image";
 import { VideoQuickActions } from "@/components/video/video-quick-actions";
+import { usePrefersCoarsePointer } from "@/hooks/use-prefers-coarse-pointer";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
   extractYouTubeId,
   getEmbedUrl,
@@ -23,7 +26,7 @@ type NetflixHoverPreviewProps = {
   onOpenPlayer?: () => void;
 };
 
-/** Muted loop preview on hover — full controls via Watch button or dialog. */
+/** Muted loop preview on hover — skipped on touch / reduced-motion. */
 export function NetflixHoverPreview({
   youtubeUrl,
   posterUrl,
@@ -33,15 +36,18 @@ export function NetflixHoverPreview({
   showActions = false,
   onOpenPlayer,
 }: NetflixHoverPreviewProps) {
+  const coarse = usePrefersCoarsePointer();
+  const reduceMotion = usePrefersReducedMotion();
   const [iframeReady, setIframeReady] = useState(false);
 
   const videoId = youtubeUrl ? extractYouTubeId(youtubeUrl) : null;
   const embedUrl = videoId
     ? getEmbedUrl(videoId, { preset: "preview" })
     : null;
+  const allowIframe = active && Boolean(embedUrl) && !coarse && !reduceMotion;
 
   useEffect(() => {
-    if (!active || !embedUrl) {
+    if (!allowIframe) {
       setIframeReady(false);
       return;
     }
@@ -51,25 +57,23 @@ export function NetflixHoverPreview({
       clearTimeout(timer);
       setIframeReady(false);
     };
-  }, [active, embedUrl]);
+  }, [allowIframe]);
 
-  const showVideo = active && iframeReady && embedUrl;
+  const showVideo = allowIframe && iframeReady && embedUrl;
 
   return (
     <div className={cn("absolute inset-0 overflow-hidden", className)}>
-      {posterUrl && (
-        <img
-          src={posterUrl}
-          alt=""
-          loading="lazy"
-          decoding="async"
+      {youtubeUrl || posterUrl ? (
+        <YouTubePosterImage
+          videoUrl={youtubeUrl}
+          fallbackUrl={posterUrl}
           className={cn(
-            "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300",
+            "absolute inset-0 size-full transition-opacity duration-300",
             showVideo ? "opacity-0" : "opacity-100",
           )}
-          draggable={false}
+          imgClassName="object-cover object-center"
         />
-      )}
+      ) : null}
       {showVideo && (
         <iframe
           src={embedUrl}

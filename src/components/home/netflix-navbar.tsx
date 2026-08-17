@@ -53,6 +53,15 @@ export function NetflixNavbar() {
   }, [pathname]);
 
   useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
     if (pathname !== APP_HOME) {
       setActiveId("");
       return;
@@ -121,13 +130,13 @@ export function NetflixNavbar() {
             />
           </Link>
 
-          <nav className="hidden min-w-0 flex-1 items-center gap-5 md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center gap-5 lg:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.id}
                 href={link.href}
                 className={cn(
-                  "shrink-0 text-sm text-[#e5e5e5] transition-colors hover:text-white/70",
+                  "text-sm text-[#e5e5e5] transition-colors hover:text-white/70",
                   isActive(link.id, link.href) && "font-semibold text-white",
                 )}
               >
@@ -173,7 +182,7 @@ export function NetflixNavbar() {
 
             <button
               type="button"
-              className="text-white md:hidden"
+              className="text-white lg:hidden"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen((open) => !open)}
@@ -186,7 +195,7 @@ export function NetflixNavbar() {
         </div>
 
         {mobileOpen && (
-          <nav className="border-t border-white/10 px-[4%] py-3 md:hidden">
+          <nav className="border-t border-white/10 px-[4%] py-3 lg:hidden">
             <ul className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <li key={link.id}>
@@ -203,6 +212,21 @@ export function NetflixNavbar() {
                   </Link>
                 </li>
               ))}
+              {showDashboard && (
+                <li>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "block rounded-md px-2 py-2.5 text-sm text-[#e5e5e5] transition-colors hover:bg-white/5 hover:text-white",
+                      pathname === "/dashboard" &&
+                        "bg-white/10 font-semibold text-white",
+                    )}
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
         )}
