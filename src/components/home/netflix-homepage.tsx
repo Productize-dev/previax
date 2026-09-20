@@ -454,7 +454,7 @@ export function NetflixHomepage() {
   let rentAnchorAssigned = false;
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white">
+    <div className="min-h-screen bg-black text-white">
       <NetflixNavbar />
 
       {showHero && <NetflixHero focusCommunity={focusCommunity} />}

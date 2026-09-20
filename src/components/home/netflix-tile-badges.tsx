@@ -23,7 +23,7 @@ export function NetflixTileBadges({
 }: NetflixTileBadgesProps) {
   if (badges.length === 0) return null;
 
-  const visible = compact ? badges.slice(0, 3) : badges.slice(0, 4);
+  const visible = compact ? badges.slice(0, 1) : badges.slice(0, 3);
 
   return (
     <div
@@ -81,11 +81,13 @@ export function NetflixStatusBar({ label, className }: NetflixStatusBarProps) {
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[#e50914] px-2 py-1 text-center text-[10px] font-bold uppercase tracking-wide text-white sm:text-[11px]",
+        "pointer-events-none absolute inset-x-0 bottom-11 z-20 flex justify-center sm:bottom-12",
         className,
       )}
     >
-      {label}
+      <span className="rounded-[2px] bg-[#e50914] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white sm:text-[11px]">
+        {label}
+      </span>
     </div>
   );
 }

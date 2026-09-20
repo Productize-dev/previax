@@ -34,10 +34,10 @@ export function LandingTrendingCommunities() {
     <FadeInSection>
       <section
         id="communities"
-        className="scroll-mt-24 border-t border-white/10 bg-black py-16 md:py-20"
+        className="scroll-mt-24 bg-black py-10 md:py-14"
       >
-        <div className="mb-8 px-[4%]">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary">
+        <div className="mb-5 px-[4%] md:mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
             Trending now
           </p>
           <h2 className="font-heading mt-2 text-3xl text-white sm:text-4xl">

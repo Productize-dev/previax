@@ -82,14 +82,23 @@ export function LandingNetwork() {
     <FadeInSection>
       <section
         id="lenders"
-        className="scroll-mt-24 border-t border-white/10 bg-[#0a0a0a] px-6 py-16 md:py-24"
+        className="scroll-mt-24 bg-black px-6 py-14 md:py-20"
       >
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-center font-heading text-4xl font-bold uppercase tracking-[0.12em] text-white sm:text-5xl">
-            Network
-          </h2>
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+              Ecosystem
+            </p>
+            <h2 className="font-heading mt-2 text-3xl text-white sm:text-4xl">
+              Network
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-white/55 sm:text-base">
+              Lenders, associations, and partners who help buyers move from
+              browse to closing.
+            </p>
+          </div>
 
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
             {cards.map((card) => {
               const inner = (
                 <>
@@ -101,7 +110,11 @@ export function LandingNetwork() {
                     className="object-cover transition duration-500 group-hover:scale-105"
                     unoptimized
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 transition group-hover:opacity-100"
+                  />
                   <div className="absolute inset-x-0 bottom-0 z-10 p-4">
                     <p className="text-base font-semibold text-white">
                       {card.title}
@@ -119,13 +132,13 @@ export function LandingNetwork() {
                     <Link
                       href={card.href}
                       className={cn(
-                        "group relative block aspect-[4/5] overflow-hidden rounded-lg ring-1 ring-white/10 transition hover:ring-primary/40",
+                        "group relative block aspect-[4/5] overflow-hidden rounded-sm ring-1 ring-white/10 transition duration-300 hover:ring-white/35",
                       )}
                     >
                       {inner}
                     </Link>
                   ) : (
-                    <div className="group relative aspect-[4/5] overflow-hidden rounded-lg ring-1 ring-white/10">
+                    <div className="group relative aspect-[4/5] overflow-hidden rounded-sm ring-1 ring-white/10">
                       {inner}
                     </div>
                   )}

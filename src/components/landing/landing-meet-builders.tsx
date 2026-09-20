@@ -59,11 +59,11 @@ export function LandingMeetBuilders() {
     <FadeInSection>
       <section
         id="builders"
-        className="scroll-mt-24 border-t border-white/10 bg-black py-16 md:py-20"
+        className="scroll-mt-24 bg-black py-10 md:py-14"
       >
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 px-[4%]">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4 px-[4%] md:mb-6">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               Partners
             </p>
             <h2 className="font-heading mt-2 text-3xl text-white sm:text-4xl">
@@ -72,9 +72,9 @@ export function LandingMeetBuilders() {
           </div>
           <Link
             href={PARTNER_PATH}
-            className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            className="text-sm font-medium text-white/55 transition-colors hover:text-primary"
           >
-            Become a partner
+            Become a partner →
           </Link>
         </div>
 
@@ -108,7 +108,7 @@ export function LandingMeetBuilders() {
               >
                 <Link
                   href={href}
-                  className="group relative block overflow-hidden rounded-md ring-1 ring-white/10 transition hover:ring-primary/50"
+                  className="group relative block overflow-hidden rounded-sm ring-1 ring-white/10 transition duration-300 hover:ring-white/35"
                 >
                   <div className="relative aspect-video bg-[#1a1a1a]">
                     {poster ? (
@@ -117,18 +117,18 @@ export function LandingMeetBuilders() {
                         alt=""
                         fill
                         sizes="(max-width: 768px) 85vw, 36vw"
-                        className="object-cover transition duration-500 group-hover:scale-105"
+                        className="object-cover transition duration-500 group-hover:scale-[1.04]"
                         unoptimized={poster.startsWith("http")}
                       />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
 
                     {ribbon && (
                       <span
                         className={cn(
-                          "absolute right-0 top-3 z-10 origin-top-right translate-x-[28%] rotate-45 px-8 py-1 text-[10px] font-bold uppercase tracking-wide shadow-md",
+                          "absolute left-2 top-2 z-10 rounded-[2px] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide sm:text-[11px]",
                           ribbon.className,
                         )}
                       >
@@ -137,16 +137,16 @@ export function LandingMeetBuilders() {
                     )}
 
                     {hasVideo && (
-                      <span className="absolute inset-0 z-[5] flex items-center justify-center opacity-90 transition group-hover:opacity-100">
-                        <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white ring-1 ring-white/25">
+                      <span className="absolute inset-0 z-[5] flex items-center justify-center opacity-80 transition group-hover:opacity-100">
+                        <span className="flex size-12 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-[2px]">
                           <Play className="size-5 fill-current pl-0.5" />
                         </span>
                       </span>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 z-10 flex items-end gap-3 p-3 sm:p-4">
+                    <div className="absolute inset-x-0 bottom-0 z-10 flex items-end gap-3 p-3 sm:p-3.5">
                       {builder.logoUrl ? (
-                        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-1.5 shadow-md sm:size-12">
+                        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-[#ebe4d6] p-1.5 shadow-md sm:size-12">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={builder.logoUrl}

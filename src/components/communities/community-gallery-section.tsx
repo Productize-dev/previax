@@ -16,14 +16,41 @@ export function CommunityGallerySection({
 
   const images = items.filter((m) => m.type === "image" && m.url);
   const videos = items.filter((m) => m.type === "youtube" && m.url);
+  const hasVideos = videos.length > 0;
 
   return (
     <FadeInSection>
       <section>
-        <p className="section-eyebrow">Gallery</p>
+        <p className="section-eyebrow">
+          {hasVideos ? "Tour by area" : "Gallery"}
+        </p>
         <h2 className="font-heading mt-2 text-3xl md:text-4xl">
-          See more of {community.name}
+          {hasVideos
+            ? `Explore ${community.name}`
+            : `See more of ${community.name}`}
         </h2>
+        {hasVideos && (
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            Walk through the spaces that make this community feel like home —
+            amenities, gathering spots, and everyday living.
+          </p>
+        )}
+
+        {videos.length > 0 && (
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {videos.map((item) => {
+              const title = item.caption?.trim() || community.name;
+              return (
+                <figure key={item.id} className="space-y-2">
+                  <VideoPlayer youtubeUrl={item.url} title={title} />
+                  <figcaption className="text-sm font-medium text-foreground">
+                    {title}
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        )}
 
         {images.length > 0 && (
           <div className="mt-8 flex max-w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
@@ -43,24 +70,6 @@ export function CommunityGallerySection({
                 </div>
                 {item.caption && (
                   <figcaption className="bg-card px-4 py-2 text-sm text-muted-foreground">
-                    {item.caption}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        )}
-
-        {videos.length > 0 && (
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {videos.map((item) => (
-              <figure key={item.id}>
-                <VideoPlayer
-                  youtubeUrl={item.url}
-                  title={item.caption ?? community.name}
-                />
-                {item.caption && (
-                  <figcaption className="mt-2 text-sm text-muted-foreground">
                     {item.caption}
                   </figcaption>
                 )}

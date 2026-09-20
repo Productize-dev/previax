@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AiContentButtons } from "@/components/dashboard/ai-content-buttons";
+import { CommunityPartVideosFields } from "@/components/dashboard/community-part-videos-fields";
 import { DuplicateWarning } from "@/components/dashboard/duplicate-warning";
 import { ImageInput } from "@/components/dashboard/image-input";
 import { Button } from "@/components/ui/button";
@@ -236,6 +237,17 @@ export function CommunityForm({
       return;
     }
 
+    const partVideos = form.mediaGallery.filter(
+      (item) => item.type === "youtube",
+    );
+    const invalidPart = partVideos.find(
+      (item) => item.url.trim() && !isValidYouTubeUrl(item.url),
+    );
+    if (invalidPart) {
+      toastError("Each part video needs a valid YouTube URL");
+      return;
+    }
+
     const thumbnailUrl = resolveThumbnailFromYouTube(
       form.youtubeUrl,
       form.thumbnailUrl,
@@ -246,10 +258,22 @@ export function CommunityForm({
       return;
     }
 
+    const galleryImages = form.mediaGallery.filter(
+      (item) => item.type === "image" && item.url.trim(),
+    );
+    const galleryVideos = partVideos
+      .filter((item) => item.url.trim())
+      .map((item) => ({
+        ...item,
+        url: item.url.trim(),
+        caption: item.caption?.trim() || undefined,
+      }));
+
     const payload = {
       ...form,
       thumbnailUrl,
       mainHighlight: form.mainHighlight.trim(),
+      mediaGallery: [...galleryImages, ...galleryVideos],
     };
 
     setSubmitting(true);
@@ -556,6 +580,11 @@ export function CommunityForm({
               onChange={handleThumbnailChange}
             />
           </div>
+
+          <CommunityPartVideosFields
+            mediaGallery={form.mediaGallery}
+            onChange={(mediaGallery) => updateField("mediaGallery", mediaGallery)}
+          />
 
           <DuplicateWarning matches={duplicates} />
 

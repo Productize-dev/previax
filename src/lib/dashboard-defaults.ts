@@ -7,6 +7,7 @@ import type {
   HomeInput,
   HomeListingCategory,
   HomeTag,
+  MediaItem,
 } from "@/lib/types";
 
 /** Default tags applied when creating a new community in the dashboard. */
@@ -62,6 +63,8 @@ export type CommunityDashboardForm = {
   lenders: string[];
   mainHighlight: string;
   tags: CommunityTag[];
+  /** Part tours + any preserved gallery images. */
+  mediaGallery: MediaItem[];
 };
 
 export const emptyCommunityDashboardForm: CommunityDashboardForm = {
@@ -77,6 +80,7 @@ export const emptyCommunityDashboardForm: CommunityDashboardForm = {
   lenders: [],
   mainHighlight: "",
   tags: [],
+  mediaGallery: [],
 };
 
 export function newCommunityDashboardForm(
@@ -135,6 +139,7 @@ export function communityToDashboardForm(
     lenders: community.lenders ?? [],
     mainHighlight: community.mainHighlight ?? "",
     tags: community.tags ?? [],
+    mediaGallery: community.mediaGallery ?? [],
   };
 }
 

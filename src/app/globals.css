@@ -169,9 +169,9 @@
   }
 
   .netflix-row-section {
-    @apply relative scroll-mt-20 py-4 md:scroll-mt-[4.5rem] md:py-6;
+    @apply relative scroll-mt-20 py-2.5 md:scroll-mt-[4.5rem] md:py-3.5;
     content-visibility: auto;
-    contain-intrinsic-size: auto 360px;
+    contain-intrinsic-size: auto 320px;
   }
 
   .netflix-nav-anchor {
@@ -179,7 +179,7 @@
   }
 
   .netflix-row-title {
-    @apply mb-3 px-[4%] font-sans text-lg font-semibold tracking-wide text-[#e5e5e5] transition-colors md:mb-4 md:text-xl lg:text-[1.65rem];
+    @apply mb-2 px-[4%] font-sans text-[0.95rem] font-medium tracking-wide text-[#e5e5e5] transition-colors md:mb-2.5 md:text-[1.1rem] lg:text-[1.25rem];
   }
 
   .netflix-row-section:hover .netflix-row-title {
@@ -197,11 +197,18 @@
   }
 
   .netflix-focus-track {
-    @apply flex items-start gap-3 overflow-x-auto px-[4%] py-3 pb-10 outline-none sm:gap-5 md:pb-12;
+    @apply relative flex items-start gap-2 overflow-x-auto px-[4%] py-2 pb-6 outline-none sm:gap-3 md:pb-8;
     scroll-behavior: auto;
     scroll-padding-inline: 4%;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 2%,
+      #000 98%,
+      transparent
+    );
   }
 
   .netflix-focus-track::-webkit-scrollbar {
@@ -209,40 +216,54 @@
   }
 
   .netflix-focus-track:focus-visible {
-    @apply rounded-sm ring-2 ring-white/30 ring-offset-2 ring-offset-[#141414];
+    @apply rounded-sm ring-2 ring-white/30 ring-offset-2 ring-offset-black;
+  }
+
+  .netflix-row-chevron {
+    @apply absolute top-0 z-20 flex h-[min(100%,calc(100%-3.5rem))] w-12 items-center justify-center text-white opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover/row:opacity-100;
+  }
+
+  .netflix-row-chevron--left {
+    @apply left-0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.85), transparent);
+  }
+
+  .netflix-row-chevron--right {
+    @apply right-0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.85), transparent);
   }
 
   .netflix-focus-tile {
     /* ~2.5–3 tiles on desktop — fills the row with a smaller catalog */
-    --tile-width: clamp(260px, 38vw, 440px);
+    --tile-width: clamp(240px, 32vw, 380px);
     width: var(--tile-width);
     flex: 0 0 var(--tile-width);
     transform-origin: center center;
     transition:
-      width 420ms cubic-bezier(0.22, 1, 0.36, 1),
-      flex-basis 420ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 280ms ease;
+      width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      flex-basis 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms ease;
     @apply relative shrink-0;
   }
 
   .netflix-focus-tile--portrait:hover {
-    transform: scale(1.05);
+    transform: scale(1.04);
     z-index: 5;
   }
 
   .netflix-focus-tile--selected {
-    --tile-width: clamp(300px, 55vw, 680px);
+    --tile-width: clamp(280px, 42vw, 520px);
     z-index: 10;
     transform: none;
   }
 
   .netflix-focus-tile--top10 {
-    --tile-width: clamp(280px, 36vw, 420px);
-    margin-left: 1.75rem;
+    --tile-width: clamp(260px, 30vw, 360px);
+    margin-left: 1.5rem;
   }
 
   .netflix-focus-tile--top10.netflix-focus-tile--selected {
-    --tile-width: clamp(300px, 55vw, 680px);
+    --tile-width: clamp(280px, 42vw, 520px);
     margin-left: 0.75rem;
   }
 
@@ -269,7 +290,7 @@
   }
 
   .netflix-tile-media {
-    @apply relative overflow-hidden rounded-[3px] transition-[border-color,box-shadow,aspect-ratio,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)];
+    @apply relative overflow-hidden rounded-[4px] transition-[border-color,box-shadow,aspect-ratio,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)];
   }
 
   /* YouTube / listing thumbs are 16:9 */
@@ -300,26 +321,64 @@
 
   .netflix-billboard {
     @apply relative w-full overflow-hidden bg-black;
-    min-height: min(78svh, 760px);
-    max-height: 85svh;
+    min-height: min(88svh, 900px);
+    max-height: 92svh;
     aspect-ratio: 16 / 9;
   }
 
   @media (max-width: 640px) {
     .netflix-billboard {
-      min-height: 58svh;
+      min-height: 62svh;
+      max-height: none;
       aspect-ratio: auto;
-      height: 62svh;
+      height: 68svh;
     }
+  }
+
+  .netflix-billboard-vignette {
+    @apply pointer-events-none absolute inset-0 z-[1];
+    background:
+      linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.92) 0%,
+        rgba(0, 0, 0, 0.55) 28%,
+        rgba(0, 0, 0, 0.15) 55%,
+        transparent 78%
+      ),
+      linear-gradient(
+        to top,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.75) 18%,
+        rgba(0, 0, 0, 0.25) 42%,
+        transparent 62%
+      ),
+      linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.65) 0%,
+        transparent 18%
+      );
+  }
+
+  .netflix-hero-nav {
+    @apply pointer-events-none absolute top-1/2 z-20 hidden size-14 -translate-y-1/2 items-center justify-center text-white opacity-0 transition-opacity duration-200 md:flex;
+    @apply group-hover/hero:pointer-events-auto group-hover/hero:opacity-100;
+  }
+
+  .netflix-hero-nav--prev {
+    @apply left-1 bg-gradient-to-r from-black/50 to-transparent pl-1;
+  }
+
+  .netflix-hero-nav--next {
+    @apply right-1 bg-gradient-to-l from-black/50 to-transparent pr-1;
   }
 
   .netflix-hero-title {
     @apply font-sans font-extrabold tracking-tight text-white;
-    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+    text-shadow: 0 2px 28px rgba(0, 0, 0, 0.65);
   }
 
   .netflix-rows-stack {
-    @apply relative z-10 -mt-20 space-y-3 pb-20 sm:-mt-24 md:-mt-28 md:space-y-4 md:pb-28;
+    @apply relative z-10 -mt-28 space-y-1 pb-16 sm:-mt-32 md:-mt-40 md:space-y-2 md:pb-24;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -441,6 +500,20 @@
 
   .landing-logo-marquee:hover .landing-logo-marquee-track {
     animation-play-state: paused;
+  }
+
+  .landing-row-chevron {
+    @apply absolute top-0 z-20 flex h-full w-12 items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover/carousel:opacity-100;
+  }
+
+  .landing-row-chevron--left {
+    @apply left-0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.9), transparent);
+  }
+
+  .landing-row-chevron--right {
+    @apply right-0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.9), transparent);
   }
 
   @keyframes landing-logo-marquee {

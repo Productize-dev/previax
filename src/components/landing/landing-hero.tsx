@@ -50,7 +50,7 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
   const watchUrl = getWatchUrl(MARKETING_HERO_YOUTUBE_URL);
 
   return (
-    <section className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 pb-24 pt-28">
+    <section className="relative flex min-h-[68svh] flex-col justify-center overflow-hidden px-6 pb-12 pt-24 md:min-h-[72svh] md:pb-14 md:pt-28">
       <div className="absolute inset-0">
         <YouTubeEmbed
           youtubeUrl={MARKETING_HERO_YOUTUBE_URL}
@@ -63,15 +63,16 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.75)_75%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-3xl text-center">
-        <div className="mb-8 flex justify-center opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.15s_forwards]">
-          <PreviaxLogo height={64} asLink={false} className="brightness-110" />
+        <div className="mb-5 flex justify-center opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.15s_forwards]">
+          <PreviaxLogo height={48} asLink={false} className="brightness-110" />
         </div>
 
         <div
-          className="mb-8 inline-flex rounded-full border border-white/15 bg-black/40 p-1 backdrop-blur-sm opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.25s_forwards]"
+          className="mb-5 inline-flex rounded-full border border-white/15 bg-black/40 p-1 backdrop-blur-sm opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.25s_forwards]"
           role="tablist"
           aria-label="Choose your path"
         >
@@ -103,14 +104,14 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
           key={audience}
           className="opacity-0 animate-[landing-fade-up_0.55s_ease-out_forwards]"
         >
-          <h1 className="font-heading text-4xl leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="font-heading text-3xl leading-tight tracking-tight text-white sm:text-5xl md:text-5xl lg:text-6xl">
             {copy.headline}
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
             {copy.sub}
           </p>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href={copy.primaryHref}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
@@ -150,6 +151,16 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
             </div>
           )}
         </div>
+      </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex justify-center opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.7s_forwards]"
+        aria-hidden
+      >
+        <span className="flex flex-col items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
+          Scroll
+          <span className="block h-6 w-px bg-gradient-to-b from-primary/80 to-transparent" />
+        </span>
       </div>
     </section>
   );

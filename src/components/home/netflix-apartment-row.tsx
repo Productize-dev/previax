@@ -45,19 +45,22 @@ export const NetflixApartmentRow = memo(function NetflixApartmentRow({
   if (communities.length === 0) return null;
 
   return (
-    <section id={id} className={cn("relative z-10 px-[4%] py-3", className)}>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <h2 className="font-heading text-xl text-white md:text-2xl">{title}</h2>
+    <section
+      id={id}
+      className={cn("netflix-row-section group/row", className)}
+    >
+      <div className="mb-2 flex items-end justify-between gap-3 px-[4%] md:mb-2.5">
+        <h2 className="netflix-row-title !mb-0 !px-0">{title}</h2>
         <Link
           href="/rent"
-          className="text-sm text-[#b3b3b3] transition-colors hover:text-white"
+          className="shrink-0 pb-0.5 text-sm text-[#b3b3b3] transition-colors hover:text-white"
         >
-          See all
+          Explore All ›
         </Link>
       </div>
       <div
         ref={trackRef}
-        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+        className="netflix-focus-track !items-stretch"
         onMouseLeave={handleTrackMouseLeave}
       >
         {communities.map((community, index) => {
@@ -71,7 +74,7 @@ export const NetflixApartmentRow = memo(function NetflixApartmentRow({
                 itemRefs.current[index] = el;
               }}
               className={cn(
-                "group relative w-[260px] shrink-0 snap-start sm:w-[280px]",
+                "group relative w-[clamp(240px,32vw,380px)] shrink-0 snap-start",
                 selected && "z-10",
               )}
               onMouseEnter={() => selectOnHover(index)}
@@ -79,7 +82,7 @@ export const NetflixApartmentRow = memo(function NetflixApartmentRow({
               onFocus={() => selectIndex(index)}
             >
               <Link href={`/rent/${community.id}`} className="block text-left">
-                <div className="relative aspect-video overflow-hidden rounded-sm bg-[#2a2a2a]">
+                <div className="relative aspect-video overflow-hidden rounded-[4px] bg-[#2a2a2a]">
                   {community.youtubeUrl || community.thumbnailUrl ? (
                     <YouTubePosterImage
                       videoUrl={community.youtubeUrl}

@@ -57,13 +57,13 @@ export function LandingNav() {
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <Link
             href={APP_HOME}
-            className="rounded-md border border-primary px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-primary/15 sm:px-4 sm:py-2"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 sm:px-4 sm:py-2"
           >
             Start Here
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/15 sm:px-4 sm:py-2"
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/25 bg-black/30 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/5 sm:px-4 sm:py-2"
           >
             <User className="size-3.5" />
             <span className="hidden sm:inline">Sign In</span>

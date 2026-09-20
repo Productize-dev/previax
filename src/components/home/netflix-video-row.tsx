@@ -37,17 +37,13 @@ export function NetflixVideoRow({
   return (
     <section className={cn("netflix-row-section group/row", className)}>
       {branded ? (
-        <div className="mb-3 px-[4%] md:mb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#46d369] sm:text-xs">
+        <div className="mb-2 px-[4%] md:mb-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55 sm:text-[11px]">
             Previax Original
           </p>
-          <h2 className="mt-1 font-sans text-xl font-semibold tracking-wide text-white md:text-2xl lg:text-[1.75rem]">
+          <h2 className="mt-1 font-sans text-[0.95rem] font-medium tracking-wide text-[#e5e5e5] md:text-[1.1rem] lg:text-[1.25rem]">
             {title}
           </h2>
-          <span
-            aria-hidden
-            className="mt-2 block h-0.5 w-10 rounded-full bg-[#46d369]"
-          />
         </div>
       ) : (
         <h2 className="netflix-row-title">{title}</h2>

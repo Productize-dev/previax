@@ -14,12 +14,19 @@ export function LandingCtaBand({ audience = "buyer" }: LandingCtaBandProps) {
 
   return (
     <FadeInSection>
-      <section className="border-t border-white/10 px-6 py-20 md:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-heading text-3xl text-white sm:text-4xl">
+      <section className="relative overflow-hidden border-t border-white/10 px-6 py-20 md:py-24">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,120,0.1),transparent_60%)]"
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+            {isBuilder ? "Partnership" : "Get started"}
+          </p>
+          <h2 className="font-heading mt-2 text-3xl text-white sm:text-4xl">
             {isBuilder ? "Ready to partner?" : "Ready to explore?"}
           </h2>
-          <p className="mt-4 text-white/65">
+          <p className="mt-4 text-white/60">
             {isBuilder
               ? "Tell us about your company — we list and present your communities with a cinematic experience."
               : "Enter the platform and browse premium new construction communities across North Carolina."}
@@ -35,7 +42,7 @@ export function LandingCtaBand({ audience = "buyer" }: LandingCtaBandProps) {
             {!isBuilder && (
               <Link
                 href="/login"
-                className="inline-flex items-center rounded-md border border-white/25 px-7 py-3.5 text-base font-medium text-white transition-colors hover:border-white/50 hover:bg-white/5"
+                className="inline-flex items-center rounded-md border border-white/25 bg-black/40 px-7 py-3.5 text-base font-medium text-white backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/5"
               >
                 Sign In
               </Link>

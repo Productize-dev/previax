@@ -29,10 +29,13 @@ export function LandingTopNcRow() {
 
   return (
     <FadeInSection>
-      <section className="border-t border-white/10 bg-[#0a0a0a] py-16 md:py-20">
-        <div className="mb-8 px-[4%]">
-          <h2 className="font-heading text-3xl text-white sm:text-4xl">
-            Top Communities In North Carolina
+      <section className="bg-black py-10 md:py-14">
+        <div className="mb-5 px-[4%] md:mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+            Top 10
+          </p>
+          <h2 className="font-heading mt-2 text-3xl text-white sm:text-4xl">
+            Communities in North Carolina
           </h2>
         </div>
 

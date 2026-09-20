@@ -58,12 +58,12 @@ export function UserMenu({ className }: UserMenuProps) {
           type="button"
           onClick={() => setSignInOpen(true)}
           className={cn(
-            "flex size-8 items-center justify-center rounded bg-[#333] text-white transition-colors hover:bg-[#444]",
+            "flex size-8 items-center justify-center rounded-[4px] bg-[#333] text-white transition-colors hover:bg-[#444]",
             className,
           )}
           aria-label="Sign in"
         >
-          <User className="size-4" />
+          <User className="size-4" strokeWidth={1.75} />
         </button>
         <SignInDialog open={signInOpen} onOpenChange={setSignInOpen} />
       </>
@@ -75,17 +75,28 @@ export function UserMenu({ className }: UserMenuProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex size-8 items-center justify-center rounded bg-[#e50914] text-xs font-bold text-white ring-2 ring-transparent transition-all hover:ring-white/30"
+        className="flex items-center gap-1.5 rounded-[4px] transition-opacity hover:opacity-90"
         aria-label="Account menu"
         aria-expanded={open}
       >
-        {buyer.name.charAt(0).toUpperCase()}
+        <span className="flex size-8 items-center justify-center rounded-[4px] bg-[#e50914] text-xs font-bold text-white">
+          {buyer.name.charAt(0).toUpperCase()}
+        </span>
+        <span
+          aria-hidden
+          className={cn(
+            "hidden border-x-4 border-x-transparent border-t-[5px] border-t-white transition-transform sm:block",
+            open && "rotate-180",
+          )}
+        />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-md border border-white/10 bg-[#181818] py-1 shadow-2xl">
+        <div className="absolute right-0 top-full z-50 mt-3 w-60 overflow-hidden rounded-md border border-white/10 bg-[#181818] py-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.65)]">
           <div className="border-b border-white/10 px-4 py-3">
-            <p className="truncate text-sm font-semibold text-white">{buyer.name}</p>
+            <p className="truncate text-sm font-semibold text-white">
+              {buyer.name}
+            </p>
             <p className="truncate text-xs text-[#b3b3b3]">{buyer.email}</p>
           </div>
 
