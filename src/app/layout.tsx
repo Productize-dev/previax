@@ -22,10 +22,6 @@ export const metadata: Metadata = {
   title: "Previax — Explore Communities",
   description:
     "A cinematic real estate platform for exploring premium residential communities across North Carolina.",
-  icons: {
-    icon: "/favicon.png",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export default function RootLayout({

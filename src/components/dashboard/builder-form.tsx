@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ImageInput } from "@/components/dashboard/image-input";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import {
+  ASSIGNEE_NONE,
+  fetchActiveProfilesByRole,
+  profileAssigneeLabel,
+} from "@/lib/dashboard-assignees";
 import {
   builderToDashboardForm,
   emptyBuilderDashboardForm,
   toBuilderInput,
   type BuilderDashboardForm,
 } from "@/lib/dashboard-defaults";
-import type { Builder } from "@/lib/types";
+import type { Builder, Profile } from "@/lib/types";
 import { isValidYouTubeUrl } from "@/lib/youtube";
+import { toastError } from "@/lib/toast";
 
 type BuilderFormProps = {
   editingBuilder: Builder | null;
@@ -33,7 +46,7 @@ export function BuilderForm({
   editingBuilder,
   onEditComplete,
 }: BuilderFormProps) {
-  const { addBuilder, updateBuilder } = useDashboardData();
+  const { addBuilder, updateBuilder, isAdmin } = useDashboardData();
   const [form, setForm] = useState<BuilderDashboardForm>(() =>
     editingBuilder
       ? builderToDashboardForm(editingBuilder)
@@ -41,8 +54,30 @@ export function BuilderForm({
   );
   const [submitting, setSubmitting] = useState(false);
   const [youtubeError, setYoutubeError] = useState("");
+  const [builderAccounts, setBuilderAccounts] = useState<Profile[]>([]);
 
   const isEditing = editingBuilder !== null;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    void fetchActiveProfilesByRole("builder")
+      .then((list) => {
+        if (!cancelled) setBuilderAccounts(list);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toastError(
+            err instanceof Error
+              ? err.message
+              : "Could not load builder accounts",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   function updateField<K extends keyof BuilderDashboardForm>(
     field: K,
@@ -62,7 +97,10 @@ export function BuilderForm({
       return;
     }
 
-    const payload = toBuilderInput(form);
+    const payload = toBuilderInput(form, {
+      assignOwner: isAdmin,
+      existingOwnerId: editingBuilder?.ownerId,
+    });
 
     setSubmitting(true);
     try {
@@ -139,6 +177,37 @@ export function BuilderForm({
               </p>
             )}
           </div>
+
+          {isAdmin && (
+            <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+              <Label>Account owner</Label>
+              <Select
+                value={form.accountOwnerId || ASSIGNEE_NONE}
+                onValueChange={(value) =>
+                  updateField(
+                    "accountOwnerId",
+                    !value || value === ASSIGNEE_NONE ? "" : value,
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ASSIGNEE_NONE}>Unassigned</SelectItem>
+                  {builderAccounts.map((person) => (
+                    <SelectItem key={person.id} value={person.id}>
+                      {profileAssigneeLabel(person)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The builder login that can manage this org and approve linked
+                communities.
+              </p>
+            </div>
+          )}
 
           <label
             htmlFor="builder-show-marketing"

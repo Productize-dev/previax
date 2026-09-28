@@ -55,7 +55,7 @@ export function Navbar({ overlay = false }: NavbarProps) {
       >
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <PreviaxLogo height={40} />
+            <PreviaxLogo height={48} />
 
             {!overlay && (
               <div className="hidden flex-1 max-w-md md:block">

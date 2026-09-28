@@ -68,7 +68,7 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
 
       <div className="relative z-10 mx-auto w-full max-w-3xl text-center">
         <div className="mb-5 flex justify-center opacity-0 animate-[landing-fade-up_0.8s_ease-out_0.15s_forwards]">
-          <PreviaxLogo height={48} asLink={false} className="brightness-110" />
+          <PreviaxLogo height={72} asLink={false} className="brightness-110" />
         </div>
 
         <div

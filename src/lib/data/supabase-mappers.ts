@@ -563,6 +563,7 @@ export function builderInputToRow(data: Partial<BuilderInput>): AnyRow {
   if ("showOnMarketing" in data) {
     row.show_on_marketing = Boolean(data.showOnMarketing);
   }
+  if ("ownerId" in data) row.owner_id = data.ownerId ?? null;
   return row;
 }
 
@@ -613,6 +614,7 @@ export function communityInputToRow(data: Partial<CommunityInput>): AnyRow {
   setIfDefined(row, "is_hidden", data.isHidden);
   setIfDefined(row, "pipeline_status", data.pipelineStatus);
   if ("submittedBy" in data) row.submitted_by = data.submittedBy ?? null;
+  if ("ownerId" in data) row.owner_id = data.ownerId ?? null;
   if ("step1CompletedAt" in data) {
     row.step1_completed_at = data.step1CompletedAt
       ? new Date(data.step1CompletedAt).toISOString()

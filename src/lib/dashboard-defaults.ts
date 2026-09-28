@@ -54,6 +54,8 @@ export type CommunityDashboardForm = {
   communityType: "single" | "multi" | "none";
   builderId: string;
   builderIds: string[];
+  /** Sales profile id; empty = unassigned. Admin sets submittedBy + ownerId from this. */
+  assignedSalesId: string;
   name: string;
   city: string;
   description: string;
@@ -71,6 +73,7 @@ export const emptyCommunityDashboardForm: CommunityDashboardForm = {
   communityType: "single",
   builderId: "",
   builderIds: [],
+  assignedSalesId: "",
   name: "",
   city: "",
   description: "",
@@ -130,6 +133,7 @@ export function communityToDashboardForm(
     communityType: inferCommunityType(community),
     builderId: community.builderId ?? builderIds[0] ?? "",
     builderIds,
+    assignedSalesId: community.submittedBy ?? "",
     name: community.name,
     city: community.city,
     description: community.description,
@@ -147,9 +151,24 @@ export function toCommunityInput(
   form: CommunityDashboardForm,
   existing?: CommunityInput,
   builders: { id: string; name: string }[] = [],
+  options?: { assignSales?: boolean },
 ): CommunityInput {
-  const { communityType: _communityType, builderIds: _formBuilderIds, ...rest } =
-    form;
+  const {
+    communityType: _communityType,
+    builderIds: _formBuilderIds,
+    assignedSalesId,
+    ...rest
+  } = form;
+
+  const assignSales = options?.assignSales === true;
+  const salesId = assignedSalesId.trim() || undefined;
+
+  const ownership = assignSales
+    ? { submittedBy: salesId, ownerId: salesId }
+    : {
+        submittedBy: existing?.submittedBy,
+        ownerId: existing?.ownerId,
+      };
 
   if (form.communityType === "none") {
     return {
@@ -160,6 +179,7 @@ export function toCommunityInput(
       builderIds: [],
       builderId: undefined,
       builderName: NO_BUILDER_ASSIGNED_LABEL,
+      ...ownership,
     };
   }
 
@@ -196,6 +216,7 @@ export function toCommunityInput(
     builderIds: selectedIds,
     builderId: primaryBuilder?.id,
     builderName,
+    ...ownership,
   };
 }
 
@@ -205,6 +226,8 @@ export type BuilderDashboardForm = {
   logoUrl: string;
   youtubeUrl: string;
   showOnMarketing: boolean;
+  /** Builder login profile id; empty = unassigned. */
+  accountOwnerId: string;
 };
 
 export const emptyBuilderDashboardForm: BuilderDashboardForm = {
@@ -213,6 +236,7 @@ export const emptyBuilderDashboardForm: BuilderDashboardForm = {
   logoUrl: "",
   youtubeUrl: "",
   showOnMarketing: true,
+  accountOwnerId: "",
 };
 
 export function builderToDashboardForm(builder: {
@@ -221,6 +245,7 @@ export function builderToDashboardForm(builder: {
   logoUrl?: string;
   youtubeUrl?: string;
   showOnMarketing?: boolean;
+  ownerId?: string;
 }): BuilderDashboardForm {
   return {
     name: builder.name,
@@ -228,17 +253,37 @@ export function builderToDashboardForm(builder: {
     logoUrl: builder.logoUrl ?? "",
     youtubeUrl: builder.youtubeUrl ?? "",
     showOnMarketing: builder.showOnMarketing !== false,
+    accountOwnerId: builder.ownerId ?? "",
   };
 }
 
-export function toBuilderInput(form: BuilderDashboardForm): BuilderInput {
-  return {
+export function toBuilderInput(
+  form: BuilderDashboardForm,
+  options?: { assignOwner?: boolean; existingOwnerId?: string },
+): BuilderInput {
+  const base = {
     name: form.name.trim(),
     description: form.description.trim() || undefined,
     logoUrl: form.logoUrl.trim() || undefined,
     youtubeUrl: form.youtubeUrl.trim() || undefined,
     showOnMarketing: form.showOnMarketing,
   };
+
+  if (options?.assignOwner) {
+    return {
+      ...base,
+      ownerId: form.accountOwnerId.trim() || undefined,
+    };
+  }
+
+  if (options?.existingOwnerId) {
+    return {
+      ...base,
+      ownerId: options.existingOwnerId,
+    };
+  }
+
+  return base;
 }
 
 export type HomeModelForm = {

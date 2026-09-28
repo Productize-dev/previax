@@ -18,7 +18,7 @@ type PreviaxLogoProps = {
 
 export function PreviaxLogo({
   className,
-  height = 36,
+  height = 48,
   asLink = true,
   href = "/",
 }: PreviaxLogoProps) {

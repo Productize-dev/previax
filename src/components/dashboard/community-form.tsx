@@ -26,6 +26,11 @@ import {
 } from "@/components/ui/select";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import {
+  ASSIGNEE_NONE,
+  fetchActiveProfilesByRole,
+  profileAssigneeLabel,
+} from "@/lib/dashboard-assignees";
+import {
   communityToDashboardForm,
   newCommunityDashboardForm,
   toCommunityInput,
@@ -39,7 +44,7 @@ import {
   isYouTubeThumbnailUrl,
   resolveThumbnailFromYouTube,
 } from "@/lib/youtube";
-import type { Community, CommunityTag } from "@/lib/types";
+import type { Community, CommunityTag, Profile } from "@/lib/types";
 import type { DuplicateMatch } from "@/lib/duplicate-detection";
 import { cn } from "@/lib/utils";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -69,7 +74,7 @@ export function CommunityForm({
   prefillKey,
   initialForm,
 }: CommunityFormProps) {
-  const { builders, communities, customCommunityTagLabels, addCommunity, updateCommunity } =
+  const { builders, communities, customCommunityTagLabels, addCommunity, updateCommunity, isAdmin } =
     useDashboardData();
   const [form, setForm] = useState<CommunityDashboardForm>(() =>
     initialForm ??
@@ -80,10 +85,30 @@ export function CommunityForm({
   const [youtubeError, setYoutubeError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [salesPeople, setSalesPeople] = useState<Profile[]>([]);
 
   useEffect(() => {
     if (initialForm) setForm(initialForm);
   }, [prefillKey, initialForm]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    void fetchActiveProfilesByRole("sales")
+      .then((list) => {
+        if (!cancelled) setSalesPeople(list);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toastError(
+            err instanceof Error ? err.message : "Could not load sales team",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   const isEditing = editingCommunity !== null;
 
@@ -283,12 +308,18 @@ export function CommunityForm({
           editingCommunity;
         await updateCommunity(
           id,
-          toCommunityInput(payload, existing, builders),
+          toCommunityInput(payload, existing, builders, {
+            assignSales: isAdmin,
+          }),
         );
         toastSuccess("Community updated");
         onEditComplete();
       } else {
-        await addCommunity(toCommunityInput(payload, undefined, builders));
+        await addCommunity(
+          toCommunityInput(payload, undefined, builders, {
+            assignSales: isAdmin,
+          }),
+        );
         toastSuccess("Community created");
       }
       setForm(newCommunityDashboardForm(defaultBuilderId ?? form.builderId));
@@ -312,100 +343,141 @@ export function CommunityForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label>Community type</Label>
-            <Select
-              value={form.communityType}
-              onValueChange={(value) =>
-                setCommunityType(
-                  (value as "single" | "multi" | "none") ?? "single",
-                )
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select community type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Single builder</SelectItem>
-                <SelectItem value="multi">Multi-builder community</SelectItem>
-                {!lockBuilder && (
-                  <SelectItem value="none">No builder assigned</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+            <div>
+              <p className="text-sm font-medium">Assignment</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Who owns this listing in the pipeline, and which builder org(s)
+                it belongs to.
+              </p>
+            </div>
 
-          {form.communityType === "single" ? (
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label>Assigned sales</Label>
+                <Select
+                  value={form.assignedSalesId || ASSIGNEE_NONE}
+                  onValueChange={(value) =>
+                    updateField(
+                      "assignedSalesId",
+                      !value || value === ASSIGNEE_NONE ? "" : value,
+                    )
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ASSIGNEE_NONE}>Unassigned</SelectItem>
+                    {salesPeople.map((person) => (
+                      <SelectItem key={person.id} value={person.id}>
+                        {profileAssigneeLabel(person)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  That sales user will see this community in their pipeline.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label>Builder</Label>
+              <Label>Community type</Label>
               <Select
-                value={form.builderId}
-                onValueChange={(value) => {
-                  const builderId = value ?? "";
-                  updateField("builderId", builderId);
-                  updateField("builderIds", builderId ? [builderId] : []);
-                }}
-                disabled={lockBuilder}
+                value={form.communityType}
+                onValueChange={(value) =>
+                  setCommunityType(
+                    (value as "single" | "multi" | "none") ?? "single",
+                  )
+                }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a builder" />
+                  <SelectValue placeholder="Select community type" />
                 </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None yet</SelectItem>
-                {builders.map((builder) => (
-                    <SelectItem key={builder.id} value={builder.id}>
-                      {builder.name}
-                    </SelectItem>
-                  ))}
+                <SelectContent>
+                  <SelectItem value="single">Single builder</SelectItem>
+                  <SelectItem value="multi">Multi-builder community</SelectItem>
+                  {!lockBuilder && (
+                    <SelectItem value="none">No builder assigned</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
-          ) : form.communityType === "multi" ? (
-            <div className="space-y-2">
-              <Label>Builders</Label>
-              <p className="text-xs text-muted-foreground">
-                Optional — assign builders now or add them later.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {builders.map((builder) => {
-                  const selected = form.builderIds.includes(builder.id);
 
-                  return (
-                    <button
-                      key={builder.id}
-                      type="button"
-                      onClick={() => {
-                        if (
-                          lockBuilder &&
-                          builder.id === defaultBuilderId &&
-                          form.builderIds.includes(builder.id)
-                        ) {
-                          return;
-                        }
-                        toggleBuilder(builder.id);
-                      }}
-                      className={cn(
-                        "rounded-full border px-3 py-1 text-sm transition-colors",
-                        selected
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:border-primary/50",
-                      )}
-                    >
-                      {builder.name}
-                    </button>
-                  );
-                })}
+            {form.communityType === "single" ? (
+              <div className="space-y-2">
+                <Label>Builder</Label>
+                <Select
+                  value={form.builderId || ASSIGNEE_NONE}
+                  onValueChange={(value) => {
+                    const builderId =
+                      !value || value === ASSIGNEE_NONE ? "" : value;
+                    updateField("builderId", builderId);
+                    updateField("builderIds", builderId ? [builderId] : []);
+                  }}
+                  disabled={lockBuilder}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a builder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ASSIGNEE_NONE}>None yet</SelectItem>
+                    {builders.map((builder) => (
+                      <SelectItem key={builder.id} value={builder.id}>
+                        {builder.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {form.builderIds.length} builder
-                {form.builderIds.length === 1 ? "" : "s"} selected
+            ) : form.communityType === "multi" ? (
+              <div className="space-y-2">
+                <Label>Builders</Label>
+                <p className="text-xs text-muted-foreground">
+                  Optional — assign builders now or add them later.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {builders.map((builder) => {
+                    const selected = form.builderIds.includes(builder.id);
+
+                    return (
+                      <button
+                        key={builder.id}
+                        type="button"
+                        onClick={() => {
+                          if (
+                            lockBuilder &&
+                            builder.id === defaultBuilderId &&
+                            form.builderIds.includes(builder.id)
+                          ) {
+                            return;
+                          }
+                          toggleBuilder(builder.id);
+                        }}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-sm transition-colors",
+                          selected
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border text-muted-foreground hover:border-primary/50",
+                        )}
+                      >
+                        {builder.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {form.builderIds.length} builder
+                  {form.builderIds.length === 1 ? "" : "s"} selected
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This community will not be linked to any builder.
               </p>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              This community will not be linked to any builder.
-            </p>
-          )}
+            )}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

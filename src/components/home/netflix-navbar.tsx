@@ -150,7 +150,7 @@ export function NetflixNavbar() {
             aria-label="Previax home"
           >
             <PreviaxLogo
-              height={scrolled ? 40 : 48}
+              height={scrolled ? 48 : 56}
               className="brightness-110"
               asLink={false}
             />

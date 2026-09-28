@@ -14,7 +14,7 @@ export default function AuthLayout({
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#e50914]/10 via-transparent to-transparent"
       />
       <Link href="/" className="relative mb-8">
-        <PreviaxLogo height={56} asLink={false} />
+        <PreviaxLogo height={64} asLink={false} />
       </Link>
       <div className="relative w-full max-w-md rounded-xl border border-border bg-card/70 p-8 backdrop-blur">
         {children}

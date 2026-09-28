@@ -38,7 +38,7 @@ export function LandingNav() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-6 lg:h-[72px]">
         <PreviaxLogo
           href={MARKETING_HOME}
-          height={40}
+          height={52}
           className="brightness-110"
         />
 

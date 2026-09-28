@@ -90,11 +90,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Role | Access |
 |------|--------|
-| **Admin** | Full catalog, curation (Featured, Top 10), pending approvals, KPIs |
-| **Builder** | Own builders, communities, model homes |
+| **Admin** | Full catalog, curation (Featured, Top 10), pending approvals, KPIs, sales invites, AI Assistant |
+| **Builder** | Own builders, communities, model homes, listing approvals |
 | **Lender** | Own lenders and financing offers |
+| **Sales** | Invite-only; listing pipeline Step 1/2 (no public signup) |
+| **Buyer** | Browse, AI search, guidance, local saved/liked library (no dashboard) |
 
 New builder/lender signups start as `pending` until an admin approves them in the dashboard overview.
+
+**Role handbooks** (what works today vs how it should work): [docs/handbooks/](docs/handbooks/). See [how roles connect](docs/handbooks/connections.md) for diagrams.
+
+First admin is created with SQL after a normal signup — see [docs/handbooks/admin.md](docs/handbooks/admin.md).
 
 ## Top 10 automation
 

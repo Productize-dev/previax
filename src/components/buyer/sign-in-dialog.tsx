@@ -81,7 +81,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader className="items-center text-center">
-          <PreviaxLogo height={72} asLink={false} className="mx-auto" />
+          <PreviaxLogo height={80} asLink={false} className="mx-auto" />
           <DialogTitle>Welcome to Previax</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">

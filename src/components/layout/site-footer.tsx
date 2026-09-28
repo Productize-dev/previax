@@ -10,7 +10,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <PreviaxLogo height={56} asLink={false} />
+            <PreviaxLogo height={64} asLink={false} />
             <p className="mt-2 text-sm text-muted-foreground">
               Premium communities across North Carolina
             </p>

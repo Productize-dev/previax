@@ -14,7 +14,7 @@ export function LandingFooter() {
     <footer className="mt-auto border-t border-white/10 bg-black px-6 py-14">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 lg:flex-row lg:justify-between">
         <div>
-          <PreviaxLogo href={MARKETING_HOME} height={48} />
+          <PreviaxLogo href={MARKETING_HOME} height={56} />
           <p className="mt-3 max-w-xs text-sm text-white/50">
             A smarter way to explore new construction communities in North
             Carolina.

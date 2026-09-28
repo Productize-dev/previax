@@ -42,8 +42,6 @@ export function SalesSubmissionWizard({
     builders,
     communities,
     customCommunityTagLabels,
-    addCommunity,
-    updateCommunity,
     refresh,
   } = useDashboardData();
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -146,46 +144,41 @@ export function SalesSubmissionWizard({
     const builder = builders.find((b) => b.id === builderId);
     setBusy(true);
     try {
-      const basePayload = {
-        name: name.trim(),
-        city: city.trim(),
-        description: description.trim(),
-        thumbnailUrl: thumbnailUrl.trim(),
-        builderName: builder?.name ?? "",
-        builderId,
-        builderIds: [builderId],
-        isMultiBuilder: false,
-        builderOffers: "",
-        realtorName: "",
-        realtorPhone: "",
-        realtorEmail: "",
-        realtorPhotoUrl: "",
-        amenities: amenities
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean),
-        mainHighlight: mainHighlight.trim(),
-        schoolDistrict: schoolDistrict.trim(),
-        tagline: tagline.trim(),
-        lifestyleNotes: lifestyleNotes.trim(),
-        tags,
-        isHidden: true,
-        submittedBy: profile.id,
-        ownerId: profile.id,
+      // Create/update via server route (service role). Direct browser inserts
+      // hit communities RLS even for active sales sessions.
+      const draftRes = await fetch("/api/pipeline/save-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          communityId: communityId ?? undefined,
+          name: name.trim(),
+          city: city.trim(),
+          description: description.trim(),
+          thumbnailUrl: thumbnailUrl.trim(),
+          builderName: builder?.name ?? "",
+          builderId,
+          builderIds: [builderId],
+          amenities: amenities
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+          mainHighlight: mainHighlight.trim(),
+          schoolDistrict: schoolDistrict.trim(),
+          tagline: tagline.trim(),
+          lifestyleNotes: lifestyleNotes.trim(),
+          tags,
+        }),
+      });
+      const draftData = (await draftRes.json()) as {
+        id?: string;
+        error?: string;
       };
-
-      let id = communityId;
-      if (id) {
-        await updateCommunity(id, basePayload);
-      } else {
-        const created = await addCommunity({
-          ...basePayload,
-          youtubeUrl: "",
-          pipelineStatus: "draft",
-        });
-        id = created.id;
-        setCommunityId(created.id);
+      if (!draftRes.ok || !draftData.id) {
+        throw new Error(draftData.error ?? "Save draft failed");
       }
+
+      const id = draftData.id;
+      setCommunityId(id);
 
       if (completeStep1) {
         const res = await fetch("/api/pipeline/action", {
