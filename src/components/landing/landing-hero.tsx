@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Crosshair, Play } from "lucide-react";
 
-import { YouTubeEmbed } from "@/components/video/youtube-embed";
+import { YouTubePosterImage } from "@/components/communities/youtube-poster-image";
 import { PreviaxLogo } from "@/components/layout/previax-logo";
 import { MARKETING_HERO_YOUTUBE_URL } from "@/lib/config";
 import { APP_HOME, PARTNER_PATH } from "@/lib/routes";
@@ -52,14 +52,15 @@ export function LandingHero({ audience, onAudienceChange }: LandingHeroProps) {
   return (
     <section className="relative flex min-h-[68svh] flex-col justify-center overflow-hidden px-6 pb-12 pt-24 md:min-h-[72svh] md:pb-14 md:pt-28">
       <div className="absolute inset-0">
-        <YouTubeEmbed
-          youtubeUrl={MARKETING_HERO_YOUTUBE_URL}
-          title="Previax"
-          preset="background"
+        {/* Poster only. An autoplay YouTube iframe shows "confirm you're not a bot"
+            and visitors cannot dismiss it (the frame ignores clicks). */}
+        <YouTubePosterImage
+          videoUrl={MARKETING_HERO_YOUTUBE_URL}
+          alt=""
           loading="eager"
-          fillContainer
-          cover
+          fetchPriority="high"
           className="absolute inset-0 size-full"
+          imgClassName="scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.75)_75%)]" />
